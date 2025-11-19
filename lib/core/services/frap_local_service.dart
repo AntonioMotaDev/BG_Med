@@ -99,6 +99,23 @@ class FrapLocalService {
     }
   }
 
+  // BUSCAR un registro por folio
+  Future<Frap?> findRecordByFolio(String folio) async {
+    try {
+      if (folio.trim().isEmpty) {
+        return null;
+      }
+      final box = await _getFrapBox;
+      final frap = box.values.firstWhere(
+        (frap) => frap.registryInfo['folio']?.toString() == folio,
+        orElse: () => throw Exception('Registro no encontrado con ese folio'),
+      );
+      return frap;
+    } catch (e) {
+      return null;
+    }
+  }
+
   // OBTENER todos los registros FRAP locales
   Future<List<Frap>> getAllFrapRecords() async {
     try {

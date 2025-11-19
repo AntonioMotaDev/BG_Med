@@ -89,7 +89,7 @@ class AppTheme {
       ),
       
       // Cards personalizadas
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 3,
         shadowColor: primaryBlue.withOpacity(0.1),
         shape: RoundedRectangleBorder(
@@ -183,7 +183,7 @@ class AppTheme {
       ),
       
       // TabBar personalizado
-      tabBarTheme: TabBarTheme(
+      tabBarTheme: TabBarThemeData(
         labelColor: primaryBlue,
         unselectedLabelColor: neutralGray,
         indicator: UnderlineTabIndicator(
@@ -248,7 +248,7 @@ class AppTheme {
       ),
       
       // Cards personalizadas oscuras
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 4,
         shadowColor: Colors.black.withOpacity(0.3),
         shape: RoundedRectangleBorder(
@@ -342,7 +342,7 @@ class AppTheme {
       ),
       
       // TabBar personalizado oscuro
-      tabBarTheme: TabBarTheme(
+      tabBarTheme: TabBarThemeData(
         labelColor: primaryBlueDark,
         unselectedLabelColor: neutralGrayDark,
         indicator: UnderlineTabIndicator(

@@ -6,12 +6,14 @@ class InjuryLocationDisplayWidget extends StatefulWidget {
   final List<DrawnInjuryDisplay> drawnInjuries;
   final Size? originalImageSize; // Tamaño original cuando se dibujaron las lesiones
   final Rect? originalImageRect; // Rectángulo original de la imagen
+  final double? height; // Altura fija para renderizado en PDF
 
   const InjuryLocationDisplayWidget({
     super.key,
     required this.drawnInjuries,
     this.originalImageSize,
     this.originalImageRect,
+    this.height,
   });
 
   @override
@@ -54,13 +56,13 @@ class _InjuryLocationDisplayWidgetState extends State<InjuryLocationDisplayWidge
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text(
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            const Text(
               'Cargando mapa de lesiones...',
               style: TextStyle(
                 color: Colors.grey,
@@ -96,14 +98,42 @@ class _InjuryLocationDisplayWidgetState extends State<InjuryLocationDisplayWidge
       );
     }
 
+    // Si se proporciona una altura, usar un SizedBox para forzar el tamaño.
+    // Esto es ideal para la generación de PDF.
+    if (widget.height != null) {
+      // Calcular el aspect ratio de la imagen para darle un tamaño predecible al widget.
+      // Esto es crucial para que el centrado en el PDF funcione correctamente.
+      final imageWidth = _humanSilhouetteImage!.width.toDouble();
+      final imageHeight = _humanSilhouetteImage!.height.toDouble();
+      final imageAspectRatio = imageWidth / imageHeight;
+
+      return SizedBox(
+        height: widget.height,
+        // Usar AspectRatio para que el widget tenga un ancho proporcional a su altura,
+        // en lugar de `width: double.infinity`.
+        child: AspectRatio(
+          aspectRatio: imageAspectRatio,
+          child: CustomPaint(
+            painter: _createPainter(),
+            // El painter usará el tamaño que le da el AspectRatio.
+          ),
+        ),
+      );
+    }
+
+    // Comportamiento por defecto para la UI normal.
     return CustomPaint(
-      painter: InjuryLocationDisplayPainter(
-        drawnInjuries: widget.drawnInjuries,
-        humanSilhouetteImage: _humanSilhouetteImage!,
-        originalImageSize: widget.originalImageSize,
-        originalImageRect: widget.originalImageRect,
-      ),
-      size: Size.infinite,
+      painter: _createPainter(),
+      size: Size.infinite, // Se adapta al contenedor padre
+    );
+  }
+
+  InjuryLocationDisplayPainter _createPainter() {
+    return InjuryLocationDisplayPainter(
+      drawnInjuries: widget.drawnInjuries,
+      humanSilhouetteImage: _humanSilhouetteImage!,
+      originalImageSize: widget.originalImageSize,
+      originalImageRect: widget.originalImageRect,
     );
   }
 }
@@ -169,11 +199,11 @@ class InjuryLocationDisplayPainter extends CustomPainter {
     
     if (canvasSize.width / canvasSize.height > imageAspectRatio) {
       // Ajustar por altura
-      targetHeight = canvasSize.height * 0.9;
+      targetHeight = canvasSize.height;
       targetWidth = targetHeight * imageAspectRatio;
     } else {
       // Ajustar por anchura
-      targetWidth = canvasSize.width * 0.9;
+      targetWidth = canvasSize.width;
       targetHeight = targetWidth / imageAspectRatio;
     }
 

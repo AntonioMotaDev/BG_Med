@@ -1,5 +1,6 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 class ConnectivityIndicator extends StatelessWidget {
   const ConnectivityIndicator({super.key});
@@ -16,6 +17,12 @@ class ConnectivityIndicator extends StatelessWidget {
             final connectivityResults = snapshot.data ?? [ConnectivityResult.none];
             final isConnected = connectivityResults.any((result) => 
                 result != ConnectivityResult.none);
+            
+            // Para debug - ver qué detecta en web
+            if (kDebugMode) {
+              print('🌐 Connectivity results: $connectivityResults');
+              print('📱 Platform: ${Theme.of(context).platform}');
+            }
             
             return Container(
               margin: const EdgeInsets.only(right: 8),

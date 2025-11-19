@@ -101,6 +101,7 @@ class FrapSyncService {
 
       // Obtener registros locales existentes
       final localRecords = await _localService.getAllFrapRecords();
+      print(localRecords);
       final localRecordIds = localRecords.map((record) => record.id).toSet();
 
       // Sincronizar registros de la nube que no existen localmente

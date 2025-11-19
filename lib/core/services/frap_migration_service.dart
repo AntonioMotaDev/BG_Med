@@ -202,11 +202,12 @@ class FrapMigrationService {
             ),
           );
 
-          // Verificar si ya existe en local
-          final existingLocal =
-              localRecords
-                  .where((r) => _areRecordsEquivalent(r, cloudRecord))
-                  .firstOrNull;
+          // --- ¡CAMBIO CLAVE! ---
+          // 1. Buscar si ya existe un registro local usando el folio.
+          final folio = cloudRecord.registryInfo['folio']?.toString();
+          final Frap? existingLocal = folio != null && folio.isNotEmpty
+              ? await _localService.findRecordByFolio(folio)
+              : null;
 
           if (existingLocal == null) {
             // Crear modelo de transición
@@ -239,7 +240,7 @@ class FrapMigrationService {
               );
             }
           } else {
-            // Actualizar registro existente si es más reciente
+            // 2. Si ya existe, actualizarlo solo si el de la nube es más reciente.
             if (cloudRecord.updatedAt.isAfter(existingLocal.updatedAt)) {
               final transitionModel = FrapTransitionModel.fromCloud(
                 cloudRecord,
@@ -409,67 +410,75 @@ class FrapMigrationService {
             ),
           );
 
-          // Crear modelo de transición
-          final transitionModel = FrapTransitionModel.fromLocal(localRecord);
-
-          // Migrar a modelo nube
-          final cloudFrap = transitionModel.migrateToCloudStandard();
-
           // Convertir a FrapData para guardar en nube
-          final frapData = FrapData(
-            serviceInfo: cloudFrap.serviceInfo,
-            registryInfo: cloudFrap.registryInfo,
-            patientInfo: cloudFrap.patientInfo,
-            management: cloudFrap.management,
-            medications: cloudFrap.medications,
-            gynecoObstetric: cloudFrap.gynecoObstetric,
-            attentionNegative: cloudFrap.attentionNegative,
-            pathologicalHistory: cloudFrap.pathologicalHistory,
-            clinicalHistory: cloudFrap.clinicalHistory,
-            physicalExam: cloudFrap.physicalExam,
-            priorityJustification: cloudFrap.priorityJustification,
-            injuryLocation: cloudFrap.injuryLocation,
-            receivingUnit: cloudFrap.receivingUnit,
-            patientReception: cloudFrap.patientReception,
-          );
+          final frapData = _localService.convertFrapToFrapData(localRecord);
 
-          final cloudId = await _retryOperation(
-            () => _cloudService.createFrapRecord(frapData: frapData),
-            'create_cloud_record',
-          );
+          // --- ¡CAMBIO CLAVE! ---
+          // 1. Verificar si ya existe un registro equivalente en la nube.
+          final existingCloudId =
+              await _cloudService.findExistingCloudRecord(frapData: frapData);
 
-          if (cloudId != null) {
-            // Marcar como sincronizado
+          if (existingCloudId != null) {
+            // 2. Si ya existe, no creamos uno nuevo. Lo marcamos como sincronizado y continuamos.
+            migratedRecords++; // Lo contamos como "migrado" porque ya está en la nube.
+            FrapConversionLogger.logConversionSuccess(
+              'migration_local_to_cloud_skipped_duplicate',
+              existingCloudId,
+              {
+                'localId': localRecord.id,
+                'patientName': localRecord.patient.fullName,
+                'reason': 'Record already exists in cloud',
+              },
+            );
+
             try {
               await _retryOperation(
                 () => _localService.markAsSynced(localRecord.id),
                 'mark_as_synced',
               );
             } catch (e) {
-              if (_config.enableLogging) {
-                FrapConversionLogger.logConversionError(
-                  'mark_as_synced_failed',
-                  localRecord.id,
-                  'No se pudo marcar como sincronizado: $e',
-                  StackTrace.current,
-                );
-              }
+              // Log de advertencia si no se puede marcar como sincronizado
             }
-
-            migratedRecords++;
-            FrapConversionLogger.logConversionSuccess(
-              'migration_local_to_cloud',
-              cloudId,
-              {
-                'localId': localRecord.id,
-                'patientName': localRecord.patient.fullName,
-              },
-            );
           } else {
-            failedRecords++;
-            errors.add(
-              'Error guardando registro en nube para ${localRecord.patient.fullName}',
+            // 3. Si no existe, procedemos a crearlo en la nube.
+            final cloudId = await _retryOperation(
+              () => _cloudService.createFrapRecord(frapData: frapData),
+              'create_cloud_record',
             );
+
+            if (cloudId != null) {
+              // Marcar como sincronizado
+              try {
+                await _retryOperation(
+                  () => _localService.markAsSynced(localRecord.id),
+                  'mark_as_synced',
+                );
+              } catch (e) {
+                if (_config.enableLogging) {
+                  FrapConversionLogger.logConversionError(
+                    'mark_as_synced_failed',
+                    localRecord.id,
+                    'No se pudo marcar como sincronizado: $e',
+                    StackTrace.current,
+                  );
+                }
+              }
+
+              migratedRecords++;
+              FrapConversionLogger.logConversionSuccess(
+                'migration_local_to_cloud',
+                cloudId,
+                {
+                  'localId': localRecord.id,
+                  'patientName': localRecord.patient.fullName,
+                },
+              );
+            } else {
+              failedRecords++;
+              errors.add(
+                'Error guardando registro en nube para ${localRecord.patient.fullName}',
+              );
+            }
           }
         } catch (e, stackTrace) {
           failedRecords++;
@@ -561,6 +570,7 @@ class FrapMigrationService {
   /// Migración bidireccional completa
   Future<MigrationResult> migrateBidirectional() async {
     final startTime = DateTime.now();
+    //final startTime = DateTime.now().difference(startTime);
     final errors = <String>[];
     int totalRecords = 0;
     int migratedRecords = 0;

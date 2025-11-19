@@ -5,6 +5,7 @@ import 'package:bg_med/features/frap/presentation/providers/frap_local_provider.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bg_med/features/frap/presentation/providers/frap_data_provider.dart';
 import 'package:bg_med/core/services/folio_generator_service.dart';
+import 'dart:convert';
 
 // Estados de sincronización
 enum SyncStatus { idle, syncing, success, error }
@@ -83,6 +84,15 @@ class UnifiedFrapNotifier extends StateNotifier<UnifiedFrapState> {
     await loadAllRecords();
   }
 
+  void verComoJSON(List<UnifiedFrapRecord> registros) {
+    for (int i = 0; i < registros.length; i++) {
+      var info = registros[i].getDetailedInfo();
+      var jsonString = JsonEncoder.withIndent('  ').convert(info);
+      print("\n📄 Registro $i (JSON):");
+      print(jsonString);
+    }
+  }
+
   // Cargar todos los registros
   Future<void> loadAllRecords() async {
     if (_isUpdating) return;
@@ -93,7 +103,8 @@ class UnifiedFrapNotifier extends StateNotifier<UnifiedFrapState> {
     try {
       print('Cargando registros unificados...');
       final records = await _unifiedService.getAllRecords();
-      print('Registros obtenidos: ${records.length}');
+      verComoJSON(records);
+      print('Registros: $records');
 
       final stats = _calculateStats(records);
       print('Estadísticas calculadas: $stats');

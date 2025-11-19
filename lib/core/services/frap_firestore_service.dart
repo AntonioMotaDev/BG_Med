@@ -340,6 +340,42 @@ class FrapFirestoreService {
     }
   }
 
+  // BUSCAR si un registro equivalente ya existe en la nube
+  Future<String?> findExistingCloudRecord({
+    required FrapData frapData,
+    String? customUserId,
+  }) async {
+    try {
+      final userId = customUserId ?? _currentUserId;
+      if (userId == null) {
+        // No se puede buscar sin un usuario
+        return null;
+      }
+
+      final folio = frapData.registryInfo['folio']?.toString();
+      final patientName =
+          '${frapData.patientInfo['firstName'] ?? ''} ${frapData.patientInfo['paternalLastName'] ?? ''}'
+              .trim();
+
+      // Si no hay folio o nombre de paciente, no podemos buscar de forma fiable.
+      if (folio == null || folio.isEmpty || patientName.isEmpty) {
+        return null;
+      }
+
+      // Buscar por folio, que debería ser el identificador más fiable.
+      final querySnapshot = await _collection
+          .where('userId', isEqualTo: userId)
+          .where('registryInfo.folio', isEqualTo: folio)
+          .limit(1)
+          .get();
+
+      return querySnapshot.docs.isNotEmpty ? querySnapshot.docs.first.id : null;
+    } catch (e) {
+      // Si hay un error en la búsqueda, es más seguro asumir que no existe.
+      return null;
+    }
+  }
+
   // STREAM de registros FRAP en tiempo real
   Stream<List<FrapFirestore>> getFrapRecordsStream({String? customUserId}) {
     try {
