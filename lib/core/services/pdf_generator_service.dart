@@ -270,7 +270,7 @@ class FrapPdfDisplayData {
   final ReceptionDisplayData reception;
   final String? consentimientoServicio;
   final InsumosDisplayData insumos;
-  
+
   FrapPdfDisplayData({
     required this.patient,
     required this.service,
@@ -362,7 +362,6 @@ class PdfGeneratorService {
       _valueStyle = _valueStyle.copyWith(font: _robotoRegular);
       _headerStyle = _headerStyle.copyWith(font: _robotoBold);
       _smallStyle = _smallStyle.copyWith(font: _robotoRegular);
-
     } catch (e) {
       _log('Error loading Roboto fonts: $e');
       // Usar fuentes por defecto si falla la carga
@@ -420,7 +419,8 @@ class PdfGeneratorService {
 
     // Crear imagen combinada con silueta y lesiones
     pw.MemoryImage? combinedImage;
-    final injuryLocation = record.getDetailedInfo()['injuryLocation'] as Map<String, dynamic>?;
+    final injuryLocation =
+        record.getDetailedInfo()['injuryLocation'] as Map<String, dynamic>?;
     final drawnInjuries = injuryLocation?['drawnInjuries'] as List<dynamic>?;
     if (drawnInjuries != null && drawnInjuries.isNotEmpty) {
       try {
@@ -458,19 +458,22 @@ class PdfGeneratorService {
               // SECCIONES PRINCIPALES EN ORDEN COMPACTO
               _buildCompactAdminDetails(displayData.registry),
               pw.SizedBox(height: 4),
-              
+
               _buildCompactTimeTracking(displayData.service),
               pw.SizedBox(height: 4),
-              
-              _buildCompactPatientInfo(displayData.patient, displayData.service.currentCondition),
+
+              _buildCompactPatientInfo(
+                displayData.patient,
+                displayData.service.currentCondition,
+              ),
               pw.SizedBox(height: 4),
-              
+
               _buildCompactServiceInfo(displayData.service),
               pw.SizedBox(height: 4),
-              
+
               _buildCompactInjuryLocationSection(record, combinedImage),
               pw.SizedBox(height: 4),
-              
+
               // SECCIONES EN COLUMNAS PARA AHORRAR ESPACIO
               pw.Row(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -498,7 +501,9 @@ class PdfGeneratorService {
                         pw.SizedBox(height: 4),
                         _buildCompactVitalSignsTable(displayData.vitalSigns),
                         pw.SizedBox(height: 4),
-                        _buildCompactPriorityJustification(displayData.priority),
+                        _buildCompactPriorityJustification(
+                          displayData.priority,
+                        ),
                       ],
                     ),
                   ),
@@ -508,19 +513,21 @@ class PdfGeneratorService {
 
               // SECCIONES ADICIONALES
               if (displayData.patient.sex.toLowerCase() == 'femenino') ...[
-                _buildCompactGynecoObstetricSection(displayData.gynecoObstetric),
+                _buildCompactGynecoObstetricSection(
+                  displayData.gynecoObstetric,
+                ),
                 pw.SizedBox(height: 4),
               ],
-              
+
               _buildCompactInsumosSection(displayData.insumos),
               pw.SizedBox(height: 4),
-              
+
               _buildCompactPersonalMedicoSection(displayData.management),
               pw.SizedBox(height: 4),
-              
+
               _buildCompactReceivingUnitSection(displayData.reception),
               pw.SizedBox(height: 4),
-              
+
               _buildCompactAmbulanceSection(displayData.ambulance),
               pw.SizedBox(height: 4),
 
@@ -641,7 +648,10 @@ class PdfGeneratorService {
     );
   }
 
-  pw.Widget _buildCompactPatientInfo(PatientDisplayData patient, String currentCondition) {
+  pw.Widget _buildCompactPatientInfo(
+    PatientDisplayData patient,
+    String currentCondition,
+  ) {
     return pw.Container(
       decoration: pw.BoxDecoration(
         border: pw.Border.all(color: PdfColors.black, width: 0.5),
@@ -662,22 +672,48 @@ class PdfGeneratorService {
               children: [
                 pw.TableRow(
                   children: [
-                    _buildCompactTableCell('Nombre: ${patient.fullName}', alignLeft: true),
-                    _buildCompactTableCell('Edad: ${patient.age}', alignLeft: true),
-                    _buildCompactTableCell('Sexo: ${patient.sex}', alignLeft: true),
-                    _buildCompactTableCell('Seguro: ${patient.insurance}', alignLeft: true),
+                    _buildCompactTableCell(
+                      'Nombre: ${patient.fullName}',
+                      alignLeft: true,
+                    ),
+                    _buildCompactTableCell(
+                      'Edad: ${patient.age}',
+                      alignLeft: true,
+                    ),
+                    _buildCompactTableCell(
+                      'Sexo: ${patient.sex}',
+                      alignLeft: true,
+                    ),
+                    _buildCompactTableCell(
+                      'Seguro: ${patient.insurance}',
+                      alignLeft: true,
+                    ),
                   ],
                 ),
                 pw.TableRow(
                   children: [
-                    _buildCompactTableCell('Dirección: ${patient.address}', alignLeft: true, colSpan: 2),
-                    _buildCompactTableCell('Tel: ${patient.phone}', alignLeft: true),
-                    _buildCompactTableCell('Responsable: ${patient.responsiblePerson}', alignLeft: true),
+                    _buildCompactTableCell(
+                      'Dirección: ${patient.address}',
+                      alignLeft: true,
+                      colSpan: 2,
+                    ),
+                    _buildCompactTableCell(
+                      'Tel: ${patient.phone}',
+                      alignLeft: true,
+                    ),
+                    _buildCompactTableCell(
+                      'Responsable: ${patient.responsiblePerson}',
+                      alignLeft: true,
+                    ),
                   ],
                 ),
                 pw.TableRow(
                   children: [
-                    _buildCompactTableCell('Padecimiento: $currentCondition', alignLeft: true, colSpan: 4),
+                    _buildCompactTableCell(
+                      'Padecimiento: $currentCondition',
+                      alignLeft: true,
+                      colSpan: 4,
+                    ),
                   ],
                 ),
               ],
@@ -712,20 +748,27 @@ class PdfGeneratorService {
                     _buildCompactTableCell('Lugar:', alignLeft: true),
                     _buildCompactTableCell(service.ubicacion, alignLeft: true),
                     _buildCompactTableCell('Tipo:', alignLeft: true),
-                    _buildCompactTableCell(service.tipoServicio, alignLeft: true),
+                    _buildCompactTableCell(
+                      service.tipoServicio,
+                      alignLeft: true,
+                    ),
                   ],
                 ),
                 pw.TableRow(
                   children: [
                     _buildCompactTableCell('Ocurrencia:', alignLeft: true),
                     _buildCompactTableCell(
-                      (service.lugarOcurrencia.isEmpty || service.lugarOcurrencia == 'Otro') 
-                          ? service.lugarOcurrenciaEspecifique 
+                      (service.lugarOcurrencia.isEmpty ||
+                              service.lugarOcurrencia == 'Otro')
+                          ? service.lugarOcurrenciaEspecifique
                           : service.lugarOcurrencia,
                       alignLeft: true,
                     ),
                     _buildCompactTableCell('Especifique:', alignLeft: true),
-                    _buildCompactTableCell(service.tipoServicioEspecifique, alignLeft: true),
+                    _buildCompactTableCell(
+                      service.tipoServicioEspecifique,
+                      alignLeft: true,
+                    ),
                   ],
                 ),
               ],
@@ -736,10 +779,14 @@ class PdfGeneratorService {
     );
   }
 
-  pw.Widget _buildCompactInjuryLocationSection(UnifiedFrapRecord record, pw.MemoryImage? combinedImage) {
-    final injuryLocation = record.getDetailedInfo()['injuryLocation'] as Map<String, dynamic>?;
+  pw.Widget _buildCompactInjuryLocationSection(
+    UnifiedFrapRecord record,
+    pw.MemoryImage? combinedImage,
+  ) {
+    final injuryLocation =
+        record.getDetailedInfo()['injuryLocation'] as Map<String, dynamic>?;
     final drawnInjuries = injuryLocation?['drawnInjuries'] as List<dynamic>?;
-    
+
     return pw.Container(
       decoration: pw.BoxDecoration(
         border: pw.Border.all(color: PdfColors.black, width: 0.5),
@@ -759,14 +806,12 @@ class PdfGeneratorService {
                   decoration: pw.BoxDecoration(
                     border: pw.Border.all(color: PdfColors.grey400),
                   ),
-                  child: combinedImage != null
-                      ? pw.Image(combinedImage, fit: pw.BoxFit.contain)
-                      : pw.Center(
-                          child: pw.Text(
-                            'No hay imagen',
-                            style: _smallStyle,
+                  child:
+                      combinedImage != null
+                          ? pw.Image(combinedImage, fit: pw.BoxFit.contain)
+                          : pw.Center(
+                            child: pw.Text('No hay imagen', style: _smallStyle),
                           ),
-                        ),
                 ),
                 pw.SizedBox(width: 8),
                 // Información de lesiones
@@ -778,12 +823,10 @@ class PdfGeneratorService {
                         'Lesiones registradas: ${drawnInjuries?.length ?? 0}',
                         style: _valueStyle,
                       ),
-                      if (drawnInjuries != null && drawnInjuries.isNotEmpty) ...[
+                      if (drawnInjuries != null &&
+                          drawnInjuries.isNotEmpty) ...[
                         pw.SizedBox(height: 4),
-                        pw.Text(
-                          'Tipos:',
-                          style: _labelStyle,
-                        ),
+                        pw.Text('Tipos:', style: _labelStyle),
                         pw.Wrap(
                           spacing: 2,
                           runSpacing: 1,
@@ -827,10 +870,11 @@ class PdfGeneratorService {
   }
 
   pw.Widget _buildCompactManagementSection(ManagementDisplayData management) {
-    final selectedProcedures = management.procedures.entries
-        .where((entry) => entry.value == 'Sí')
-        .map((entry) => _getProcedureName(entry.key))
-        .toList();
+    final selectedProcedures =
+        management.procedures.entries
+            .where((entry) => entry.value == 'Sí')
+            .map((entry) => _getProcedureName(entry.key))
+            .toList();
 
     return pw.Container(
       width: double.infinity,
@@ -842,23 +886,36 @@ class PdfGeneratorService {
           _buildCompactSectionHeader('MANEJO'),
           pw.Padding(
             padding: const pw.EdgeInsets.all(4),
-            child: selectedProcedures.isNotEmpty
-                ? pw.Wrap(
-                    spacing: 3,
-                    runSpacing: 2,
-                    children: selectedProcedures.map((procedure) => 
-                      pw.Container(
-                        padding: const pw.EdgeInsets.symmetric(horizontal: 3, vertical: 1),
-                        decoration: pw.BoxDecoration(
-                          color: PdfColors.grey100,
-                          borderRadius: pw.BorderRadius.circular(2),
-                          border: pw.Border.all(color: PdfColors.grey400, width: 0.3),
-                        ),
-                        child: pw.Text(procedure, style: _valueStyle),
-                      ),
-                    ).toList(),
-                  )
-                : pw.Text('No se seleccionaron procedimientos', style: _valueStyle),
+            child:
+                selectedProcedures.isNotEmpty
+                    ? pw.Wrap(
+                      spacing: 3,
+                      runSpacing: 2,
+                      children:
+                          selectedProcedures
+                              .map(
+                                (procedure) => pw.Container(
+                                  padding: const pw.EdgeInsets.symmetric(
+                                    horizontal: 3,
+                                    vertical: 1,
+                                  ),
+                                  decoration: pw.BoxDecoration(
+                                    color: PdfColors.grey100,
+                                    borderRadius: pw.BorderRadius.circular(2),
+                                    border: pw.Border.all(
+                                      color: PdfColors.grey400,
+                                      width: 0.3,
+                                    ),
+                                  ),
+                                  child: pw.Text(procedure, style: _valueStyle),
+                                ),
+                              )
+                              .toList(),
+                    )
+                    : pw.Text(
+                      'No se seleccionaron procedimientos',
+                      style: _valueStyle,
+                    ),
           ),
         ],
       ),
@@ -877,7 +934,9 @@ class PdfGeneratorService {
           pw.Padding(
             padding: const pw.EdgeInsets.all(4),
             child: pw.Text(
-              management.medicamentos.isNotEmpty ? management.medicamentos : 'No se registraron medicamentos',
+              management.medicamentos.isNotEmpty
+                  ? management.medicamentos
+                  : 'No se registraron medicamentos',
               style: _valueStyle,
             ),
           ),
@@ -902,7 +961,10 @@ class PdfGeneratorService {
               children: [
                 _buildCompactDetailRow('Alergias:', clinical.allergies),
                 _buildCompactDetailRow('Medicamentos:', clinical.medications),
-                _buildCompactDetailRow('Enfermedades:', clinical.previousIllnesses),
+                _buildCompactDetailRow(
+                  'Enfermedades:',
+                  clinical.previousIllnesses,
+                ),
                 _buildCompactDetailRow('Cirugías:', clinical.previousSurgeries),
               ],
             ),
@@ -913,10 +975,11 @@ class PdfGeneratorService {
   }
 
   pw.Widget _buildCompactClinicalHistory(ClinicalDisplayData clinical) {
-    final selectedAccidents = clinical.accidentTypes.entries
-        .where((entry) => entry.value)
-        .map((entry) => _getAccidentTypeName(entry.key))
-        .toList();
+    final selectedAccidents =
+        clinical.accidentTypes.entries
+            .where((entry) => entry.value)
+            .map((entry) => _getAccidentTypeName(entry.key))
+            .toList();
 
     return pw.Container(
       width: double.infinity,
@@ -936,17 +999,26 @@ class PdfGeneratorService {
                   pw.Wrap(
                     spacing: 2,
                     runSpacing: 1,
-                    children: selectedAccidents.map((accident) => 
-                      pw.Container(
-                        padding: const pw.EdgeInsets.symmetric(horizontal: 3, vertical: 1),
-                        decoration: pw.BoxDecoration(
-                          color: PdfColors.grey100,
-                          borderRadius: pw.BorderRadius.circular(2),
-                          border: pw.Border.all(color: PdfColors.grey400, width: 0.3),
-                        ),
-                        child: pw.Text(accident, style: _smallStyle),
-                      ),
-                    ).toList(),
+                    children:
+                        selectedAccidents
+                            .map(
+                              (accident) => pw.Container(
+                                padding: const pw.EdgeInsets.symmetric(
+                                  horizontal: 3,
+                                  vertical: 1,
+                                ),
+                                decoration: pw.BoxDecoration(
+                                  color: PdfColors.grey100,
+                                  borderRadius: pw.BorderRadius.circular(2),
+                                  border: pw.Border.all(
+                                    color: PdfColors.grey400,
+                                    width: 0.3,
+                                  ),
+                                ),
+                                child: pw.Text(accident, style: _smallStyle),
+                              ),
+                            )
+                            .toList(),
                   ),
                   pw.SizedBox(height: 4),
                 ],
@@ -975,9 +1047,18 @@ class PdfGeneratorService {
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 _buildCompactDetailRow('Alergias (S):', sample.alergias),
-                _buildCompactDetailRow('Medicamentos (M):', sample.medicamentos),
-                _buildCompactDetailRow('Antecedentes (A):', sample.enfermedades),
-                _buildCompactDetailRow('Última ingesta (L):', sample.horaAlimento),
+                _buildCompactDetailRow(
+                  'Medicamentos (M):',
+                  sample.medicamentos,
+                ),
+                _buildCompactDetailRow(
+                  'Antecedentes (A):',
+                  sample.enfermedades,
+                ),
+                _buildCompactDetailRow(
+                  'Última ingesta (L):',
+                  sample.horaAlimento,
+                ),
               ],
             ),
           ),
@@ -988,7 +1069,7 @@ class PdfGeneratorService {
 
   pw.Widget _buildCompactVitalSignsTable(VitalSignsDisplayData vitalSigns) {
     final vitalSignsList = ['T/A', 'FC', 'FR', 'Temp.', 'Sat. O2', 'Glasgow'];
-    
+
     return pw.Container(
       width: double.infinity,
       decoration: pw.BoxDecoration(
@@ -1004,7 +1085,10 @@ class PdfGeneratorService {
               columnWidths: {
                 0: const pw.FlexColumnWidth(1.2),
                 ...Map.fromIterable(
-                  List.generate(vitalSigns.timeColumns.length, (index) => index + 1),
+                  List.generate(
+                    vitalSigns.timeColumns.length,
+                    (index) => index + 1,
+                  ),
                   key: (index) => index,
                   value: (index) => const pw.FlexColumnWidth(1.0),
                 ),
@@ -1016,14 +1100,27 @@ class PdfGeneratorService {
                   children: [
                     pw.Padding(
                       padding: const pw.EdgeInsets.all(2),
-                      child: pw.Text('Signo', style: _smallStyle.copyWith(fontWeight: pw.FontWeight.bold)),
+                      child: pw.Text(
+                        'Signo',
+                        style: _smallStyle.copyWith(
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
                     ),
-                    ...vitalSigns.timeColumns.map((time) => 
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(2),
-                        child: pw.Text(time, style: _smallStyle.copyWith(fontWeight: pw.FontWeight.bold), textAlign: pw.TextAlign.center),
-                      )
-                    ).toList(),
+                    ...vitalSigns.timeColumns
+                        .map(
+                          (time) => pw.Padding(
+                            padding: const pw.EdgeInsets.all(2),
+                            child: pw.Text(
+                              time,
+                              style: _smallStyle.copyWith(
+                                fontWeight: pw.FontWeight.bold,
+                              ),
+                              textAlign: pw.TextAlign.center,
+                            ),
+                          ),
+                        )
+                        .toList(),
                   ],
                 ),
                 // Data rows
@@ -1035,16 +1132,18 @@ class PdfGeneratorService {
                         padding: const pw.EdgeInsets.all(2),
                         child: pw.Text(vitalSign, style: _smallStyle),
                       ),
-                      ...vitalSigns.timeColumns.map((time) => 
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(2),
-                          child: pw.Text(
-                            vitalData[time] ?? '-',
-                            style: _smallStyle,
-                            textAlign: pw.TextAlign.center,
-                          ),
-                        )
-                      ).toList(),
+                      ...vitalSigns.timeColumns
+                          .map(
+                            (time) => pw.Padding(
+                              padding: const pw.EdgeInsets.all(2),
+                              child: pw.Text(
+                                vitalData[time] ?? '-',
+                                style: _smallStyle,
+                                textAlign: pw.TextAlign.center,
+                              ),
+                            ),
+                          )
+                          .toList(),
                     ],
                   );
                 }).toList(),
@@ -1055,7 +1154,9 @@ class PdfGeneratorService {
           pw.Container(
             padding: const pw.EdgeInsets.all(4),
             decoration: pw.BoxDecoration(
-              border: pw.Border(top: pw.BorderSide(color: PdfColors.grey400, width: 0.3)),
+              border: pw.Border(
+                top: pw.BorderSide(color: PdfColors.grey400, width: 0.3),
+              ),
             ),
             child: pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
@@ -1086,7 +1187,10 @@ class PdfGeneratorService {
               mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
               children: [
                 _buildPriorityOption('Rojo', priority.priority == 'Rojo'),
-                _buildPriorityOption('Amarillo', priority.priority == 'Amarillo'),
+                _buildPriorityOption(
+                  'Amarillo',
+                  priority.priority == 'Amarillo',
+                ),
                 _buildPriorityOption('Verde', priority.priority == 'Verde'),
                 _buildPriorityOption('Negro', priority.priority == 'Negro'),
               ],
@@ -1097,7 +1201,9 @@ class PdfGeneratorService {
     );
   }
 
-  pw.Widget _buildCompactGynecoObstetricSection(GynecoObstetricDisplayData gynecoObstetric) {
+  pw.Widget _buildCompactGynecoObstetricSection(
+    GynecoObstetricDisplayData gynecoObstetric,
+  ) {
     return pw.Container(
       width: double.infinity,
       decoration: pw.BoxDecoration(
@@ -1117,14 +1223,26 @@ class PdfGeneratorService {
               children: [
                 pw.TableRow(
                   children: [
-                    _buildCompactTableCell('FUM: ${gynecoObstetric.fum}', alignLeft: true),
-                    _buildCompactTableCell('Semanas: ${gynecoObstetric.semanasGestacion}', alignLeft: true),
+                    _buildCompactTableCell(
+                      'FUM: ${gynecoObstetric.fum}',
+                      alignLeft: true,
+                    ),
+                    _buildCompactTableCell(
+                      'Semanas: ${gynecoObstetric.semanasGestacion}',
+                      alignLeft: true,
+                    ),
                   ],
                 ),
                 pw.TableRow(
                   children: [
-                    _buildCompactTableCell('Gesta: ${gynecoObstetric.gesta}', alignLeft: true),
-                    _buildCompactTableCell('Partos: ${gynecoObstetric.partos}', alignLeft: true),
+                    _buildCompactTableCell(
+                      'Gesta: ${gynecoObstetric.gesta}',
+                      alignLeft: true,
+                    ),
+                    _buildCompactTableCell(
+                      'Partos: ${gynecoObstetric.partos}',
+                      alignLeft: true,
+                    ),
                   ],
                 ),
               ],
@@ -1137,7 +1255,7 @@ class PdfGeneratorService {
 
   pw.Widget _buildCompactInsumosSection(InsumosDisplayData insumos) {
     if (insumos.insumos.isEmpty) return pw.SizedBox();
-    
+
     return pw.Container(
       width: double.infinity,
       decoration: pw.BoxDecoration(
@@ -1151,12 +1269,15 @@ class PdfGeneratorService {
             child: pw.Wrap(
               spacing: 4,
               runSpacing: 2,
-              children: insumos.insumos.map((insumo) => 
-                pw.Text(
-                  '${insumo['cantidad']}x ${insumo['articulo']}',
-                  style: _valueStyle,
-                )
-              ).toList(),
+              children:
+                  insumos.insumos
+                      .map(
+                        (insumo) => pw.Text(
+                          '${insumo['cantidad']}x ${insumo['articulo']}',
+                          style: _valueStyle,
+                        ),
+                      )
+                      .toList(),
             ),
           ),
         ],
@@ -1164,9 +1285,11 @@ class PdfGeneratorService {
     );
   }
 
-  pw.Widget _buildCompactPersonalMedicoSection(ManagementDisplayData management) {
+  pw.Widget _buildCompactPersonalMedicoSection(
+    ManagementDisplayData management,
+  ) {
     if (management.personalMedico.isEmpty) return pw.SizedBox();
-    
+
     return pw.Container(
       width: double.infinity,
       decoration: pw.BoxDecoration(
@@ -1178,12 +1301,15 @@ class PdfGeneratorService {
           pw.Padding(
             padding: const pw.EdgeInsets.all(4),
             child: pw.Column(
-              children: management.personalMedico.map((personal) => 
-                pw.Text(
-                  '${personal['nombre']} - ${personal['especialidad']}',
-                  style: _valueStyle,
-                )
-              ).toList(),
+              children:
+                  management.personalMedico
+                      .map(
+                        (personal) => pw.Text(
+                          '${personal['nombre']} - ${personal['especialidad']}',
+                          style: _valueStyle,
+                        ),
+                      )
+                      .toList(),
             ),
           ),
         ],
@@ -1233,17 +1359,26 @@ class PdfGeneratorService {
     );
   }
 
-  pw.Widget _buildCompactAllSignaturesSection(FrapPdfDisplayData displayData, UnifiedFrapRecord record) {
-    final hasConsentimiento = displayData.consentimientoServicio != null && 
-                           displayData.consentimientoServicio!.isNotEmpty;
-    final hasDoctorSignature = displayData.reception.doctorSignature != null && 
-                            displayData.reception.doctorSignature!.isNotEmpty;
-    
-    final attentionNegative = record.getDetailedInfo()['attentionNegative'] as Map<String, dynamic>?;
+  pw.Widget _buildCompactAllSignaturesSection(
+    FrapPdfDisplayData displayData,
+    UnifiedFrapRecord record,
+  ) {
+    final hasConsentimiento =
+        displayData.consentimientoServicio != null &&
+        displayData.consentimientoServicio!.isNotEmpty;
+    final hasDoctorSignature =
+        displayData.reception.doctorSignature != null &&
+        displayData.reception.doctorSignature!.isNotEmpty;
+
+    final attentionNegative =
+        record.getDetailedInfo()['attentionNegative'] as Map<String, dynamic>?;
     final hasPatientSignature = attentionNegative?['patientSignature'] != null;
     final hasWitnessSignature = attentionNegative?['witnessSignature'] != null;
 
-    if (!hasConsentimiento && !hasDoctorSignature && !hasPatientSignature && !hasWitnessSignature) {
+    if (!hasConsentimiento &&
+        !hasDoctorSignature &&
+        !hasPatientSignature &&
+        !hasWitnessSignature) {
       return pw.SizedBox();
     }
 
@@ -1259,12 +1394,29 @@ class PdfGeneratorService {
             padding: const pw.EdgeInsets.all(4),
             child: pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
-              children: [
-                if (hasConsentimiento) _buildCompactSignature('Consentimiento', displayData.consentimientoServicio!),
-                if (hasPatientSignature) _buildCompactSignature('Paciente', attentionNegative!['patientSignature']!),
-                if (hasWitnessSignature) _buildCompactSignature('Testigo', attentionNegative!['witnessSignature']!),
-                if (hasDoctorSignature) _buildCompactSignature('Médico', displayData.reception.doctorSignature!),
-              ].where((element) => element != null).toList(),
+              children:
+                  [
+                    if (hasConsentimiento)
+                      _buildCompactSignature(
+                        'Consentimiento',
+                        displayData.consentimientoServicio!,
+                      ),
+                    if (hasPatientSignature)
+                      _buildCompactSignature(
+                        'Paciente',
+                        attentionNegative!['patientSignature']!,
+                      ),
+                    if (hasWitnessSignature)
+                      _buildCompactSignature(
+                        'Testigo',
+                        attentionNegative!['witnessSignature']!,
+                      ),
+                    if (hasDoctorSignature)
+                      _buildCompactSignature(
+                        'Médico',
+                        displayData.reception.doctorSignature!,
+                      ),
+                  ].where((element) => element != null).toList(),
             ),
           ),
         ],
@@ -1280,7 +1432,9 @@ class PdfGeneratorService {
       padding: const pw.EdgeInsets.symmetric(vertical: 2, horizontal: 4),
       decoration: pw.BoxDecoration(
         color: PdfColors.grey300,
-        border: pw.Border(bottom: pw.BorderSide(color: PdfColors.black, width: 0.3)),
+        border: pw.Border(
+          bottom: pw.BorderSide(color: PdfColors.black, width: 0.3),
+        ),
       ),
       child: pw.Text(
         title,
@@ -1290,7 +1444,12 @@ class PdfGeneratorService {
     );
   }
 
-  pw.Widget _buildCompactTableCell(String text, {bool isHeader = false, bool alignLeft = false, int colSpan = 1}) {
+  pw.Widget _buildCompactTableCell(
+    String text, {
+    bool isHeader = false,
+    bool alignLeft = false,
+    int colSpan = 1,
+  }) {
     return pw.Padding(
       padding: const pw.EdgeInsets.all(2),
       child: pw.Text(
@@ -1307,19 +1466,8 @@ class PdfGeneratorService {
       child: pw.Row(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
-          pw.SizedBox(
-            width: 40,
-            child: pw.Text(
-              label,
-              style: _labelStyle,
-            ),
-          ),
-          pw.Expanded(
-            child: pw.Text(
-              value,
-              style: _valueStyle,
-            ),
-          ),
+          pw.SizedBox(width: 40, child: pw.Text(label, style: _labelStyle)),
+          pw.Expanded(child: pw.Text(value, style: _valueStyle)),
         ],
       ),
     );
@@ -1328,7 +1476,10 @@ class PdfGeneratorService {
   pw.Widget _buildCompactVitalItem(String label, String value) {
     return pw.Column(
       children: [
-        pw.Text(label, style: _smallStyle.copyWith(fontWeight: pw.FontWeight.bold)),
+        pw.Text(
+          label,
+          style: _smallStyle.copyWith(fontWeight: pw.FontWeight.bold),
+        ),
         pw.Text(value, style: _smallStyle),
       ],
     );
@@ -1369,9 +1520,7 @@ class PdfGeneratorService {
             decoration: pw.BoxDecoration(
               border: pw.Border.all(color: PdfColors.grey400),
             ),
-            child: pw.Center(
-              child: pw.Text('N/A', style: _smallStyle),
-            ),
+            child: pw.Center(child: pw.Text('N/A', style: _smallStyle)),
           ),
         pw.SizedBox(height: 2),
         pw.Text(label, style: _smallStyle),
@@ -1392,301 +1541,359 @@ class PdfGeneratorService {
   }
 
   // ========== MÉTODOS ORIGINALES (se mantienen para funcionalidad) ==========
-Future<pw.MemoryImage> _createCombinedSilhouetteImage(
-  String silhouettePath,
-  List<dynamic> drawnInjuries, {
-  Map<String, dynamic>? injuryLocationMap,
-}) async {
-  // Cargar imagen de silueta
-  final silhouetteBytes = await rootBundle.load(silhouettePath);
-  final codec = await ui.instantiateImageCodec(silhouetteBytes.buffer.asUint8List());
-  final frame = await codec.getNextFrame();
-  final silhouetteImage = frame.image;
+  Future<pw.MemoryImage> _createCombinedSilhouetteImage(
+    String silhouettePath,
+    List<dynamic> drawnInjuries, {
+    Map<String, dynamic>? injuryLocationMap,
+  }) async {
+    // Cargar imagen de silueta
+    final silhouetteBytes = await rootBundle.load(silhouettePath);
+    final codec = await ui.instantiateImageCodec(
+      silhouetteBytes.buffer.asUint8List(),
+    );
+    final frame = await codec.getNextFrame();
+    final silhouetteImage = frame.image;
 
-  // Tamaño fijo para el PDF (igual al que usa el widget en modo PDF)
-  final pdfWidth = 300.0;
-  final pdfHeight = 450.0;
+    // Tamaño fijo para el PDF (igual al que usa el widget en modo PDF)
+    final pdfWidth = 300.0;
+    final pdfHeight = 450.0;
 
-  final recorder = ui.PictureRecorder();
-  final canvas = Canvas(recorder);
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
 
-  // Calcular el rectángulo donde se dibuja la imagen (igual que en el widget)
-  final currentImageRect = _calculateImageRectForPDF(Size(pdfWidth, pdfHeight), silhouetteImage);
+    // Calcular el rectángulo donde se dibuja la imagen (igual que en el widget)
+    final currentImageRect = _calculateImageRectForPDF(
+      Size(pdfWidth, pdfHeight),
+      silhouetteImage,
+    );
 
-  // Dibujar fondo blanco
-  canvas.drawRect(
-    Rect.fromLTWH(0, 0, pdfWidth, pdfHeight),
-    Paint()..color = Colors.white,
-  );
+    // Dibujar fondo blanco
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, pdfWidth, pdfHeight),
+      Paint()..color = Colors.white,
+    );
 
-  // Dibujar silueta humana en el rectángulo calculado
-  canvas.drawImageRect(
-    silhouetteImage,
-    Rect.fromLTWH(0, 0, silhouetteImage.width.toDouble(), silhouetteImage.height.toDouble()),
-    currentImageRect,
-    Paint()
-      ..filterQuality = FilterQuality.high
-      ..isAntiAlias = true,
-  );
+    // Dibujar silueta humana en el rectángulo calculado
+    canvas.drawImageRect(
+      silhouetteImage,
+      Rect.fromLTWH(
+        0,
+        0,
+        silhouetteImage.width.toDouble(),
+        silhouetteImage.height.toDouble(),
+      ),
+      currentImageRect,
+      Paint()
+        ..filterQuality = FilterQuality.high
+        ..isAntiAlias = true,
+    );
 
-  // Obtener información del tamaño original usado en la app
-  final originalImageSize = injuryLocationMap?['originalImageSize'] != null 
-      ? Size(
-          (injuryLocationMap!['originalImageSize']['width'] as num).toDouble(),
-          (injuryLocationMap['originalImageSize']['height'] as num).toDouble(),
-        )
-      : null;
+    // Obtener información del tamaño original usado en la app
+    final originalImageSize =
+        injuryLocationMap?['originalImageSize'] != null
+            ? Size(
+              (injuryLocationMap!['originalImageSize']['width'] as num)
+                  .toDouble(),
+              (injuryLocationMap['originalImageSize']['height'] as num)
+                  .toDouble(),
+            )
+            : null;
 
-  final originalImageRect = injuryLocationMap?['originalImageRect'] != null
-      ? Rect.fromLTWH(
-          (injuryLocationMap!['originalImageRect']['left'] as num).toDouble(),
-          (injuryLocationMap['originalImageRect']['top'] as num).toDouble(),
-          (injuryLocationMap['originalImageRect']['width'] as num).toDouble(),
-          (injuryLocationMap['originalImageRect']['height'] as num).toDouble(),
-        )
-      : null;
+    final originalImageRect =
+        injuryLocationMap?['originalImageRect'] != null
+            ? Rect.fromLTWH(
+              (injuryLocationMap!['originalImageRect']['left'] as num)
+                  .toDouble(),
+              (injuryLocationMap['originalImageRect']['top'] as num).toDouble(),
+              (injuryLocationMap['originalImageRect']['width'] as num)
+                  .toDouble(),
+              (injuryLocationMap['originalImageRect']['height'] as num)
+                  .toDouble(),
+            )
+            : null;
 
-  // Dibujar lesiones transformadas (igual que en el widget)
-  for (final injury in drawnInjuries) {
-    _drawInjuryForPDF(canvas, injury, currentImageRect, originalImageSize, originalImageRect);
-  }
-
-  final picture = recorder.endRecording();
-  final combinedImage = await picture.toImage(pdfWidth.toInt(), pdfHeight.toInt());
-  final byteData = await combinedImage.toByteData(format: ui.ImageByteFormat.png);
-
-  return pw.MemoryImage(byteData!.buffer.asUint8List());
-}
-
-// Método idéntico al del widget para calcular el rectángulo de la imagen
-Rect _calculateImageRectForPDF(Size canvasSize, ui.Image image) {
-  final imageWidth = image.width.toDouble();
-  final imageHeight = image.height.toDouble();
-  final imageAspectRatio = imageWidth / imageHeight;
-  
-  // Calcular dimensiones manteniendo aspect ratio
-  double targetWidth, targetHeight;
-  
-  if (canvasSize.width / canvasSize.height > imageAspectRatio) {
-    // Ajustar por altura
-    targetHeight = canvasSize.height;
-    targetWidth = targetHeight * imageAspectRatio;
-  } else {
-    // Ajustar por anchura
-    targetWidth = canvasSize.width;
-    targetHeight = targetWidth / imageAspectRatio;
-  }
-
-  // Centrar la imagen
-  final offsetX = (canvasSize.width - targetWidth) / 2;
-  final offsetY = (canvasSize.height - targetHeight) / 2;
-
-  return Rect.fromLTWH(offsetX, offsetY, targetWidth, targetHeight);
-}
-
-// Método para dibujar lesiones que replica exactamente la lógica del widget
-void _drawInjuryForPDF(
-  Canvas canvas, 
-  dynamic injury, 
-  Rect currentImageRect, 
-  Size? originalImageSize, 
-  Rect? originalImageRect,
-) {
-  final points = injury['points'] as List<dynamic>? ?? [];
-  if (points.isEmpty) return;
-
-  final injuryType = injury['injuryType'] as int? ?? 0;
-  final color = _getInjuryTypeFlutterColor(injuryType);
-  
-  // Transformar las coordenadas (igual que en el widget)
-  final transformedPoints = _transformInjuryPointsForPDF(
-    points, 
-    currentImageRect, 
-    originalImageSize, 
-    originalImageRect,
-  );
-  
-  final paint = Paint()
-    ..color = color
-    ..strokeCap = StrokeCap.round
-    ..strokeWidth = 2.0  // Un poco más delgado para PDF
-    ..style = PaintingStyle.stroke;
-
-  // Dibujar el path de la lesión
-  if (transformedPoints.isNotEmpty) {
-    final path = Path();
-    path.moveTo(transformedPoints.first.dx, transformedPoints.first.dy);
-
-    for (int i = 1; i < transformedPoints.length; i++) {
-      path.lineTo(transformedPoints[i].dx, transformedPoints[i].dy);
+    // Dibujar lesiones transformadas (igual que en el widget)
+    for (final injury in drawnInjuries) {
+      _drawInjuryForPDF(
+        canvas,
+        injury,
+        currentImageRect,
+        originalImageSize,
+        originalImageRect,
+      );
     }
 
-    canvas.drawPath(path, paint);
+    final picture = recorder.endRecording();
+    final combinedImage = await picture.toImage(
+      pdfWidth.toInt(),
+      pdfHeight.toInt(),
+    );
+    final byteData = await combinedImage.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
 
-    // Dibujar círculos en cada punto
-    final circlePaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
+    return pw.MemoryImage(byteData!.buffer.asUint8List());
+  }
 
-    for (final point in transformedPoints) {
-      canvas.drawCircle(point, 1.5, circlePaint); // Más pequeños para PDF
+  // Método idéntico al del widget para calcular el rectángulo de la imagen
+  Rect _calculateImageRectForPDF(Size canvasSize, ui.Image image) {
+    final imageWidth = image.width.toDouble();
+    final imageHeight = image.height.toDouble();
+    final imageAspectRatio = imageWidth / imageHeight;
+
+    // Calcular dimensiones manteniendo aspect ratio
+    double targetWidth, targetHeight;
+
+    if (canvasSize.width / canvasSize.height > imageAspectRatio) {
+      // Ajustar por altura
+      targetHeight = canvasSize.height;
+      targetWidth = targetHeight * imageAspectRatio;
+    } else {
+      // Ajustar por anchura
+      targetWidth = canvasSize.width;
+      targetHeight = targetWidth / imageAspectRatio;
     }
 
-    // Dibujar el número de la lesión (opcional, para mantener consistencia)
-    final number = injuryType + 1;
-    
-    final paragraphBuilder = ui.ParagraphBuilder(
-      ui.ParagraphStyle(
-        fontSize: 10, // Más pequeño para PDF
-        fontFamily: 'Roboto',
-      ),
-    )..pushStyle(ui.TextStyle(color: Colors.white))
-      ..addText('$number');
-    
-    final paragraph = paragraphBuilder.build();
-    paragraph.layout(ui.ParagraphConstraints(width: 20));
+    // Centrar la imagen
+    final offsetX = (canvasSize.width - targetWidth) / 2;
+    final offsetY = (canvasSize.height - targetHeight) / 2;
 
-    // Dibujar círculo de fondo para el número
-    canvas.drawCircle(
-      transformedPoints.first, 
-      8.0, // Más pequeño para PDF
-      Paint()
-        ..color = color
-        ..style = PaintingStyle.fill,
-    );
-
-    // Dibujar borde blanco
-    canvas.drawCircle(
-      transformedPoints.first, 
-      8.0, 
-      Paint()
-        ..color = Colors.white
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.0,
-    );
-    
-    // Dibujar el texto centrado
-    canvas.drawParagraph(
-      paragraph, 
-      Offset(
-        transformedPoints.first.dx - paragraph.minIntrinsicWidth / 2,
-        transformedPoints.first.dy - paragraph.height / 2,
-      ),
-    );
+    return Rect.fromLTWH(offsetX, offsetY, targetWidth, targetHeight);
   }
-}
 
-// Método idéntico al del widget para transformar puntos
-List<Offset> _transformInjuryPointsForPDF(
-  List<dynamic> points, 
-  Rect currentImageRect, 
-  Size? originalImageSize, 
-  Rect? originalImageRect,
-) {
-  // Convertir puntos dinámicos a Offset
-  final originalPoints = points.map((point) {
-    return Offset(
-      (point['dx'] as num).toDouble(),
-      (point['dy'] as num).toDouble(),
+  // Método para dibujar lesiones que replica exactamente la lógica del widget
+  void _drawInjuryForPDF(
+    Canvas canvas,
+    dynamic injury,
+    Rect currentImageRect,
+    Size? originalImageSize,
+    Rect? originalImageRect,
+  ) {
+    final points = injury['points'] as List<dynamic>? ?? [];
+    if (points.isEmpty) return;
+
+    final injuryType = injury['injuryType'] as int? ?? 0;
+    final color = _getInjuryTypeFlutterColor(injuryType);
+
+    // Transformar las coordenadas (igual que en el widget)
+    final transformedPoints = _transformInjuryPointsForPDF(
+      points,
+      currentImageRect,
+      originalImageSize,
+      originalImageRect,
     );
-  }).toList();
 
-  // Si tenemos tanto el rectángulo original como el tamaño original, hacer transformación precisa
-  if (originalImageRect != null && originalImageSize != null) {
-    return originalPoints.map((point) {
-      // Convertir coordenadas del canvas original a coordenadas relativas dentro de la imagen original (0.0 - 1.0)
-      final relativeX = (point.dx - originalImageRect.left) / originalImageRect.width;
-      final relativeY = (point.dy - originalImageRect.top) / originalImageRect.height;
-      
-      // Convertir coordenadas relativas al espacio actual de la imagen
-      final transformedX = currentImageRect.left + (relativeX * currentImageRect.width);
-      final transformedY = currentImageRect.top + (relativeY * currentImageRect.height);
-      
-      // Asegurar que están dentro de los límites de la imagen actual
-      final clampedX = transformedX.clamp(currentImageRect.left, currentImageRect.right);
-      final clampedY = transformedY.clamp(currentImageRect.top, currentImageRect.bottom);
-      
-      return Offset(clampedX, clampedY);
-    }).toList();
+    final paint =
+        Paint()
+          ..color = color
+          ..strokeCap = StrokeCap.round
+          ..strokeWidth =
+              2.0 // Un poco más delgado para PDF
+          ..style = PaintingStyle.stroke;
+
+    // Dibujar el path de la lesión
+    if (transformedPoints.isNotEmpty) {
+      final path = Path();
+      path.moveTo(transformedPoints.first.dx, transformedPoints.first.dy);
+
+      for (int i = 1; i < transformedPoints.length; i++) {
+        path.lineTo(transformedPoints[i].dx, transformedPoints[i].dy);
+      }
+
+      canvas.drawPath(path, paint);
+
+      // Dibujar círculos en cada punto
+      final circlePaint =
+          Paint()
+            ..color = color
+            ..style = PaintingStyle.fill;
+
+      for (final point in transformedPoints) {
+        canvas.drawCircle(point, 1.5, circlePaint); // Más pequeños para PDF
+      }
+
+      // Dibujar el número de la lesión (opcional, para mantener consistencia)
+      final number = injuryType + 1;
+
+      final paragraphBuilder =
+          ui.ParagraphBuilder(
+              ui.ParagraphStyle(
+                fontSize: 10, // Más pequeño para PDF
+                fontFamily: 'Roboto',
+              ),
+            )
+            ..pushStyle(ui.TextStyle(color: Colors.white))
+            ..addText('$number');
+
+      final paragraph = paragraphBuilder.build();
+      paragraph.layout(ui.ParagraphConstraints(width: 20));
+
+      // Dibujar círculo de fondo para el número
+      canvas.drawCircle(
+        transformedPoints.first,
+        8.0, // Más pequeño para PDF
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.fill,
+      );
+
+      // Dibujar borde blanco
+      canvas.drawCircle(
+        transformedPoints.first,
+        8.0,
+        Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.0,
+      );
+
+      // Dibujar el texto centrado
+      canvas.drawParagraph(
+        paragraph,
+        Offset(
+          transformedPoints.first.dx - paragraph.minIntrinsicWidth / 2,
+          transformedPoints.first.dy - paragraph.height / 2,
+        ),
+      );
+    }
   }
-  
-  // Si tenemos solo el tamaño original pero no el rectángulo, asumir que la imagen ocupaba todo el canvas
-  if (originalImageSize != null) {
+
+  // Método idéntico al del widget para transformar puntos
+  List<Offset> _transformInjuryPointsForPDF(
+    List<dynamic> points,
+    Rect currentImageRect,
+    Size? originalImageSize,
+    Rect? originalImageRect,
+  ) {
+    // Convertir puntos dinámicos a Offset
+    final originalPoints =
+        points.map((point) {
+          return Offset(
+            (point['dx'] as num).toDouble(),
+            (point['dy'] as num).toDouble(),
+          );
+        }).toList();
+
+    // Si tenemos tanto el rectángulo original como el tamaño original, hacer transformación precisa
+    if (originalImageRect != null && originalImageSize != null) {
+      return originalPoints.map((point) {
+        // Convertir coordenadas del canvas original a coordenadas relativas dentro de la imagen original (0.0 - 1.0)
+        final relativeX =
+            (point.dx - originalImageRect.left) / originalImageRect.width;
+        final relativeY =
+            (point.dy - originalImageRect.top) / originalImageRect.height;
+
+        // Convertir coordenadas relativas al espacio actual de la imagen
+        final transformedX =
+            currentImageRect.left + (relativeX * currentImageRect.width);
+        final transformedY =
+            currentImageRect.top + (relativeY * currentImageRect.height);
+
+        // Asegurar que están dentro de los límites de la imagen actual
+        final clampedX = transformedX.clamp(
+          currentImageRect.left,
+          currentImageRect.right,
+        );
+        final clampedY = transformedY.clamp(
+          currentImageRect.top,
+          currentImageRect.bottom,
+        );
+
+        return Offset(clampedX, clampedY);
+      }).toList();
+    }
+
+    // Si tenemos solo el tamaño original pero no el rectángulo, asumir que la imagen ocupaba todo el canvas
+    if (originalImageSize != null) {
+      return originalPoints.map((point) {
+        // Convertir coordenadas del canvas original a coordenadas relativas (0.0 - 1.0)
+        final relativeX = point.dx / originalImageSize.width;
+        final relativeY = point.dy / originalImageSize.height;
+
+        // Convertir coordenadas relativas al espacio actual de la imagen
+        final transformedX =
+            currentImageRect.left + (relativeX * currentImageRect.width);
+        final transformedY =
+            currentImageRect.top + (relativeY * currentImageRect.height);
+
+        // Asegurar que están dentro de los límites de la imagen
+        final clampedX = transformedX.clamp(
+          currentImageRect.left,
+          currentImageRect.right,
+        );
+        final clampedY = transformedY.clamp(
+          currentImageRect.top,
+          currentImageRect.bottom,
+        );
+
+        return Offset(clampedX, clampedY);
+      }).toList();
+    }
+
+    // Si no tenemos información original, usar el método de fallback (igual que en el widget)
+    if (originalPoints.isEmpty) return originalPoints;
+
+    // Encontrar los límites de los puntos originales
+    double minX = originalPoints.first.dx;
+    double maxX = originalPoints.first.dx;
+    double minY = originalPoints.first.dy;
+    double maxY = originalPoints.first.dy;
+
+    for (final point in originalPoints) {
+      minX = point.dx < minX ? point.dx : minX;
+      maxX = point.dx > maxX ? point.dx : maxX;
+      minY = point.dy < minY ? point.dy : minY;
+      maxY = point.dy > maxY ? point.dy : maxY;
+    }
+
+    final originalWidth = maxX - minX;
+    final originalHeight = maxY - minY;
+
     return originalPoints.map((point) {
-      // Convertir coordenadas del canvas original a coordenadas relativas (0.0 - 1.0)
-      final relativeX = point.dx / originalImageSize.width;
-      final relativeY = point.dy / originalImageSize.height;
-      
-      // Convertir coordenadas relativas al espacio actual de la imagen
-      final transformedX = currentImageRect.left + (relativeX * currentImageRect.width);
-      final transformedY = currentImageRect.top + (relativeY * currentImageRect.height);
-      
+      // Normalizar las coordenadas dentro del área de la imagen actual
+      final normalizedX =
+          originalWidth > 0 ? (point.dx - minX) / originalWidth : 0.5;
+      final normalizedY =
+          originalHeight > 0 ? (point.dy - minY) / originalHeight : 0.5;
+
+      final transformedX =
+          currentImageRect.left + (normalizedX * currentImageRect.width);
+      final transformedY =
+          currentImageRect.top + (normalizedY * currentImageRect.height);
+
       // Asegurar que están dentro de los límites de la imagen
-      final clampedX = transformedX.clamp(currentImageRect.left, currentImageRect.right);
-      final clampedY = transformedY.clamp(currentImageRect.top, currentImageRect.bottom);
-      
+      final clampedX = transformedX.clamp(
+        currentImageRect.left,
+        currentImageRect.right,
+      );
+      final clampedY = transformedY.clamp(
+        currentImageRect.top,
+        currentImageRect.bottom,
+      );
+
       return Offset(clampedX, clampedY);
     }).toList();
   }
 
-  // Si no tenemos información original, usar el método de fallback (igual que en el widget)
-  if (originalPoints.isEmpty) return originalPoints;
-  
-  // Encontrar los límites de los puntos originales
-  double minX = originalPoints.first.dx;
-  double maxX = originalPoints.first.dx;
-  double minY = originalPoints.first.dy;
-  double maxY = originalPoints.first.dy;
-  
-  for (final point in originalPoints) {
-    minX = point.dx < minX ? point.dx : minX;
-    maxX = point.dx > maxX ? point.dx : maxX;
-    minY = point.dy < minY ? point.dy : minY;
-    maxY = point.dy > maxY ? point.dy : maxY;
+  Color _getInjuryTypeFlutterColor(int typeIndex) {
+    const colors = [
+      Colors.red, // Hemorragia
+      Color(0xFF8D6E63), // Herida (brown)
+      Colors.purple, // Contusión
+      Colors.orange, // Fractura
+      Colors.yellow, // Luxación/Esguince
+      Colors.pink, // Objeto extraño
+      Colors.deepOrange, // Quemadura
+      Colors.green, // Picadura/Mordedura
+      Colors.indigo, // Edema/Hematoma
+      Colors.grey, // Otro
+    ];
+
+    if (typeIndex >= 0 && typeIndex < colors.length) {
+      return colors[typeIndex];
+    }
+    return Colors.grey;
   }
-  
-  final originalWidth = maxX - minX;
-  final originalHeight = maxY - minY;
-  
-  return originalPoints.map((point) {
-    // Normalizar las coordenadas dentro del área de la imagen actual
-    final normalizedX = originalWidth > 0 ? (point.dx - minX) / originalWidth : 0.5;
-    final normalizedY = originalHeight > 0 ? (point.dy - minY) / originalHeight : 0.5;
-    
-    final transformedX = currentImageRect.left + (normalizedX * currentImageRect.width);
-    final transformedY = currentImageRect.top + (normalizedY * currentImageRect.height);
-    
-    // Asegurar que están dentro de los límites de la imagen
-    final clampedX = transformedX.clamp(currentImageRect.left, currentImageRect.right);
-    final clampedY = transformedY.clamp(currentImageRect.top, currentImageRect.bottom);
-    
-    return Offset(clampedX, clampedY);
-  }).toList();
-}
-
-Color _getInjuryTypeFlutterColor(int typeIndex) {
-  const colors = [
-    Colors.red,           // Hemorragia
-    Color(0xFF8D6E63),   // Herida (brown)
-    Colors.purple,        // Contusión
-    Colors.orange,        // Fractura
-    Colors.yellow,        // Luxación/Esguince
-    Colors.pink,          // Objeto extraño
-    Colors.deepOrange,    // Quemadura
-    Colors.green,         // Picadura/Mordedura
-    Colors.indigo,        // Edema/Hematoma
-    Colors.grey,          // Otro
-  ];
-  
-  if (typeIndex >= 0 && typeIndex < colors.length) {
-    return colors[typeIndex];
-  }
-  return Colors.grey;
-}
-
-
-
-
 
   /*Future<pw.MemoryImage> _createCombinedSilhouetteImage(
   String silhouettePath,
@@ -1783,7 +1990,7 @@ Color _getInjuryTypeFlutterColor(int typeIndex) {
   String _getInjuryTypeName(int typeIndex) {
     const injuryTypes = [
       'Hemorragia',
-      'Herida', 
+      'Herida',
       'Contusión',
       'Fractura',
       'Luxación/Esguince',
@@ -1839,14 +2046,18 @@ Color _getInjuryTypeFlutterColor(int typeIndex) {
     );
   }
 
-  PatientDisplayData _buildPatientDisplayData(UnifiedFrapRecord record, Map<String, dynamic> detailedInfo) {
+  PatientDisplayData _buildPatientDisplayData(
+    UnifiedFrapRecord record,
+    Map<String, dynamic> detailedInfo,
+  ) {
     _log('Building patient display data...');
-    
+
     if (record.localRecord != null) {
       final patient = record.localRecord!.patient;
       _log('Using local patient data');
       return PatientDisplayData(
-        fullName: '${patient.firstName} ${patient.paternalLastName} ${patient.maternalLastName}',
+        fullName:
+            '${patient.firstName} ${patient.paternalLastName} ${patient.maternalLastName}',
         address: patient.address,
         age: patient.age.toString(),
         sex: (patient.sex.isNotEmpty ? patient.sex : patient.gender),
@@ -1861,7 +2072,8 @@ Color _getInjuryTypeFlutterColor(int typeIndex) {
       );
     } else {
       _log('Using cloud patient data');
-      final patientInfo = detailedInfo['patientInfo'] as Map<String, dynamic>? ?? {};
+      final patientInfo =
+          detailedInfo['patientInfo'] as Map<String, dynamic>? ?? {};
       return PatientDisplayData(
         fullName: record.patientName,
         address: record.patientAddress,
@@ -1870,7 +2082,8 @@ Color _getInjuryTypeFlutterColor(int typeIndex) {
         gender: patientInfo['gender']?.toString() ?? 'N/A',
         phone: patientInfo['phone']?.toString() ?? 'N/A',
         insurance: patientInfo['insurance']?.toString() ?? 'N/A',
-        responsiblePerson: patientInfo['responsiblePerson']?.toString() ?? 'N/A',
+        responsiblePerson:
+            patientInfo['responsiblePerson']?.toString() ?? 'N/A',
         emergencyContact: patientInfo['emergencyContact']?.toString() ?? 'N/A',
         addressDetails: patientInfo['addressDetails']?.toString() ?? 'N/A',
         tipoEntrega: patientInfo['tipoEntrega']?.toString() ?? 'N/A',
@@ -1879,33 +2092,46 @@ Color _getInjuryTypeFlutterColor(int typeIndex) {
     }
   }
 
-  ServiceDisplayData _buildServiceDisplayData(UnifiedFrapRecord record, Map<String, dynamic> detailedInfo) {
-    final serviceInfo = detailedInfo['serviceInfo'] as Map<String, dynamic>? ?? {};
+  ServiceDisplayData _buildServiceDisplayData(
+    UnifiedFrapRecord record,
+    Map<String, dynamic> detailedInfo,
+  ) {
+    final serviceInfo =
+        detailedInfo['serviceInfo'] as Map<String, dynamic>? ?? {};
     return ServiceDisplayData(
       ubicacion: serviceInfo['ubicacion']?.toString() ?? 'N/A',
       tipoServicio: serviceInfo['tipoServicio']?.toString() ?? 'N/A',
-      tipoServicioEspecifique: serviceInfo['tipoServicioEspecifique']?.toString() ?? 'N/A',
+      tipoServicioEspecifique:
+          serviceInfo['tipoServicioEspecifique']?.toString() ?? 'N/A',
       lugarOcurrencia: serviceInfo['lugarOcurrencia']?.toString() ?? 'N/A',
-      lugarOcurrenciaEspecifique: serviceInfo['lugarOcurrenciaEspecifique']?.toString() ?? 'N/A',
+      lugarOcurrenciaEspecifique:
+          serviceInfo['lugarOcurrenciaEspecifique']?.toString() ?? 'N/A',
       horaLlamada: serviceInfo['horaLlamada']?.toString() ?? 'N/A',
       horaArribo: serviceInfo['horaArribo']?.toString() ?? 'N/A',
       horaLlegada: serviceInfo['horaLlegada']?.toString() ?? 'N/A',
       horaTermino: serviceInfo['horaTermino']?.toString() ?? 'N/A',
-      tiempoEsperaArribo: serviceInfo['tiempoEsperaArribo']?.toString() ?? 'N/A',
-      tiempoEsperaLlegada: serviceInfo['tiempoEsperaLlegada']?.toString() ?? 'N/A',
+      tiempoEsperaArribo:
+          serviceInfo['tiempoEsperaArribo']?.toString() ?? 'N/A',
+      tiempoEsperaLlegada:
+          serviceInfo['tiempoEsperaLlegada']?.toString() ?? 'N/A',
       tiempoTotal: _calculateTotalTime(serviceInfo),
       currentCondition: serviceInfo['currentCondition']?.toString() ?? 'N/A',
     );
   }
 
-  VitalSignsDisplayData _buildVitalSignsDisplayData(UnifiedFrapRecord record, Map<String, dynamic> detailedInfo) {
+  VitalSignsDisplayData _buildVitalSignsDisplayData(
+    UnifiedFrapRecord record,
+    Map<String, dynamic> detailedInfo,
+  ) {
     List<String> timeColumns = [];
     Map<String, Map<String, String>> vitalSigns = {};
 
     if (record.localRecord != null) {
       final physicalExam = record.localRecord!.physicalExam;
       timeColumns = physicalExam.timeColumns;
-      vitalSigns = physicalExam.vitalSignsData.map((key, value) => MapEntry(key, value.map((k, v) => MapEntry(k, v))));
+      vitalSigns = physicalExam.vitalSignsData.map(
+        (key, value) => MapEntry(key, value.map((k, v) => MapEntry(k, v))),
+      );
 
       return VitalSignsDisplayData(
         timeColumns: timeColumns,
@@ -1916,17 +2142,29 @@ Color _getInjuryTypeFlutterColor(int typeIndex) {
         ta: physicalExam.ta,
       );
     } else {
-      final physicalExam = detailedInfo['physicalExam'] as Map<String, dynamic>? ?? {};
+      final physicalExam =
+          detailedInfo['physicalExam'] as Map<String, dynamic>? ?? {};
       final tc = physicalExam['timeColumns'];
       if (tc is List) {
         timeColumns = tc.map((e) => e.toString()).toList();
       }
 
-      const vitalSignKeys = ['T/A', 'FC', 'FR', 'Temp.', 'Sat. O2', 'LLC', 'Glu', 'Glasgow'];
+      const vitalSignKeys = [
+        'T/A',
+        'FC',
+        'FR',
+        'Temp.',
+        'Sat. O2',
+        'LLC',
+        'Glu',
+        'Glasgow',
+      ];
       for (final key in vitalSignKeys) {
         final data = physicalExam[key];
         if (data is Map) {
-          vitalSigns[key] = data.map((k, v) => MapEntry(k.toString(), v?.toString() ?? ''));
+          vitalSigns[key] = data.map(
+            (k, v) => MapEntry(k.toString(), v?.toString() ?? ''),
+          );
         }
       }
 
@@ -1941,7 +2179,10 @@ Color _getInjuryTypeFlutterColor(int typeIndex) {
     }
   }
 
-  SampleDisplayData _buildSampleDisplayData(UnifiedFrapRecord record, Map<String, dynamic> detailedInfo) {
+  SampleDisplayData _buildSampleDisplayData(
+    UnifiedFrapRecord record,
+    Map<String, dynamic> detailedInfo,
+  ) {
     if (record.localRecord != null) {
       final physicalExam = record.localRecord!.physicalExam;
       return SampleDisplayData(
@@ -1952,18 +2193,23 @@ Color _getInjuryTypeFlutterColor(int typeIndex) {
         eventosPrevios: physicalExam.sampleEventosPrevios,
       );
     } else {
-      final physicalExam = detailedInfo['physicalExam'] as Map<String, dynamic>? ?? {};
+      final physicalExam =
+          detailedInfo['physicalExam'] as Map<String, dynamic>? ?? {};
       return SampleDisplayData(
         alergias: physicalExam['sampleAlergias']?.toString() ?? 'N/A',
         medicamentos: physicalExam['sampleMedicamentos']?.toString() ?? 'N/A',
         enfermedades: physicalExam['sampleEnfermedades']?.toString() ?? 'N/A',
         horaAlimento: physicalExam['sampleHoraAlimento']?.toString() ?? 'N/A',
-        eventosPrevios: physicalExam['sampleEventosPrevios']?.toString() ?? 'N/A',
+        eventosPrevios:
+            physicalExam['sampleEventosPrevios']?.toString() ?? 'N/A',
       );
     }
   }
 
-  ClinicalDisplayData _buildClinicalDisplayData(UnifiedFrapRecord record, Map<String, dynamic> detailedInfo) {
+  ClinicalDisplayData _buildClinicalDisplayData(
+    UnifiedFrapRecord record,
+    Map<String, dynamic> detailedInfo,
+  ) {
     if (record.localRecord != null) {
       final clinicalHistory = record.localRecord!.clinicalHistory;
       return ClinicalDisplayData(
@@ -1977,27 +2223,49 @@ Color _getInjuryTypeFlutterColor(int typeIndex) {
         accidentTypes: _extractAccidentTypes(detailedInfo),
         agenteCausal: _getFromClinicalHistory(detailedInfo, 'agenteCausal'),
         cinematica: _getFromClinicalHistory(detailedInfo, 'cinematica'),
-        medidaSeguridad: _getFromClinicalHistory(detailedInfo, 'medidaSeguridad'),
+        medidaSeguridad: _getFromClinicalHistory(
+          detailedInfo,
+          'medidaSeguridad',
+        ),
       );
     } else {
       return ClinicalDisplayData(
-        currentCondition: _getFromClinicalHistory(detailedInfo, 'currentSymptoms'),
+        currentCondition: _getFromClinicalHistory(
+          detailedInfo,
+          'currentSymptoms',
+        ),
         allergies: _getFromClinicalHistory(detailedInfo, 'allergies'),
         medications: _getFromClinicalHistory(detailedInfo, 'medications'),
-        previousIllnesses: _getFromClinicalHistory(detailedInfo, 'previousIllnesses'),
-        previousSurgeries: _getFromClinicalHistory(detailedInfo, 'previousSurgeries'),
-        hospitalizations: _getFromClinicalHistory(detailedInfo, 'hospitalizations'),
+        previousIllnesses: _getFromClinicalHistory(
+          detailedInfo,
+          'previousIllnesses',
+        ),
+        previousSurgeries: _getFromClinicalHistory(
+          detailedInfo,
+          'previousSurgeries',
+        ),
+        hospitalizations: _getFromClinicalHistory(
+          detailedInfo,
+          'hospitalizations',
+        ),
         transfusions: _getFromClinicalHistory(detailedInfo, 'transfusions'),
         accidentTypes: _extractAccidentTypes(detailedInfo),
         agenteCausal: _getFromClinicalHistory(detailedInfo, 'agenteCausal'),
         cinematica: _getFromClinicalHistory(detailedInfo, 'cinematica'),
-        medidaSeguridad: _getFromClinicalHistory(detailedInfo, 'medidaSeguridad'),
+        medidaSeguridad: _getFromClinicalHistory(
+          detailedInfo,
+          'medidaSeguridad',
+        ),
       );
     }
   }
 
-  ManagementDisplayData _buildManagementDisplayData(UnifiedFrapRecord record, Map<String, dynamic> detailedInfo) {
-    final management = detailedInfo['management'] as Map<String, dynamic>? ?? {};
+  ManagementDisplayData _buildManagementDisplayData(
+    UnifiedFrapRecord record,
+    Map<String, dynamic> detailedInfo,
+  ) {
+    final management =
+        detailedInfo['management'] as Map<String, dynamic>? ?? {};
     final insumos = _getInsumos(record);
     final personalMedico = _getPersonalMedico(record);
 
@@ -2013,11 +2281,15 @@ Color _getInjuryTypeFlutterColor(int typeIndex) {
       oxigenoLitros: management['ltMin']?.toString() ?? 'N/A',
       insumos: insumos,
       personalMedico: personalMedico,
-      medicamentos: detailedInfo['medications']?['medications']?.toString() ?? 'N/A',
+      medicamentos:
+          detailedInfo['medications']?['medications']?.toString() ?? 'N/A',
     );
   }
 
-  AmbulanceDisplayData _buildAmbulanceDisplayData(UnifiedFrapRecord record, Map<String, dynamic> detailedInfo) {
+  AmbulanceDisplayData _buildAmbulanceDisplayData(
+    UnifiedFrapRecord record,
+    Map<String, dynamic> detailedInfo,
+  ) {
     final ambulance = detailedInfo['ambulance'] as Map<String, dynamic>? ?? {};
     return AmbulanceDisplayData(
       numeroAmbulancia: ambulance['numero']?.toString() ?? 'N/A',
@@ -2028,28 +2300,38 @@ Color _getInjuryTypeFlutterColor(int typeIndex) {
     );
   }
 
-  GynecoObstetricDisplayData _buildGynecoObstetricDisplayData(UnifiedFrapRecord record, Map<String, dynamic> detailedInfo) {
-    final gynecoObstetric = detailedInfo['gynecoObstetric'] as Map<String, dynamic>? ?? {};
+  GynecoObstetricDisplayData _buildGynecoObstetricDisplayData(
+    UnifiedFrapRecord record,
+    Map<String, dynamic> detailedInfo,
+  ) {
+    final gynecoObstetric =
+        detailedInfo['gynecoObstetric'] as Map<String, dynamic>? ?? {};
     final escalas = _getEscalasObstetricas(record);
 
     return GynecoObstetricDisplayData(
       urgencia: gynecoObstetric['urgencia']?.toString() ?? 'N/A',
       fum: gynecoObstetric['fum']?.toString() ?? 'N/A',
-      semanasGestacion: gynecoObstetric['semanasGestacion']?.toString() ?? 'N/A',
+      semanasGestacion:
+          gynecoObstetric['semanasGestacion']?.toString() ?? 'N/A',
       gesta: gynecoObstetric['gesta']?.toString() ?? 'N/A',
       partos: gynecoObstetric['partos']?.toString() ?? 'N/A',
       cesareas: gynecoObstetric['cesareas']?.toString() ?? 'N/A',
       abortos: gynecoObstetric['abortos']?.toString() ?? 'N/A',
       hora: gynecoObstetric['hora']?.toString() ?? 'N/A',
-      metodosAnticonceptivos: gynecoObstetric['metodosAnticonceptivos']?.toString() ?? 'N/A',
+      metodosAnticonceptivos:
+          gynecoObstetric['metodosAnticonceptivos']?.toString() ?? 'N/A',
       ruidosCardiacosFetales: gynecoObstetric['ruidosCardiacosFetales'] == true,
       expulsionPlacenta: gynecoObstetric['expulsionPlacenta'] == true,
       escalasObstetricas: escalas,
     );
   }
 
-  PriorityDisplayData _buildPriorityDisplayData(UnifiedFrapRecord record, Map<String, dynamic> detailedInfo) {
-    final priority = detailedInfo['priorityJustification'] as Map<String, dynamic>? ?? {};
+  PriorityDisplayData _buildPriorityDisplayData(
+    UnifiedFrapRecord record,
+    Map<String, dynamic> detailedInfo,
+  ) {
+    final priority =
+        detailedInfo['priorityJustification'] as Map<String, dynamic>? ?? {};
     return PriorityDisplayData(
       priority: priority['priority']?.toString() ?? 'N/A',
       pupils: priority['pupils']?.toString() ?? 'N/A',
@@ -2061,8 +2343,12 @@ Color _getInjuryTypeFlutterColor(int typeIndex) {
     );
   }
 
-  RegistryDisplayData _buildRegistryDisplayData(UnifiedFrapRecord record, Map<String, dynamic> detailedInfo) {
-    final registryInfo = detailedInfo['registryInfo'] as Map<String, dynamic>? ?? {};
+  RegistryDisplayData _buildRegistryDisplayData(
+    UnifiedFrapRecord record,
+    Map<String, dynamic> detailedInfo,
+  ) {
+    final registryInfo =
+        detailedInfo['registryInfo'] as Map<String, dynamic>? ?? {};
     return RegistryDisplayData(
       convenio: registryInfo['convenio']?.toString() ?? 'N/A',
       episodio: registryInfo['episodio']?.toString() ?? 'N/A',
@@ -2072,9 +2358,14 @@ Color _getInjuryTypeFlutterColor(int typeIndex) {
     );
   }
 
-  ReceptionDisplayData _buildReceptionDisplayData(UnifiedFrapRecord record, Map<String, dynamic> detailedInfo) {
-    final reception = detailedInfo['patientReception'] as Map<String, dynamic>? ?? {};
-    final receivingUnit = detailedInfo['receivingUnit'] as Map<String, dynamic>? ?? {};
+  ReceptionDisplayData _buildReceptionDisplayData(
+    UnifiedFrapRecord record,
+    Map<String, dynamic> detailedInfo,
+  ) {
+    final reception =
+        detailedInfo['patientReception'] as Map<String, dynamic>? ?? {};
+    final receivingUnit =
+        detailedInfo['receivingUnit'] as Map<String, dynamic>? ?? {};
 
     return ReceptionDisplayData(
       receivingDoctor: reception['receivingDoctor']?.toString() ?? 'N/A',
@@ -2088,13 +2379,19 @@ Color _getInjuryTypeFlutterColor(int typeIndex) {
   InsumosDisplayData _buildInsumosDisplayData(UnifiedFrapRecord record) {
     if (record.localRecord != null) {
       return InsumosDisplayData(
-        insumos: record.localRecord!.insumos.map((insumo) => {
-          'cantidad': insumo.cantidad,
-          'articulo': insumo.articulo,
-        }).toList(),
+        insumos:
+            record.localRecord!.insumos
+                .map(
+                  (insumo) => {
+                    'cantidad': insumo.cantidad,
+                    'articulo': insumo.articulo,
+                  },
+                )
+                .toList(),
       );
     }
-    final insumosData = record.getDetailedInfo()['insumos'] as List<dynamic>? ?? [];
+    final insumosData =
+        record.getDetailedInfo()['insumos'] as List<dynamic>? ?? [];
     return InsumosDisplayData(
       insumos: insumosData.map((item) => item as Map<String, dynamic>).toList(),
     );
@@ -2111,24 +2408,49 @@ Color _getInjuryTypeFlutterColor(int typeIndex) {
   }
 
   Map<String, bool> _extractAccidentTypes(Map<String, dynamic> detailedInfo) {
-    final clinicalHistory = detailedInfo['clinicalHistory'] as Map<String, dynamic>? ?? {};
+    final clinicalHistory =
+        detailedInfo['clinicalHistory'] as Map<String, dynamic>? ?? {};
     return {
-      'atropellado': clinicalHistory['atropellado'] == true || clinicalHistory['atropellado'] == 'Sí',
-      'lxPorCaida': clinicalHistory['lxPorCaida'] == true || clinicalHistory['lxPorCaida'] == 'Sí',
-      'intoxicacion': clinicalHistory['intoxicacion'] == true || clinicalHistory['intoxicacion'] == 'Sí',
-      'amputacion': clinicalHistory['amputacion'] == true || clinicalHistory['amputacion'] == 'Sí',
-      'choque': clinicalHistory['choque'] == true || clinicalHistory['choque'] == 'Sí',
-      'agresion': clinicalHistory['agresion'] == true || clinicalHistory['agresion'] == 'Sí',
-      'hpab': clinicalHistory['hpab'] == true || clinicalHistory['hpab'] == 'Sí',
-      'hpaf': clinicalHistory['hpaf'] == true || clinicalHistory['hpaf'] == 'Sí',
-      'volcadura': clinicalHistory['volcadura'] == true || clinicalHistory['volcadura'] == 'Sí',
-      'quemadura': clinicalHistory['quemadura'] == true || clinicalHistory['quemadura'] == 'Sí',
-      'otroTipo': clinicalHistory['otroTipo'] == true || clinicalHistory['otroTipo'] == 'Sí',
+      'atropellado':
+          clinicalHistory['atropellado'] == true ||
+          clinicalHistory['atropellado'] == 'Sí',
+      'lxPorCaida':
+          clinicalHistory['lxPorCaida'] == true ||
+          clinicalHistory['lxPorCaida'] == 'Sí',
+      'intoxicacion':
+          clinicalHistory['intoxicacion'] == true ||
+          clinicalHistory['intoxicacion'] == 'Sí',
+      'amputacion':
+          clinicalHistory['amputacion'] == true ||
+          clinicalHistory['amputacion'] == 'Sí',
+      'choque':
+          clinicalHistory['choque'] == true ||
+          clinicalHistory['choque'] == 'Sí',
+      'agresion':
+          clinicalHistory['agresion'] == true ||
+          clinicalHistory['agresion'] == 'Sí',
+      'hpab':
+          clinicalHistory['hpab'] == true || clinicalHistory['hpab'] == 'Sí',
+      'hpaf':
+          clinicalHistory['hpaf'] == true || clinicalHistory['hpaf'] == 'Sí',
+      'volcadura':
+          clinicalHistory['volcadura'] == true ||
+          clinicalHistory['volcadura'] == 'Sí',
+      'quemadura':
+          clinicalHistory['quemadura'] == true ||
+          clinicalHistory['quemadura'] == 'Sí',
+      'otroTipo':
+          clinicalHistory['otroTipo'] == true ||
+          clinicalHistory['otroTipo'] == 'Sí',
     };
   }
 
-  String _getFromClinicalHistory(Map<String, dynamic> detailedInfo, String key) {
-    final clinicalHistory = detailedInfo['clinicalHistory'] as Map<String, dynamic>? ?? {};
+  String _getFromClinicalHistory(
+    Map<String, dynamic> detailedInfo,
+    String key,
+  ) {
+    final clinicalHistory =
+        detailedInfo['clinicalHistory'] as Map<String, dynamic>? ?? {};
     final value = clinicalHistory[key];
     if (value == true) return 'Sí';
     if (value == false) return 'No';
@@ -2145,7 +2467,8 @@ Color _getInjuryTypeFlutterColor(int typeIndex) {
     if (record.localRecord != null) {
       return record.localRecord!.consentimientoServicio;
     }
-    final serviceInfo = record.getDetailedInfo()['serviceInfo'] as Map<String, dynamic>?;
+    final serviceInfo =
+        record.getDetailedInfo()['serviceInfo'] as Map<String, dynamic>?;
     final sig = serviceInfo?['consentimientoSignature']?.toString();
     if (sig != null && sig.trim().isNotEmpty) return sig;
     return serviceInfo?['consentimientoServicio']?.toString() ?? '';
@@ -2164,17 +2487,19 @@ Color _getInjuryTypeFlutterColor(int typeIndex) {
     }
     final details = record.getDetailedInfo();
     final management = details['management'] as Map<String, dynamic>?;
-    final list = (management?['insumos'] as List?) ?? (details['insumos'] as List?);
+    final list =
+        (management?['insumos'] as List?) ?? (details['insumos'] as List?);
     if (list is List) {
       return list
           .where((e) => e != null)
           .map(
-            (e) => e is Map
-                ? {
-                    'cantidad': e['cantidad']?.toString() ?? '',
-                    'articulo': e['articulo']?.toString() ?? '',
-                  }
-                : {'cantidad': '', 'articulo': e.toString()},
+            (e) =>
+                e is Map
+                    ? {
+                      'cantidad': e['cantidad']?.toString() ?? '',
+                      'articulo': e['articulo']?.toString() ?? '',
+                    }
+                    : {'cantidad': '', 'articulo': e.toString()},
           )
           .toList();
     }
@@ -2195,22 +2520,25 @@ Color _getInjuryTypeFlutterColor(int typeIndex) {
     }
     final details = record.getDetailedInfo();
     final management = details['management'] as Map<String, dynamic>?;
-    final list = (management?['personalMedico'] as List?) ?? (details['personalMedico'] as List?);
+    final list =
+        (management?['personalMedico'] as List?) ??
+        (details['personalMedico'] as List?);
     if (list is List) {
       return list
           .where((e) => e != null)
           .map(
-            (e) => e is Map
-                ? {
-                    'nombre': e['nombre']?.toString() ?? '',
-                    'especialidad': e['especialidad']?.toString() ?? '',
-                    'cedula': e['cedula']?.toString() ?? '',
-                  }
-                : {
-                    'nombre': e.toString(),
-                    'especialidad': '',
-                    'cedula': '',
-                  },
+            (e) =>
+                e is Map
+                    ? {
+                      'nombre': e['nombre']?.toString() ?? '',
+                      'especialidad': e['especialidad']?.toString() ?? '',
+                      'cedula': e['cedula']?.toString() ?? '',
+                    }
+                    : {
+                      'nombre': e.toString(),
+                      'especialidad': '',
+                      'cedula': '',
+                    },
           )
           .toList();
     }
@@ -2218,7 +2546,8 @@ Color _getInjuryTypeFlutterColor(int typeIndex) {
   }
 
   Map<String, dynamic>? _getEscalasObstetricas(UnifiedFrapRecord record) {
-    if (record.localRecord != null && record.localRecord!.escalasObstetricas != null) {
+    if (record.localRecord != null &&
+        record.localRecord!.escalasObstetricas != null) {
       final e = record.localRecord!.escalasObstetricas!;
       return {
         'silvermanAnderson': e.silvermanAnderson,
@@ -2253,7 +2582,8 @@ Color _getInjuryTypeFlutterColor(int typeIndex) {
   Future<String> savePdfToFile(UnifiedFrapRecord record) async {
     final pdfBytes = await generateFrapPdf(record);
     final directory = await getApplicationDocumentsDirectory();
-    final fileName = 'FRAP_${record.patientName.replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}.pdf';
+    final fileName =
+        'FRAP_${record.patientName.replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}.pdf';
     final file = File('${directory.path}/$fileName');
     await file.writeAsBytes(pdfBytes);
     return file.path;
@@ -2263,7 +2593,9 @@ Color _getInjuryTypeFlutterColor(int typeIndex) {
   Future<void> sharePdf(UnifiedFrapRecord record) async {
     try {
       final filePath = await savePdfToFile(record);
-      await Share.shareXFiles([XFile(filePath)], text: 'Registro de Atención Prehospitalaria - ${record.patientName}');
+      await Share.shareXFiles([
+        XFile(filePath),
+      ], text: 'Registro de Atención Prehospitalaria - ${record.patientName}');
     } catch (e) {
       throw Exception('Error al compartir el PDF: $e');
     }
@@ -2273,7 +2605,10 @@ Color _getInjuryTypeFlutterColor(int typeIndex) {
   Future<void> printPdf(UnifiedFrapRecord record) async {
     try {
       final pdfBytes = await generateFrapPdf(record);
-      await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdfBytes, name: 'Registro de Atención Prehospitalaria - ${record.patientName}');
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdfBytes,
+        name: 'Registro de Atención Prehospitalaria - ${record.patientName}',
+      );
     } catch (e) {
       throw Exception('Error al imprimir el PDF: $e');
     }
