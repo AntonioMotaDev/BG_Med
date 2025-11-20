@@ -795,18 +795,25 @@ class _CalendarTabState extends ConsumerState<CalendarTab> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  _buildDetailRow(
-                    'Alergias',
-                    frap.clinicalHistory.allergies.isEmpty
-                        ? 'Ninguna'
-                        : frap.clinicalHistory.allergies,
-                  ),
-                  _buildDetailRow(
-                    'Medicamentos',
-                    frap.clinicalHistory.medications.isEmpty
-                        ? 'Ninguno'
-                        : frap.clinicalHistory.medications,
-                  ),
+                  if (frap.clinicalHistory.traumaCraneo)
+                    _buildDetailRow(
+                      'Trauma Cráneo',
+                      frap.clinicalHistory.traumaCraneoEspecifique.isEmpty
+                          ? 'Sí'
+                          : frap.clinicalHistory.traumaCraneoEspecifique,
+                    ),
+                  if (frap.clinicalHistory.traumaTorax)
+                    _buildDetailRow(
+                      'Trauma Tórax',
+                      frap.clinicalHistory.traumaToraxEspecifique.isEmpty
+                          ? 'Sí'
+                          : frap.clinicalHistory.traumaToraxEspecifique,
+                    ),
+                  if (frap.clinicalHistory.agenteCausal.isNotEmpty)
+                    _buildDetailRow(
+                      'Agente Causal',
+                      frap.clinicalHistory.agenteCausal,
+                    ),
                   const SizedBox(height: 16),
                   Text(
                     'Fecha y hora del registro:',

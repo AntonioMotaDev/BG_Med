@@ -347,9 +347,25 @@ class FrapTransitionModel {
     Map<String, dynamic> clinicalData,
   ) {
     return ClinicalHistory(
-      allergies: clinicalData['allergies'] ?? '',
-      medications: clinicalData['medications'] ?? '',
-      previousIllnesses: clinicalData['previousIllnesses'] ?? '',
+      traumaCraneo: clinicalData['traumaCraneo'] ?? false,
+      traumaCraneoEspecifique: clinicalData['traumaCraneoEspecifique'] ?? '',
+      traumaTorax: clinicalData['traumaTorax'] ?? false,
+      traumaToraxEspecifique: clinicalData['traumaToraxEspecifique'] ?? '',
+      traumaAbdomen: clinicalData['traumaAbdomen'] ?? false,
+      traumaAbdomenEspecifique: clinicalData['traumaAbdomenEspecifique'] ?? '',
+      traumaColumna: clinicalData['traumaColumna'] ?? false,
+      traumaColumnaEspecifique: clinicalData['traumaColumnaEspecifique'] ?? '',
+      traumaExtremidades: clinicalData['traumaExtremidades'] ?? false,
+      traumaExtremidadesEspecifique:
+          clinicalData['traumaExtremidadesEspecifique'] ?? '',
+      traumaPelvis: clinicalData['traumaPelvis'] ?? false,
+      traumaPelvisEspecifique: clinicalData['traumaPelvisEspecifique'] ?? '',
+      traumaOtros: clinicalData['traumaOtros'] ?? false,
+      traumaOtrosEspecifique: clinicalData['traumaOtrosEspecifique'] ?? '',
+      agenteCausal: clinicalData['agenteCausal'] ?? '',
+      cinematica: clinicalData['cinematica'] ?? '',
+      medidaSeguridad: clinicalData['medidaSeguridad'] ?? '',
+      observaciones: clinicalData['observaciones'] ?? '',
     );
   }
 
@@ -475,9 +491,27 @@ class FrapTransitionModel {
 
   Map<String, dynamic> _createClinicalHistoryFromLocal(Frap local) {
     return {
-      'allergies': local.clinicalHistory.allergies,
-      'medications': local.clinicalHistory.medications,
-      'previousIllnesses': local.clinicalHistory.previousIllnesses,
+      'traumaCraneo': local.clinicalHistory.traumaCraneo,
+      'traumaCraneoEspecifique': local.clinicalHistory.traumaCraneoEspecifique,
+      'traumaTorax': local.clinicalHistory.traumaTorax,
+      'traumaToraxEspecifique': local.clinicalHistory.traumaToraxEspecifique,
+      'traumaAbdomen': local.clinicalHistory.traumaAbdomen,
+      'traumaAbdomenEspecifique':
+          local.clinicalHistory.traumaAbdomenEspecifique,
+      'traumaColumna': local.clinicalHistory.traumaColumna,
+      'traumaColumnaEspecifique':
+          local.clinicalHistory.traumaColumnaEspecifique,
+      'traumaExtremidades': local.clinicalHistory.traumaExtremidades,
+      'traumaExtremidadesEspecifique':
+          local.clinicalHistory.traumaExtremidadesEspecifique,
+      'traumaPelvis': local.clinicalHistory.traumaPelvis,
+      'traumaPelvisEspecifique': local.clinicalHistory.traumaPelvisEspecifique,
+      'traumaOtros': local.clinicalHistory.traumaOtros,
+      'traumaOtrosEspecifique': local.clinicalHistory.traumaOtrosEspecifique,
+      'agenteCausal': local.clinicalHistory.agenteCausal,
+      'cinematica': local.clinicalHistory.cinematica,
+      'medidaSeguridad': local.clinicalHistory.medidaSeguridad,
+      'observaciones': local.clinicalHistory.observaciones,
     };
   }
 

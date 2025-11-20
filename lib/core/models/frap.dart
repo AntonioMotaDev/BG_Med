@@ -11,7 +11,6 @@ part 'frap.g.dart';
 
 @HiveType(typeId: 3)
 class Frap extends Equatable {
-  // Campos existentes (mantener para compatibilidad)
   @HiveField(0)
   final String id;
   @HiveField(1)

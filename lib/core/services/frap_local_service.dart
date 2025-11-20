@@ -361,22 +361,31 @@ class FrapLocalService {
     // Extraer historia clínica
     final clinicalHistoryData = frapData.clinicalHistory;
     final clinicalHistory = ClinicalHistory(
-      allergies: clinicalHistoryData['allergies'] ?? '',
-      medications: clinicalHistoryData['medications'] ?? '',
-      previousIllnesses:
-          clinicalHistoryData['previous_illnesses'] ??
-          clinicalHistoryData['previousIllnesses'] ??
-          '',
-      currentSymptoms: clinicalHistoryData['currentSymptoms'] ?? '',
-      pain: clinicalHistoryData['pain'] ?? '',
-      painScale: clinicalHistoryData['painScale'] ?? '',
-      dosage: clinicalHistoryData['dosage'] ?? '',
-      frequency: clinicalHistoryData['frequency'] ?? '',
-      route: clinicalHistoryData['route'] ?? '',
-      time: clinicalHistoryData['time'] ?? '',
-      previousSurgeries: clinicalHistoryData['previousSurgeries'] ?? '',
-      hospitalizations: clinicalHistoryData['hospitalizations'] ?? '',
-      transfusions: clinicalHistoryData['transfusions'] ?? '',
+      traumaCraneo: clinicalHistoryData['traumaCraneo'] ?? false,
+      traumaCraneoEspecifique:
+          clinicalHistoryData['traumaCraneoEspecifique'] ?? '',
+      traumaTorax: clinicalHistoryData['traumaTorax'] ?? false,
+      traumaToraxEspecifique:
+          clinicalHistoryData['traumaToraxEspecifique'] ?? '',
+      traumaAbdomen: clinicalHistoryData['traumaAbdomen'] ?? false,
+      traumaAbdomenEspecifique:
+          clinicalHistoryData['traumaAbdomenEspecifique'] ?? '',
+      traumaColumna: clinicalHistoryData['traumaColumna'] ?? false,
+      traumaColumnaEspecifique:
+          clinicalHistoryData['traumaColumnaEspecifique'] ?? '',
+      traumaExtremidades: clinicalHistoryData['traumaExtremidades'] ?? false,
+      traumaExtremidadesEspecifique:
+          clinicalHistoryData['traumaExtremidadesEspecifique'] ?? '',
+      traumaPelvis: clinicalHistoryData['traumaPelvis'] ?? false,
+      traumaPelvisEspecifique:
+          clinicalHistoryData['traumaPelvisEspecifique'] ?? '',
+      traumaOtros: clinicalHistoryData['traumaOtros'] ?? false,
+      traumaOtrosEspecifique:
+          clinicalHistoryData['traumaOtrosEspecifique'] ?? '',
+      agenteCausal: clinicalHistoryData['agenteCausal'] ?? '',
+      cinematica: clinicalHistoryData['cinematica'] ?? '',
+      medidaSeguridad: clinicalHistoryData['medidaSeguridad'] ?? '',
+      observaciones: clinicalHistoryData['observaciones'] ?? '',
     );
 
     // Preparar serviceInfo duplicando currentCondition / emergencyContact si venían en patientInfo
@@ -480,9 +489,27 @@ class FrapLocalService {
         'address': frap.patient.address,
       },
       'clinicalHistory': {
-        'allergies': frap.clinicalHistory.allergies,
-        'medications': frap.clinicalHistory.medications,
-        'previousIllnesses': frap.clinicalHistory.previousIllnesses,
+        'traumaCraneo': frap.clinicalHistory.traumaCraneo,
+        'traumaCraneoEspecifique': frap.clinicalHistory.traumaCraneoEspecifique,
+        'traumaTorax': frap.clinicalHistory.traumaTorax,
+        'traumaToraxEspecifique': frap.clinicalHistory.traumaToraxEspecifique,
+        'traumaAbdomen': frap.clinicalHistory.traumaAbdomen,
+        'traumaAbdomenEspecifique':
+            frap.clinicalHistory.traumaAbdomenEspecifique,
+        'traumaColumna': frap.clinicalHistory.traumaColumna,
+        'traumaColumnaEspecifique':
+            frap.clinicalHistory.traumaColumnaEspecifique,
+        'traumaExtremidades': frap.clinicalHistory.traumaExtremidades,
+        'traumaExtremidadesEspecifique':
+            frap.clinicalHistory.traumaExtremidadesEspecifique,
+        'traumaPelvis': frap.clinicalHistory.traumaPelvis,
+        'traumaPelvisEspecifique': frap.clinicalHistory.traumaPelvisEspecifique,
+        'traumaOtros': frap.clinicalHistory.traumaOtros,
+        'traumaOtrosEspecifique': frap.clinicalHistory.traumaOtrosEspecifique,
+        'agenteCausal': frap.clinicalHistory.agenteCausal,
+        'cinematica': frap.clinicalHistory.cinematica,
+        'medidaSeguridad': frap.clinicalHistory.medidaSeguridad,
+        'observaciones': frap.clinicalHistory.observaciones,
       },
       'physicalExam': {
         'vitalSigns': frap.physicalExam.vitalSigns,
@@ -532,9 +559,34 @@ class FrapLocalService {
         address: patientData['address'] as String,
       ),
       clinicalHistory: ClinicalHistory(
-        allergies: clinicalHistoryData['allergies'] as String,
-        medications: clinicalHistoryData['medications'] as String,
-        previousIllnesses: clinicalHistoryData['previousIllnesses'] as String,
+        traumaCraneo: clinicalHistoryData['traumaCraneo'] as bool? ?? false,
+        traumaCraneoEspecifique:
+            clinicalHistoryData['traumaCraneoEspecifique'] as String? ?? '',
+        traumaTorax: clinicalHistoryData['traumaTorax'] as bool? ?? false,
+        traumaToraxEspecifique:
+            clinicalHistoryData['traumaToraxEspecifique'] as String? ?? '',
+        traumaAbdomen: clinicalHistoryData['traumaAbdomen'] as bool? ?? false,
+        traumaAbdomenEspecifique:
+            clinicalHistoryData['traumaAbdomenEspecifique'] as String? ?? '',
+        traumaColumna: clinicalHistoryData['traumaColumna'] as bool? ?? false,
+        traumaColumnaEspecifique:
+            clinicalHistoryData['traumaColumnaEspecifique'] as String? ?? '',
+        traumaExtremidades:
+            clinicalHistoryData['traumaExtremidades'] as bool? ?? false,
+        traumaExtremidadesEspecifique:
+            clinicalHistoryData['traumaExtremidadesEspecifique'] as String? ??
+            '',
+        traumaPelvis: clinicalHistoryData['traumaPelvis'] as bool? ?? false,
+        traumaPelvisEspecifique:
+            clinicalHistoryData['traumaPelvisEspecifique'] as String? ?? '',
+        traumaOtros: clinicalHistoryData['traumaOtros'] as bool? ?? false,
+        traumaOtrosEspecifique:
+            clinicalHistoryData['traumaOtrosEspecifique'] as String? ?? '',
+        agenteCausal: clinicalHistoryData['agenteCausal'] as String? ?? '',
+        cinematica: clinicalHistoryData['cinematica'] as String? ?? '',
+        medidaSeguridad:
+            clinicalHistoryData['medidaSeguridad'] as String? ?? '',
+        observaciones: clinicalHistoryData['observaciones'] as String? ?? '',
       ),
       physicalExam: PhysicalExam(
         vitalSigns: physicalExamData['vitalSigns'] as String,
@@ -583,35 +635,32 @@ class FrapLocalService {
         'address': frap.patient.fullAddress,
       },
       management: frap.management,
-      medications:
-          frap.medications.isNotEmpty
-              ? frap.medications
-              : {
-                'current_medications': frap.clinicalHistory.medications,
-                'dosage': frap.clinicalHistory.dosage,
-                'frequency': frap.clinicalHistory.frequency,
-                'route': frap.clinicalHistory.route,
-                'time': frap.clinicalHistory.time,
-              },
+      medications: frap.medications,
       gynecoObstetric: frap.gynecoObstetric,
       attentionNegative: frap.attentionNegative,
-      pathologicalHistory:
-          frap.pathologicalHistory.isNotEmpty
-              ? frap.pathologicalHistory
-              : {
-                'allergies': frap.clinicalHistory.allergies,
-                'previous_illnesses': frap.clinicalHistory.previousIllnesses,
-                'previousSurgeries': frap.clinicalHistory.previousSurgeries,
-                'hospitalizations': frap.clinicalHistory.hospitalizations,
-                'transfusions': frap.clinicalHistory.transfusions,
-              },
+      pathologicalHistory: frap.pathologicalHistory,
       clinicalHistory: {
-        'allergies': frap.clinicalHistory.allergies,
-        'medications': frap.clinicalHistory.medications,
-        'previous_illnesses': frap.clinicalHistory.previousIllnesses,
-        'currentSymptoms': frap.clinicalHistory.currentSymptoms,
-        'pain': frap.clinicalHistory.pain,
-        'painScale': frap.clinicalHistory.painScale,
+        'traumaCraneo': frap.clinicalHistory.traumaCraneo,
+        'traumaCraneoEspecifique': frap.clinicalHistory.traumaCraneoEspecifique,
+        'traumaTorax': frap.clinicalHistory.traumaTorax,
+        'traumaToraxEspecifique': frap.clinicalHistory.traumaToraxEspecifique,
+        'traumaAbdomen': frap.clinicalHistory.traumaAbdomen,
+        'traumaAbdomenEspecifique':
+            frap.clinicalHistory.traumaAbdomenEspecifique,
+        'traumaColumna': frap.clinicalHistory.traumaColumna,
+        'traumaColumnaEspecifique':
+            frap.clinicalHistory.traumaColumnaEspecifique,
+        'traumaExtremidades': frap.clinicalHistory.traumaExtremidades,
+        'traumaExtremidadesEspecifique':
+            frap.clinicalHistory.traumaExtremidadesEspecifique,
+        'traumaPelvis': frap.clinicalHistory.traumaPelvis,
+        'traumaPelvisEspecifique': frap.clinicalHistory.traumaPelvisEspecifique,
+        'traumaOtros': frap.clinicalHistory.traumaOtros,
+        'traumaOtrosEspecifique': frap.clinicalHistory.traumaOtrosEspecifique,
+        'agenteCausal': frap.clinicalHistory.agenteCausal,
+        'cinematica': frap.clinicalHistory.cinematica,
+        'medidaSeguridad': frap.clinicalHistory.medidaSeguridad,
+        'observaciones': frap.clinicalHistory.observaciones,
       },
       physicalExam: frap.physicalExam.toFirebaseFormat(),
       priorityJustification: frap.priorityJustification,

@@ -5,130 +5,158 @@ part 'clinical_history.g.dart';
 
 @HiveType(typeId: 1)
 class ClinicalHistory extends Equatable {
-  // Campos existentes (mantener para compatibilidad)
+  // Campos de traumas
   @HiveField(0)
-  final String allergies;
+  final bool traumaCraneo;
   @HiveField(1)
-  final String medications;
+  final String traumaCraneoEspecifique;
   @HiveField(2)
-  final String previousIllnesses;
-
-  // Nuevos campos expandidos
+  final bool traumaTorax;
   @HiveField(3)
-  final String currentSymptoms;
+  final String traumaToraxEspecifique;
   @HiveField(4)
-  final String pain;
+  final bool traumaAbdomen;
   @HiveField(5)
-  final String painScale;
+  final String traumaAbdomenEspecifique;
   @HiveField(6)
-  final String dosage;
+  final bool traumaColumna;
   @HiveField(7)
-  final String frequency;
+  final String traumaColumnaEspecifique;
   @HiveField(8)
-  final String route;
+  final bool traumaExtremidades;
   @HiveField(9)
-  final String time;
+  final String traumaExtremidadesEspecifique;
   @HiveField(10)
-  final String previousSurgeries;
+  final bool traumaPelvis;
   @HiveField(11)
-  final String hospitalizations;
+  final String traumaPelvisEspecifique;
   @HiveField(12)
-  final String transfusions;
+  final bool traumaOtros;
   @HiveField(13)
-  final String horaUltimoAlimento;
+  final String traumaOtrosEspecifique;
+
+  // Campos adicionales de historia clínica
   @HiveField(14)
-  final String eventosPrevios;
+  final String agenteCausal;
+  @HiveField(15)
+  final String cinematica;
+  @HiveField(16)
+  final String medidaSeguridad;
+  @HiveField(17)
+  final String observaciones;
 
   const ClinicalHistory({
-    required this.allergies,
-    required this.medications,
-    required this.previousIllnesses,
-    this.currentSymptoms = '',
-    this.pain = '',
-    this.painScale = '',
-    this.dosage = '',
-    this.frequency = '',
-    this.route = '',
-    this.time = '',
-    this.previousSurgeries = '',
-    this.hospitalizations = '',
-    this.transfusions = '',
-    this.horaUltimoAlimento = '',
-    this.eventosPrevios = '',
+    this.traumaCraneo = false,
+    this.traumaCraneoEspecifique = '',
+    this.traumaTorax = false,
+    this.traumaToraxEspecifique = '',
+    this.traumaAbdomen = false,
+    this.traumaAbdomenEspecifique = '',
+    this.traumaColumna = false,
+    this.traumaColumnaEspecifique = '',
+    this.traumaExtremidades = false,
+    this.traumaExtremidadesEspecifique = '',
+    this.traumaPelvis = false,
+    this.traumaPelvisEspecifique = '',
+    this.traumaOtros = false,
+    this.traumaOtrosEspecifique = '',
+    this.agenteCausal = '',
+    this.cinematica = '',
+    this.medidaSeguridad = '',
+    this.observaciones = '',
   });
 
   ClinicalHistory copyWith({
-    String? allergies,
-    String? medications,
-    String? previousIllnesses,
-    String? currentSymptoms,
-    String? pain,
-    String? painScale,
-    String? dosage,
-    String? frequency,
-    String? route,
-    String? time,
-    String? previousSurgeries,
-    String? hospitalizations,
-    String? transfusions,
-    String? horaUltimoAlimento,
-    String? eventosPrevios,
+    bool? traumaCraneo,
+    String? traumaCraneoEspecifique,
+    bool? traumaTorax,
+    String? traumaToraxEspecifique,
+    bool? traumaAbdomen,
+    String? traumaAbdomenEspecifique,
+    bool? traumaColumna,
+    String? traumaColumnaEspecifique,
+    bool? traumaExtremidades,
+    String? traumaExtremidadesEspecifique,
+    bool? traumaPelvis,
+    String? traumaPelvisEspecifique,
+    bool? traumaOtros,
+    String? traumaOtrosEspecifique,
+    String? agenteCausal,
+    String? cinematica,
+    String? medidaSeguridad,
+    String? observaciones,
   }) {
     return ClinicalHistory(
-      allergies: allergies ?? this.allergies,
-      medications: medications ?? this.medications,
-      previousIllnesses: previousIllnesses ?? this.previousIllnesses,
-      currentSymptoms: currentSymptoms ?? this.currentSymptoms,
-      pain: pain ?? this.pain,
-      painScale: painScale ?? this.painScale,
-      dosage: dosage ?? this.dosage,
-      frequency: frequency ?? this.frequency,
-      route: route ?? this.route,
-      time: time ?? this.time,
-      previousSurgeries: previousSurgeries ?? this.previousSurgeries,
-      hospitalizations: hospitalizations ?? this.hospitalizations,
-      transfusions: transfusions ?? this.transfusions,
-      horaUltimoAlimento: horaUltimoAlimento ?? this.horaUltimoAlimento,
-      eventosPrevios: eventosPrevios ?? this.eventosPrevios,
+      traumaCraneo: traumaCraneo ?? this.traumaCraneo,
+      traumaCraneoEspecifique:
+          traumaCraneoEspecifique ?? this.traumaCraneoEspecifique,
+      traumaTorax: traumaTorax ?? this.traumaTorax,
+      traumaToraxEspecifique:
+          traumaToraxEspecifique ?? this.traumaToraxEspecifique,
+      traumaAbdomen: traumaAbdomen ?? this.traumaAbdomen,
+      traumaAbdomenEspecifique:
+          traumaAbdomenEspecifique ?? this.traumaAbdomenEspecifique,
+      traumaColumna: traumaColumna ?? this.traumaColumna,
+      traumaColumnaEspecifique:
+          traumaColumnaEspecifique ?? this.traumaColumnaEspecifique,
+      traumaExtremidades: traumaExtremidades ?? this.traumaExtremidades,
+      traumaExtremidadesEspecifique:
+          traumaExtremidadesEspecifique ?? this.traumaExtremidadesEspecifique,
+      traumaPelvis: traumaPelvis ?? this.traumaPelvis,
+      traumaPelvisEspecifique:
+          traumaPelvisEspecifique ?? this.traumaPelvisEspecifique,
+      traumaOtros: traumaOtros ?? this.traumaOtros,
+      traumaOtrosEspecifique:
+          traumaOtrosEspecifique ?? this.traumaOtrosEspecifique,
+      agenteCausal: agenteCausal ?? this.agenteCausal,
+      cinematica: cinematica ?? this.cinematica,
+      medidaSeguridad: medidaSeguridad ?? this.medidaSeguridad,
+      observaciones: observaciones ?? this.observaciones,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'allergies': allergies,
-      'medications': medications,
-      'previousIllnesses': previousIllnesses,
-      'currentSymptoms': currentSymptoms,
-      'pain': pain,
-      'painScale': painScale,
-      'dosage': dosage,
-      'frequency': frequency,
-      'route': route,
-      'time': time,
-      'previousSurgeries': previousSurgeries,
-      'hospitalizations': hospitalizations,
-      'transfusions': transfusions,
-      'horaUltimoAlimento': horaUltimoAlimento,
-      'eventosPrevios': eventosPrevios,
+      'traumaCraneo': traumaCraneo,
+      'traumaCraneoEspecifique': traumaCraneoEspecifique,
+      'traumaTorax': traumaTorax,
+      'traumaToraxEspecifique': traumaToraxEspecifique,
+      'traumaAbdomen': traumaAbdomen,
+      'traumaAbdomenEspecifique': traumaAbdomenEspecifique,
+      'traumaColumna': traumaColumna,
+      'traumaColumnaEspecifique': traumaColumnaEspecifique,
+      'traumaExtremidades': traumaExtremidades,
+      'traumaExtremidadesEspecifique': traumaExtremidadesEspecifique,
+      'traumaPelvis': traumaPelvis,
+      'traumaPelvisEspecifique': traumaPelvisEspecifique,
+      'traumaOtros': traumaOtros,
+      'traumaOtrosEspecifique': traumaOtrosEspecifique,
+      'agenteCausal': agenteCausal,
+      'cinematica': cinematica,
+      'medidaSeguridad': medidaSeguridad,
+      'observaciones': observaciones,
     };
   }
 
   @override
   List<Object?> get props => [
-    allergies,
-    medications,
-    previousIllnesses,
-    currentSymptoms,
-    pain,
-    painScale,
-    dosage,
-    frequency,
-    route,
-    time,
-    previousSurgeries,
-    hospitalizations,
-    transfusions,
-    horaUltimoAlimento,
-    eventosPrevios,
+    traumaCraneo,
+    traumaCraneoEspecifique,
+    traumaTorax,
+    traumaToraxEspecifique,
+    traumaAbdomen,
+    traumaAbdomenEspecifique,
+    traumaColumna,
+    traumaColumnaEspecifique,
+    traumaExtremidades,
+    traumaExtremidadesEspecifique,
+    traumaPelvis,
+    traumaPelvisEspecifique,
+    traumaOtros,
+    traumaOtrosEspecifique,
+    agenteCausal,
+    cinematica,
+    medidaSeguridad,
+    observaciones,
   ];
 }

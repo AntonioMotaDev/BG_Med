@@ -6,7 +6,7 @@ import 'package:bg_med/core/theme/app_theme.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:bg_med/features/frap/presentation/widgets/injury_location_display_widget.dart';
-import 'dart:typed_data'; // Added for Uint8List
+import 'dart:typed_data';
 import 'package:bg_med/features/frap/presentation/providers/frap_unified_provider.dart';
 
 // Clase de configuración para secciones
@@ -63,6 +63,7 @@ class _FrapRecordDetailsScreenState
 
   void _initializeSectionConfigs() {
     _sectionConfigs = [
+      // Información del servicio
       SectionConfig(
         key: 'serviceInfo',
         title: 'Información del Servicio',
@@ -91,6 +92,7 @@ class _FrapRecordDetailsScreenState
           },
         },
       ),
+      // Información del registro
       SectionConfig(
         key: 'registryInfo',
         title: 'Información del Registro',
@@ -104,6 +106,7 @@ class _FrapRecordDetailsScreenState
           'solicitadoPor': 'Solicitado por',
         },
       ),
+      // Información del paciente
       SectionConfig(
         key: 'patientInfo',
         title: 'Información del Paciente',
@@ -171,6 +174,7 @@ class _FrapRecordDetailsScreenState
           'tipoEntregaOtro': 'Otro tipo de entrega',
         },
       ),
+      // Manejo
       SectionConfig(
         key: 'management',
         title: 'Manejo',
@@ -264,6 +268,7 @@ class _FrapRecordDetailsScreenState
           },
         },
       ),
+      // Medicamentos
       SectionConfig(
         key: 'medications',
         title: 'Medicamentos',
@@ -274,6 +279,7 @@ class _FrapRecordDetailsScreenState
           'observaciones': 'Observaciones',
         },
       ),
+      // Urgencias Gineco-Obstétricas
       SectionConfig(
         key: 'gynecoObstetric',
         title: 'Urgencias Gineco-Obstétricas',
@@ -308,6 +314,7 @@ class _FrapRecordDetailsScreenState
           },
         },
       ),
+      // Negativa de atención
       SectionConfig(
         key: 'attentionNegative',
         title: 'Negativa de atención',
@@ -331,6 +338,7 @@ class _FrapRecordDetailsScreenState
           },
         },
       ),
+      // Antecedentes Patológicos
       SectionConfig(
         key: 'pathologicalHistory',
         title: 'Antecedentes Patológicos',
@@ -412,6 +420,7 @@ class _FrapRecordDetailsScreenState
           },
         },
       ),
+      // Antecedentes Clínicos
       SectionConfig(
         key: 'clinicalHistory',
         title: 'Antecedentes Clínicos',
@@ -477,6 +486,7 @@ class _FrapRecordDetailsScreenState
           },
         },
       ),
+      // Exploración Física
       SectionConfig(
         key: 'physicalExam',
         title: 'Exploración Física',
@@ -501,6 +511,7 @@ class _FrapRecordDetailsScreenState
           },
         },
       ),
+      // Justificación de Prioridad
       SectionConfig(
         key: 'priorityJustification',
         title: 'Justificación de Prioridad',
@@ -522,6 +533,7 @@ class _FrapRecordDetailsScreenState
           },
         },
       ),
+      // Unidad Médica que Recibe
       SectionConfig(
         key: 'receivingUnit',
         title: 'Unidad Medica que Recibe',
@@ -540,12 +552,13 @@ class _FrapRecordDetailsScreenState
         },
         specialFields: {
           'personalMedico': {
-            'label': 'Personal médico',
+            'label': 'Personal',
             'isFullWidth': true,
             'customBuilder': (data) => _buildPersonalMedicoList(data),
           },
         },
       ),
+      // Recepción del Paciente
       SectionConfig(
         key: 'patientReception',
         title: 'Recepción del Paciente',
@@ -564,6 +577,7 @@ class _FrapRecordDetailsScreenState
           },
         },
       ),
+      // Consentimiento de Servicio
       SectionConfig(
         key: 'consentimientoServicio',
         title: 'Consentimiento de Servicio',
@@ -578,6 +592,7 @@ class _FrapRecordDetailsScreenState
           },
         },
       ),
+      // Insumos Utilizados
       SectionConfig(
         key: 'insumos',
         title: 'Insumos Utilizados',
@@ -592,6 +607,7 @@ class _FrapRecordDetailsScreenState
           },
         },
       ),
+      // Personal Médico
       SectionConfig(
         key: 'personalMedico',
         title: 'Personal Médico',
@@ -616,6 +632,25 @@ class _FrapRecordDetailsScreenState
 
     // Cargar información detallada del registro
     _detailedInfo = widget.record.getDetailedInfo();
+
+    // Imprimir _detailedInfo completo en consola
+    print('========== DETAILED INFO START ==========');
+    _detailedInfo.forEach((key, value) {
+      print('\n--- $key ---');
+      if (value is Map) {
+        value.forEach((k, v) {
+          print('  $k: $v');
+        });
+      } else if (value is List) {
+        print('  Lista con ${value.length} elementos');
+        for (var i = 0; i < value.length; i++) {
+          print('  [$i]: $value[i]');
+        }
+      } else {
+        print('  $value');
+      }
+    });
+    print('========== DETAILED INFO END ==========\n');
 
     setState(() {
       _isLoading = false;
@@ -872,9 +907,9 @@ class _FrapRecordDetailsScreenState
                       _buildSectionFromConfig(_sectionConfigs[4]),
 
                       // Gineco-obstétrica (solo para pacientes femeninos)
-                      if (widget.record.patientGender.toLowerCase() ==
+                      if (_detailedInfo['patientInfo']['sex'].toLowerCase() ==
                           'femenino')
-                        _buildSectionFromConfig(_sectionConfigs[5]),
+                        _buildGynecoObstetricSection(),
 
                       // Atención negativa (solo si hay datos registrados)
                       if (_hasAttentionNegativeData())
@@ -905,11 +940,6 @@ class _FrapRecordDetailsScreenState
                       _buildInsumosSection(),
 
                       _buildPersonalMedicoSection(),
-
-                      // Escalas obstétricas (solo para pacientes femeninos)
-                      if (widget.record.patientGender.toLowerCase() ==
-                          'femenino')
-                        _buildEscalasObstetricasSection(),
 
                       const SizedBox(height: 32),
                     ],
@@ -1081,7 +1111,6 @@ class _FrapRecordDetailsScreenState
     );
   }
 
-  // Información del servicio
   Widget _buildSectionFromConfig(SectionConfig config) {
     final details = _buildDetailsFromConfig(config);
 
@@ -1292,114 +1321,6 @@ class _FrapRecordDetailsScreenState
     return Icons.info_outline;
   }
 
-  ////////////////////////
-  // Información del registro
-  Widget _buildRegistryInfoSection() {
-    final registryInfo = _detailedInfo['registryInfo'];
-    Map<String, dynamic> registryInfoMap = {};
-    if (registryInfo is Map) {
-      registryInfoMap = Map<String, dynamic>.from(registryInfo);
-    }
-    if (registryInfoMap.isEmpty) return const SizedBox.shrink();
-
-    final details = [
-      {'label': 'Convenio', 'value': registryInfoMap['convenio']},
-      {'label': 'Folio', 'value': registryInfoMap['folio']},
-      {'label': 'Episodio', 'value': registryInfoMap['episodio']},
-      {'label': 'Fecha de registro', 'value': registryInfoMap['fecha']},
-      {'label': 'Solicitado por', 'value': registryInfoMap['solicitadoPor']},
-    ];
-
-    return _buildSectionCard(
-      title: 'Información del Registro',
-      icon: Icons.assignment,
-      color: Colors.indigo,
-      child: _buildTwoColumnDetails(details),
-    );
-  }
-
-  ////////////////////////
-  // Información del paciente
-  Widget _buildPatientInfoSection() {
-    final patientInfo = _detailedInfo['patientInfo'];
-    Map<String, dynamic> patientInfoMap = {};
-    if (patientInfo is Map) {
-      patientInfoMap = Map<String, dynamic>.from(patientInfo);
-    }
-
-    final details = [
-      {
-        'label': 'Nombre completo',
-        'value':
-            _getSafeStringValue(patientInfoMap, 'name') ??
-            widget.record.patientName,
-      },
-      {
-        'label': 'Edad',
-        'value': _formatAge(
-          _getSafeStringValue(patientInfoMap, 'age'),
-          widget.record.patientAge,
-        ),
-      },
-      {
-        'label': 'Sexo',
-        'value':
-            _getSafeStringValue(patientInfoMap, 'sex') ??
-            widget.record.patientGender,
-      },
-      {
-        'label': 'Género',
-        'value': _getSafeStringValue(patientInfoMap, 'gender'),
-      },
-      {
-        'label': 'Teléfono',
-        'value': _formatPhone(_getSafeStringValue(patientInfoMap, 'phone')),
-      },
-      {
-        'label': 'Contacto de emergencia',
-        'value': _getSafeStringValue(patientInfoMap, 'emergencyContact'),
-      },
-      {
-        'label': 'Persona responsable',
-        'value': _getSafeStringValue(patientInfoMap, 'responsiblePerson'),
-      },
-      {
-        'label': 'Dirección',
-        'value': _buildFullAddress(patientInfoMap),
-        'isFullWidth': true,
-      },
-      {
-        'label': 'Detalles de dirección',
-        'value': _getSafeStringValue(patientInfoMap, 'addressDetails'),
-      },
-      {
-        'label': 'Padecimiento actual',
-        'value': _getSafeStringValue(patientInfoMap, 'currentCondition'),
-        'isFullWidth': true,
-      },
-      {
-        'label': 'Seguro médico',
-        'value': _getSafeStringValue(patientInfoMap, 'insurance'),
-      },
-      {
-        'label': 'Tipo de entrega',
-        'value': _getSafeStringValue(patientInfoMap, 'tipoEntrega'),
-      },
-      if (_getSafeStringValue(patientInfoMap, 'tipoEntregaOtro') != null)
-        {
-          'label': 'Especifique tipo de entrega',
-          'value': _getSafeStringValue(patientInfoMap, 'tipoEntregaOtro'),
-        },
-    ];
-
-    return _buildSectionCard(
-      title: 'Información del Paciente',
-      icon: Icons.person,
-      color: Colors.green,
-      child: _buildTwoColumnDetails(details),
-    );
-  }
-
   // Método para construir dirección completa
   String _buildFullAddress(Map<dynamic, dynamic> patientInfoMap) {
     final addressParts = <String>[];
@@ -1466,87 +1387,9 @@ class _FrapRecordDetailsScreenState
     return phone; // Devolver original si no coincide con formatos conocidos
   }
 
-  Widget _buildManagementSection() {
-    final management = _detailedInfo['management'];
-    Map<String, dynamic> managementMap = {};
-    if (management is Map) {
-      managementMap = Map<String, dynamic>.from(management);
-    }
-    if (managementMap.isEmpty) return const SizedBox.shrink();
-
-    final details = [
-      ...[
-        if (managementMap['viaAerea'] == true)
-          {'label': 'Vía aérea', 'value': 'Sí'},
-        if (managementMap['canalizacion'] == true)
-          {'label': 'Canalización', 'value': 'Sí'},
-        if (managementMap['empaquetamiento'] == true)
-          {'label': 'Empaquetamiento', 'value': 'Sí'},
-        if (managementMap['inmovilizacion'] == true)
-          {'label': 'Inmovilización', 'value': 'Sí'},
-        if (managementMap['monitor'] == true)
-          {'label': 'Monitor', 'value': 'Sí'},
-        if (managementMap['rcpBasica'] == true)
-          {'label': 'RCP básica', 'value': 'Sí'},
-        if (managementMap['mastPna'] == true)
-          {'label': 'MAST/PNA', 'value': 'Sí'},
-        if (managementMap['collarinCervical'] == true)
-          {'label': 'Collarín cervical', 'value': 'Sí'},
-        if (managementMap['desfibrilacion'] == true)
-          {'label': 'Desfibrilación', 'value': 'Sí'},
-        if (managementMap['apoyoVent'] == true)
-          {'label': 'Apoyo ventilatorio', 'value': 'Sí'},
-        if (managementMap['oxigeno'] != null)
-          {
-            'label': 'Oxígeno',
-            'value': managementMap['oxigeno'] == true ? 'Sí' : 'No',
-          },
-        if (managementMap['oxigeno'] == true &&
-            managementMap['ltMin'] != null &&
-            managementMap['ltMin'].toString().isNotEmpty)
-          {'label': 'Lt/min', 'value': managementMap['ltMin']},
-      ],
-      // Campos adicionales que pueden estar en el manejo
-      if (managementMap['observaciones'] != null &&
-          managementMap['observaciones'].toString().isNotEmpty)
-        {
-          'label': 'Observaciones',
-          'value': managementMap['observaciones'],
-          'isFullWidth': true,
-        },
-    ];
-
-    return _buildSectionCard(
-      title: 'Manejo',
-      icon: Icons.healing,
-      color: Colors.purple,
-      child: _buildTwoColumnDetails(details),
-    );
-  }
-
-  Widget _buildMedicationsSection() {
-    final medications = _detailedInfo['medications'];
-    Map<String, dynamic> medicationsMap = {};
-    if (medications is Map) {
-      medicationsMap = Map<String, dynamic>.from(medications);
-    }
-    if (medicationsMap.isEmpty) return const SizedBox.shrink();
-
-    final details = [
-      {'label': 'Medicamentos', 'value': medicationsMap['medications']},
-      {'label': 'Observaciones', 'value': medicationsMap['observaciones']},
-    ];
-
-    return _buildSectionCard(
-      title: 'Medicamentos',
-      icon: Icons.medication,
-      color: Colors.orange,
-      child: _buildTwoColumnDetails(details),
-    );
-  }
-
   Widget _buildGynecoObstetricSection() {
     final gynecoObstetric = _detailedInfo['gynecoObstetric'];
+
     Map<String, dynamic> gynecoObstetricMap = {};
     if (gynecoObstetric is Map) {
       gynecoObstetricMap = Map<String, dynamic>.from(gynecoObstetric);
@@ -1588,335 +1431,100 @@ class _FrapRecordDetailsScreenState
       title: 'Urgencias Gineco-Obstétricas',
       icon: Icons.pregnant_woman,
       color: Colors.pink,
-      child: _buildTwoColumnDetails(details),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Datos básicos gineco-obstétricos
+          _buildTwoColumnDetails(details),
+
+          // Escalas obstétricas (si existen)
+          const SizedBox(height: 16),
+          _buildEscalasObstetricasContent(gynecoObstetricMap),
+        ],
+      ),
     );
   }
 
-  Widget _buildAttentionNegativeSection() {
-    final attentionNegative = _detailedInfo['attentionNegative'];
-    Map<String, dynamic> attentionNegativeMap = {};
-    if (attentionNegative is Map) {
-      attentionNegativeMap = Map<String, dynamic>.from(attentionNegative);
+  // Método para construir solo el contenido de escalas (sin la card)
+  Widget _buildEscalasObstetricasContent(Map<String, dynamic> gynecoData) {
+    // Las escalas están DENTRO de gynecoObstetric, no en un campo separado
+    if (gynecoData.isEmpty) {
+      return const SizedBox.shrink();
     }
-    if (attentionNegativeMap.isEmpty) return const SizedBox.shrink();
 
-    final details = [
-      {
-        'label': 'Firma paciente',
-        'value': _buildSignatureWidget(
-          attentionNegativeMap['patientSignature'],
-          'Firma del Paciente',
+    List<Widget> escalasWidgets = [];
+
+    // Escala de Silverman-Anderson
+    if (gynecoData['silvermanAnderson'] != null) {
+      final silverman = gynecoData['silvermanAnderson'];
+      if (silverman is Map && silverman.isNotEmpty) {
+        escalasWidgets.add(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Escala Silverman-Anderson',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.pink[700],
+                ),
+              ),
+              const SizedBox(height: 8),
+              _buildSilvermanAndersonDisplay(silverman),
+            ],
+          ),
+        );
+      }
+    }
+
+    // Escala APGAR
+    if (gynecoData['apgar'] != null) {
+      final apgar = gynecoData['apgar'];
+      if (apgar is Map && apgar.isNotEmpty) {
+        if (escalasWidgets.isNotEmpty) {
+          escalasWidgets.add(const SizedBox(height: 16));
+        }
+        escalasWidgets.add(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Escala APGAR',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.pink[700],
+                ),
+              ),
+              const SizedBox(height: 8),
+              _buildApgarDisplay(apgar),
+            ],
+          ),
+        );
+      }
+    }
+
+    if (escalasWidgets.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Divider(color: Colors.pink.withValues(alpha: 0.3), thickness: 1),
+        const SizedBox(height: 12),
+        Text(
+          'Escalas Obstétricas',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.pink[800],
+          ),
         ),
-        'isSignature': true,
-      },
-      {
-        'label': 'Firma Testigo',
-        'value': _buildSignatureWidget(
-          attentionNegativeMap['witnessSignature'],
-          'Firma del Testigo',
-        ),
-        'isSignature': true,
-      },
-      {
-        'label': 'Motivo de negativa',
-        'value': attentionNegativeMap['motivoNegativa'],
-      },
-      {
-        'label': 'Observaciones',
-        'value': attentionNegativeMap['observaciones'],
-      },
-    ];
-
-    return _buildSectionCard(
-      title: 'Negativa de atención',
-      icon: Icons.cancel,
-      color: Colors.red,
-      child: _buildTwoColumnDetails(details),
-    );
-  }
-
-  Widget _buildPathologicalHistorySection() {
-    final pathologicalHistory = _detailedInfo['pathologicalHistory'];
-    Map<String, dynamic> pathologicalHistoryMap = {};
-    if (pathologicalHistory is Map) {
-      pathologicalHistoryMap = Map<String, dynamic>.from(pathologicalHistory);
-    }
-    if (pathologicalHistoryMap.isEmpty) return const SizedBox.shrink();
-
-    final details = [
-      {
-        'label': 'Respiratoria',
-        'value': pathologicalHistoryMap['respiratoria'] == true ? 'Sí' : 'No',
-      },
-      {
-        'label': 'Emocional',
-        'value': pathologicalHistoryMap['emocional'] == true ? 'Sí' : 'No',
-      },
-      {
-        'label': 'Traumática',
-        'value': pathologicalHistoryMap['traumatica'] == true ? 'Sí' : 'No',
-      },
-      {
-        'label': 'Cardiovascular',
-        'value': pathologicalHistoryMap['cardiovascular'] == true ? 'Sí' : 'No',
-      },
-      {
-        'label': 'Neurológica',
-        'value': pathologicalHistoryMap['neurologica'] == true ? 'Sí' : 'No',
-      },
-      {
-        'label': 'Alérgico',
-        'value': pathologicalHistoryMap['alergico'] == true ? 'Sí' : 'No',
-      },
-      {
-        'label': 'Otro',
-        'value':
-            pathologicalHistoryMap['otro'] == true
-                ? (pathologicalHistoryMap['otherDescription'] ?? '')
-                : 'No',
-      },
-      {
-        'label': 'Metabólica',
-        'value': pathologicalHistoryMap['metabolica'] == true ? 'Sí' : 'No',
-      },
-      {
-        'label': 'Observaciones',
-        'value': pathologicalHistoryMap['observaciones'],
-      },
-    ];
-
-    return _buildSectionCard(
-      title: 'Antecedentes Patológicos',
-      icon: Icons.history,
-      color: Colors.brown,
-      child: _buildTwoColumnDetails(details),
-    );
-  }
-
-  Widget _buildClinicalHistorySection() {
-    final clinicalHistory = _detailedInfo['clinicalHistory'];
-    Map<String, dynamic> clinicalHistoryMap = {};
-    if (clinicalHistory is Map) {
-      clinicalHistoryMap = Map<String, dynamic>.from(clinicalHistory);
-    }
-    if (clinicalHistoryMap.isEmpty) return const SizedBox.shrink();
-
-    final details = [
-      ...[
-        if (clinicalHistoryMap['atropellado'] == true)
-          {'label': 'Atropellado', 'value': 'Sí'},
-        if (clinicalHistoryMap['lxPorCaida'] == true)
-          {'label': 'Lx por caída', 'value': 'Sí'},
-        if (clinicalHistoryMap['intoxicacion'] == true)
-          {'label': 'Intoxicación', 'value': 'Sí'},
-        if (clinicalHistoryMap['amputacion'] == true)
-          {'label': 'Amputación', 'value': 'Sí'},
-        if (clinicalHistoryMap['choque'] == true)
-          {'label': 'Choque', 'value': 'Sí'},
-        if (clinicalHistoryMap['agresion'] == true)
-          {'label': 'Agresión', 'value': 'Sí'},
-        if (clinicalHistoryMap['hpaf'] == true)
-          {'label': 'HPAF', 'value': 'Sí'},
-        if (clinicalHistoryMap['hpab'] == true)
-          {'label': 'HPAB', 'value': 'Sí'},
-        if (clinicalHistoryMap['volcadura'] == true)
-          {'label': 'Volcadura', 'value': 'Sí'},
-        if (clinicalHistoryMap['quemadura'] == true)
-          {'label': 'Quemadura', 'value': 'Sí'},
+        const SizedBox(height: 12),
+        ...escalasWidgets,
       ],
-      {
-        'label': 'Otro tipo',
-        'value':
-            clinicalHistoryMap['otroTipo'] == true
-                ? (clinicalHistoryMap['otherTypeDescription'] ?? '')
-                : 'No',
-      },
-      {
-        'label': 'Agente causal',
-        'value': clinicalHistoryMap['agenteCausal'] ?? '',
-      },
-      {'label': 'Cinemática', 'value': clinicalHistoryMap['cinematica'] ?? ''},
-      {
-        'label': 'Medida de Seguridad',
-        'value': clinicalHistoryMap['medidaSeguridad'] ?? '',
-      },
-      {'label': 'Observaciones', 'value': clinicalHistoryMap['observaciones']},
-    ];
-
-    return _buildSectionCard(
-      title: 'Antecedentes Clínicos',
-      icon: Icons.medical_services,
-      color: Colors.teal,
-      child: _buildTwoColumnDetails(details),
-    );
-  }
-
-  Widget _buildPhysicalExamSection() {
-    final physicalExam = _detailedInfo['physicalExam'];
-    Map<String, dynamic> physicalExamMap = {};
-    if (physicalExam is Map) {
-      physicalExamMap = Map<String, dynamic>.from(physicalExam);
-    }
-    if (physicalExamMap.isEmpty) return const SizedBox.shrink();
-
-    final details = [
-      for (final vitalSign in [
-        {'label': 'T/A', 'key': 'T/A'},
-        {'label': 'FC', 'key': 'FC'},
-        {'label': 'FR', 'key': 'FR'},
-        {'label': 'Temp.', 'key': 'Temp.'},
-        {'label': 'Sat. O2', 'key': 'Sat. O2'},
-        {'label': 'LLC', 'key': 'LLC'},
-        {'label': 'Glu', 'key': 'Glu'},
-        {'label': 'Glasgow', 'key': 'Glasgow'},
-      ])
-        {
-          'label': vitalSign['label'],
-          'value':
-              (() {
-                // Si hay columnas de tiempo, mostrar los valores por hora
-                if (physicalExamMap['timeColumns'] != null &&
-                    physicalExamMap[vitalSign['key']] != null) {
-                  final timeColumns = List<String>.from(
-                    physicalExamMap['timeColumns'],
-                  );
-                  final valuesData = physicalExamMap[vitalSign['key']];
-
-                  // Validar que valuesData sea un Map antes de convertirlo
-                  if (valuesData is Map) {
-                    final values = Map<String, dynamic>.from(valuesData);
-                    return timeColumns
-                        .map((col) => '$col: ${values[col] ?? ''}')
-                        .join('\n');
-                  }
-                }
-                // Si no, mostrar el valor directo (por compatibilidad)
-                return physicalExamMap[vitalSign['key']];
-              })(),
-        },
-      // Campos adicionales del examen físico
-      {'label': 'Cabeza', 'value': physicalExamMap['head']},
-      {'label': 'Cuello', 'value': physicalExamMap['neck']},
-      {'label': 'Tórax', 'value': physicalExamMap['thorax']},
-      {'label': 'Abdomen', 'value': physicalExamMap['abdomen']},
-      {'label': 'Extremidades', 'value': physicalExamMap['extremities']},
-      {'label': 'Neurológico', 'value': physicalExamMap['neurological']},
-      {'label': 'Observaciones', 'value': physicalExamMap['observaciones']},
-    ];
-
-    return _buildSectionCard(
-      title: 'Exploración Física',
-      icon: Icons.health_and_safety,
-      color: Colors.cyan,
-      child: _buildTwoColumnDetails(details),
-    );
-  }
-
-  Widget _buildPriorityJustificationSection() {
-    final priorityJustification = _detailedInfo['priorityJustification'];
-    Map<String, dynamic> priorityJustificationMap = {};
-    if (priorityJustification is Map) {
-      priorityJustificationMap = Map<String, dynamic>.from(
-        priorityJustification,
-      );
-    }
-    if (priorityJustificationMap.isEmpty) return const SizedBox.shrink();
-
-    final details = [
-      {'label': 'Prioridad', 'value': priorityJustificationMap['priority']},
-      {'label': 'Pupilas', 'value': priorityJustificationMap['pupils']},
-      {'label': 'Color piel', 'value': priorityJustificationMap['skinColor']},
-      {'label': 'Piel', 'value': priorityJustificationMap['skin']},
-      {
-        'label': 'Temperatura',
-        'value': priorityJustificationMap['temperature'],
-      },
-      {
-        'label': 'Influenciado por',
-        'value':
-            (priorityJustificationMap['influence'] == 'Otro' &&
-                    (priorityJustificationMap['especifique'] != null &&
-                        priorityJustificationMap['especifique']
-                            .toString()
-                            .trim()
-                            .isNotEmpty))
-                ? priorityJustificationMap['especifique']
-                : priorityJustificationMap['influence'],
-      },
-    ];
-
-    return _buildSectionCard(
-      title: 'Justificación de Prioridad',
-      icon: Icons.priority_high,
-      color: Colors.deepOrange,
-      child: _buildTwoColumnDetails(details),
-    );
-  }
-
-  Widget _buildReceivingUnitSection() {
-    final receivingUnit = _detailedInfo['receivingUnit'];
-    Map<String, dynamic> receivingUnitMap = {};
-    if (receivingUnit is Map) {
-      receivingUnitMap = Map<String, dynamic>.from(receivingUnit);
-    }
-    if (receivingUnitMap.isEmpty) return const SizedBox.shrink();
-
-    final details = [
-      {'label': 'Lugar de origen', 'value': receivingUnitMap['originPlace']},
-      {'label': 'Lugar de consulta', 'value': receivingUnitMap['consultPlace']},
-      {
-        'label': 'Lugar de destino',
-        'value': receivingUnitMap['destinationPlace'],
-      },
-      {
-        'label': 'Numero de ambulancia',
-        'value': receivingUnitMap['ambulanceNumber'],
-      },
-      {'label': 'Placa', 'value': receivingUnitMap['plate']},
-      {'label': 'Personal', 'value': receivingUnitMap['personal']},
-      {
-        'label': 'Doctor responsable',
-        'value': receivingUnitMap['responsibleDoctor'],
-      },
-      {'label': 'Observaciones', 'value': receivingUnitMap['observaciones']},
-    ];
-
-    return _buildSectionCard(
-      title: 'Unidad Medica que Recibe',
-      icon: Icons.local_hospital,
-      color: Colors.indigo,
-      child: _buildTwoColumnDetails(details),
-    );
-  }
-
-  Widget _buildPatientReceptionSection() {
-    final patientReception = _detailedInfo['patientReception'];
-    Map<String, dynamic> patientReceptionMap = {};
-    if (patientReception is Map) {
-      patientReceptionMap = Map<String, dynamic>.from(patientReception);
-    }
-    if (patientReceptionMap.isEmpty) return const SizedBox.shrink();
-
-    final details = [
-      {
-        'label': 'Medico que recibe',
-        'value': patientReceptionMap['receivingDoctor'],
-      },
-      {
-        'label': 'Firma del medico',
-        'value': _buildSignatureWidget(
-          patientReceptionMap['doctorSignature'],
-          'Firma del Médico',
-        ),
-        'isSignature': true,
-      },
-    ];
-
-    return _buildSectionCard(
-      title: 'Recepción del Paciente',
-      icon: Icons.how_to_reg,
-      color: Colors.green,
-      child: _buildTwoColumnDetails(details),
     );
   }
 
@@ -2156,68 +1764,6 @@ class _FrapRecordDetailsScreenState
       }
     }
     return null;
-  }
-
-  Widget _buildEscalasObstetricasSection() {
-    // Obtener escalas obstétricas desde _detailedInfo
-    final escalasData = _detailedInfo['escalasObstetricas'];
-
-    if (escalasData == null || escalasData.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    List<Map<String, dynamic>> details = [];
-
-    // Escala de Silverman-Anderson
-    if (escalasData['silvermanAnderson'] != null) {
-      final silverman = escalasData['silvermanAnderson'];
-      if (silverman is Map<String, dynamic> && silverman.isNotEmpty) {
-        details.add({
-          'label': 'Escala Silverman-Anderson',
-          'value': _buildSilvermanAndersonDisplay(silverman),
-          'isFullWidth': true,
-        });
-      }
-    }
-
-    // Escala APGAR
-    if (escalasData['apgar'] != null) {
-      final apgar = escalasData['apgar'];
-      if (apgar is Map<String, dynamic> && apgar.isNotEmpty) {
-        details.add({
-          'label': 'Escala APGAR',
-          'value': _buildApgarDisplay(apgar),
-          'isFullWidth': true,
-        });
-      }
-    }
-
-    // Frecuencia cardíaca fetal
-    if (escalasData['frecuenciaCardiacaFetal'] != null &&
-        escalasData['frecuenciaCardiacaFetal'].toString().trim().isNotEmpty) {
-      details.add({
-        'label': 'Frecuencia cardíaca fetal',
-        'value': '${escalasData['frecuenciaCardiacaFetal']} lpm',
-      });
-    }
-
-    // Contracciones
-    if (escalasData['contracciones'] != null &&
-        escalasData['contracciones'].toString().trim().isNotEmpty) {
-      details.add({
-        'label': 'Contracciones',
-        'value': escalasData['contracciones'].toString(),
-      });
-    }
-
-    if (details.isEmpty) return const SizedBox.shrink();
-
-    return _buildSectionCard(
-      title: 'Escalas Obstétricas',
-      icon: Icons.pregnant_woman,
-      color: Colors.pink,
-      child: _buildTwoColumnDetails(details),
-    );
   }
 
   Widget _buildSilvermanAndersonDisplay(Map<dynamic, dynamic> silverman) {
@@ -2764,111 +2310,6 @@ class _FrapRecordDetailsScreenState
     return details;
   }
 
-  Widget _buildMedicationsList(Map<dynamic, dynamic> sectionData) {
-    final medicationsList = sectionData['medicationsList'];
-    if (medicationsList == null || medicationsList.isEmpty) {
-      return const Text('No se registraron medicamentos');
-    }
-
-    if (medicationsList is List) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          for (int i = 0; i < medicationsList.length; i++)
-            Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.orange.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          color: Colors.orange,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: Text(
-                            '${i + 1}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          medicationsList[i]['medicamento'] ??
-                              'Sin especificar',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Dosis: ${medicationsList[i]['dosis'] ?? 'No especificada'}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Text(
-                          'Vía: ${medicationsList[i]['viaAdministracion'] ?? 'No especificada'}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (medicationsList[i]['hora']?.isNotEmpty == true) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      'Hora: ${medicationsList[i]['hora']}',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    ),
-                  ],
-                  if (medicationsList[i]['medicoIndico']?.isNotEmpty ==
-                      true) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      'Médico: ${medicationsList[i]['medicoIndico'] == 'Otro' ? medicationsList[i]['medicoOtro'] : medicationsList[i]['medicoIndico']}',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-        ],
-      );
-    }
-
-    return const Text('Formato de medicamentos no válido');
-  }
-
   Widget _buildInjuryLocationSection() {
     final injuryLocation = _detailedInfo['injuryLocation'];
     Map<String, dynamic> injuryLocationMap = {};
@@ -3268,12 +2709,13 @@ class _FrapRecordDetailsScreenState
           children: [
             Icon(Icons.info_outline, color: Colors.grey[600], size: 20),
             const SizedBox(width: 12),
-            Text(
-              'No hay personal médico registrado',
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 12,
-                fontStyle: FontStyle.italic,
+            Expanded(
+              child: Text(
+                'No se ha registrado personal médico',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontStyle: FontStyle.italic,
+                ),
               ),
             ),
           ],
@@ -3285,7 +2727,7 @@ class _FrapRecordDetailsScreenState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Personal Médico',
+          'Personal:',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 16,

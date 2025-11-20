@@ -17,58 +17,67 @@ class ClinicalHistoryAdapter extends TypeAdapter<ClinicalHistory> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return ClinicalHistory(
-      allergies: fields[0] as String,
-      medications: fields[1] as String,
-      previousIllnesses: fields[2] as String,
-      currentSymptoms: fields[3] as String,
-      pain: fields[4] as String,
-      painScale: fields[5] as String,
-      dosage: fields[6] as String,
-      frequency: fields[7] as String,
-      route: fields[8] as String,
-      time: fields[9] as String,
-      previousSurgeries: fields[10] as String,
-      hospitalizations: fields[11] as String,
-      transfusions: fields[12] as String,
-      horaUltimoAlimento: fields[13] as String,
-      eventosPrevios: fields[14] as String,
+      traumaCraneo: fields[0] as bool,
+      traumaCraneoEspecifique: fields[1] as String,
+      traumaTorax: fields[2] as bool,
+      traumaToraxEspecifique: fields[3] as String,
+      traumaAbdomen: fields[4] as bool,
+      traumaAbdomenEspecifique: fields[5] as String,
+      traumaColumna: fields[6] as bool,
+      traumaColumnaEspecifique: fields[7] as String,
+      traumaExtremidades: fields[8] as bool,
+      traumaExtremidadesEspecifique: fields[9] as String,
+      traumaPelvis: fields[10] as bool,
+      traumaPelvisEspecifique: fields[11] as String,
+      traumaOtros: fields[12] as bool,
+      traumaOtrosEspecifique: fields[13] as String,
+      agenteCausal: fields[14] as String,
+      cinematica: fields[15] as String,
+      medidaSeguridad: fields[16] as String,
+      observaciones: fields[17] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, ClinicalHistory obj) {
     writer
-      ..writeByte(15)
+      ..writeByte(18)
       ..writeByte(0)
-      ..write(obj.allergies)
+      ..write(obj.traumaCraneo)
       ..writeByte(1)
-      ..write(obj.medications)
+      ..write(obj.traumaCraneoEspecifique)
       ..writeByte(2)
-      ..write(obj.previousIllnesses)
+      ..write(obj.traumaTorax)
       ..writeByte(3)
-      ..write(obj.currentSymptoms)
+      ..write(obj.traumaToraxEspecifique)
       ..writeByte(4)
-      ..write(obj.pain)
+      ..write(obj.traumaAbdomen)
       ..writeByte(5)
-      ..write(obj.painScale)
+      ..write(obj.traumaAbdomenEspecifique)
       ..writeByte(6)
-      ..write(obj.dosage)
+      ..write(obj.traumaColumna)
       ..writeByte(7)
-      ..write(obj.frequency)
+      ..write(obj.traumaColumnaEspecifique)
       ..writeByte(8)
-      ..write(obj.route)
+      ..write(obj.traumaExtremidades)
       ..writeByte(9)
-      ..write(obj.time)
+      ..write(obj.traumaExtremidadesEspecifique)
       ..writeByte(10)
-      ..write(obj.previousSurgeries)
+      ..write(obj.traumaPelvis)
       ..writeByte(11)
-      ..write(obj.hospitalizations)
+      ..write(obj.traumaPelvisEspecifique)
       ..writeByte(12)
-      ..write(obj.transfusions)
+      ..write(obj.traumaOtros)
       ..writeByte(13)
-      ..write(obj.horaUltimoAlimento)
+      ..write(obj.traumaOtrosEspecifique)
       ..writeByte(14)
-      ..write(obj.eventosPrevios);
+      ..write(obj.agenteCausal)
+      ..writeByte(15)
+      ..write(obj.cinematica)
+      ..writeByte(16)
+      ..write(obj.medidaSeguridad)
+      ..writeByte(17)
+      ..write(obj.observaciones);
   }
 
   @override

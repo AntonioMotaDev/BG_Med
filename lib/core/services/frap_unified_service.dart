@@ -452,9 +452,29 @@ class FrapUnifiedService {
           tipoEntrega: patientData['tipoEntrega'] ?? '',
         ),
         clinicalHistory: ClinicalHistory(
-          allergies: clinicalData['allergies'] ?? '',
-          medications: clinicalData['medications'] ?? '',
-          previousIllnesses: clinicalData['previousIllnesses'] ?? '',
+          traumaCraneo: clinicalData['traumaCraneo'] ?? false,
+          traumaCraneoEspecifique:
+              clinicalData['traumaCraneoEspecifique'] ?? '',
+          traumaTorax: clinicalData['traumaTorax'] ?? false,
+          traumaToraxEspecifique: clinicalData['traumaToraxEspecifique'] ?? '',
+          traumaAbdomen: clinicalData['traumaAbdomen'] ?? false,
+          traumaAbdomenEspecifique:
+              clinicalData['traumaAbdomenEspecifique'] ?? '',
+          traumaColumna: clinicalData['traumaColumna'] ?? false,
+          traumaColumnaEspecifique:
+              clinicalData['traumaColumnaEspecifique'] ?? '',
+          traumaExtremidades: clinicalData['traumaExtremidades'] ?? false,
+          traumaExtremidadesEspecifique:
+              clinicalData['traumaExtremidadesEspecifique'] ?? '',
+          traumaPelvis: clinicalData['traumaPelvis'] ?? false,
+          traumaPelvisEspecifique:
+              clinicalData['traumaPelvisEspecifique'] ?? '',
+          traumaOtros: clinicalData['traumaOtros'] ?? false,
+          traumaOtrosEspecifique: clinicalData['traumaOtrosEspecifique'] ?? '',
+          agenteCausal: clinicalData['agenteCausal'] ?? '',
+          cinematica: clinicalData['cinematica'] ?? '',
+          medidaSeguridad: clinicalData['medidaSeguridad'] ?? '',
+          observaciones: clinicalData['observaciones'] ?? '',
         ),
         physicalExam: PhysicalExam.fromFormData(examData),
         createdAt: cloud.createdAt,
@@ -634,9 +654,31 @@ class FrapUnifiedService {
         attentionNegative: local.attentionNegative,
         pathologicalHistory: local.pathologicalHistory,
         clinicalHistory: {
-          'allergies': local.clinicalHistory.allergies,
-          'medications': local.clinicalHistory.medications,
-          'previousIllnesses': local.clinicalHistory.previousIllnesses,
+          'traumaCraneo': local.clinicalHistory.traumaCraneo,
+          'traumaCraneoEspecifique':
+              local.clinicalHistory.traumaCraneoEspecifique,
+          'traumaTorax': local.clinicalHistory.traumaTorax,
+          'traumaToraxEspecifique':
+              local.clinicalHistory.traumaToraxEspecifique,
+          'traumaAbdomen': local.clinicalHistory.traumaAbdomen,
+          'traumaAbdomenEspecifique':
+              local.clinicalHistory.traumaAbdomenEspecifique,
+          'traumaColumna': local.clinicalHistory.traumaColumna,
+          'traumaColumnaEspecifique':
+              local.clinicalHistory.traumaColumnaEspecifique,
+          'traumaExtremidades': local.clinicalHistory.traumaExtremidades,
+          'traumaExtremidadesEspecifique':
+              local.clinicalHistory.traumaExtremidadesEspecifique,
+          'traumaPelvis': local.clinicalHistory.traumaPelvis,
+          'traumaPelvisEspecifique':
+              local.clinicalHistory.traumaPelvisEspecifique,
+          'traumaOtros': local.clinicalHistory.traumaOtros,
+          'traumaOtrosEspecifique':
+              local.clinicalHistory.traumaOtrosEspecifique,
+          'agenteCausal': local.clinicalHistory.agenteCausal,
+          'cinematica': local.clinicalHistory.cinematica,
+          'medidaSeguridad': local.clinicalHistory.medidaSeguridad,
+          'observaciones': local.clinicalHistory.observaciones,
         },
         physicalExam: local.physicalExam.toFirebaseFormat(),
         priorityJustification: local.priorityJustification,
@@ -827,22 +869,29 @@ class UnifiedFrapRecord {
       'attentionNegative': local.attentionNegative,
       'pathologicalHistory': local.pathologicalHistory,
       'clinicalHistory': {
-        'allergies': local.clinicalHistory.allergies,
-        'medications': local.clinicalHistory.medications,
-        'previousIllnesses': local.clinicalHistory.previousIllnesses,
-        // Expanded fields
-        'currentSymptoms': local.clinicalHistory.currentSymptoms,
-        'pain': local.clinicalHistory.pain,
-        'painScale': local.clinicalHistory.painScale,
-        'dosage': local.clinicalHistory.dosage,
-        'frequency': local.clinicalHistory.frequency,
-        'route': local.clinicalHistory.route,
-        'time': local.clinicalHistory.time,
-        'previousSurgeries': local.clinicalHistory.previousSurgeries,
-        'hospitalizations': local.clinicalHistory.hospitalizations,
-        'transfusions': local.clinicalHistory.transfusions,
-        'horaUltimoAlimento': local.clinicalHistory.horaUltimoAlimento,
-        'eventosPrevios': local.clinicalHistory.eventosPrevios,
+        'traumaCraneo': local.clinicalHistory.traumaCraneo,
+        'traumaCraneoEspecifique':
+            local.clinicalHistory.traumaCraneoEspecifique,
+        'traumaTorax': local.clinicalHistory.traumaTorax,
+        'traumaToraxEspecifique': local.clinicalHistory.traumaToraxEspecifique,
+        'traumaAbdomen': local.clinicalHistory.traumaAbdomen,
+        'traumaAbdomenEspecifique':
+            local.clinicalHistory.traumaAbdomenEspecifique,
+        'traumaColumna': local.clinicalHistory.traumaColumna,
+        'traumaColumnaEspecifique':
+            local.clinicalHistory.traumaColumnaEspecifique,
+        'traumaExtremidades': local.clinicalHistory.traumaExtremidades,
+        'traumaExtremidadesEspecifique':
+            local.clinicalHistory.traumaExtremidadesEspecifique,
+        'traumaPelvis': local.clinicalHistory.traumaPelvis,
+        'traumaPelvisEspecifique':
+            local.clinicalHistory.traumaPelvisEspecifique,
+        'traumaOtros': local.clinicalHistory.traumaOtros,
+        'traumaOtrosEspecifique': local.clinicalHistory.traumaOtrosEspecifique,
+        'agenteCausal': local.clinicalHistory.agenteCausal,
+        'cinematica': local.clinicalHistory.cinematica,
+        'medidaSeguridad': local.clinicalHistory.medidaSeguridad,
+        'observaciones': local.clinicalHistory.observaciones,
       },
       'physicalExam': {
         'eva': local.physicalExam.eva,

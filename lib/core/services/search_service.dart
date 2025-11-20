@@ -11,7 +11,8 @@ class SearchFilters {
   final int? minAge;
   final int? maxAge;
   final String? gender;
-  final List<String>? allergies;
+  final String? traumaType; // Reemplaza allergies
+  final String? agenteCausal;
   final String? vitalSigns;
   final bool? hasPathologicalHistory;
   final String? priorityLevel;
@@ -26,7 +27,8 @@ class SearchFilters {
     this.minAge,
     this.maxAge,
     this.gender,
-    this.allergies,
+    this.traumaType,
+    this.agenteCausal,
     this.vitalSigns,
     this.hasPathologicalHistory,
     this.priorityLevel,
@@ -42,7 +44,8 @@ class SearchFilters {
     int? minAge,
     int? maxAge,
     String? gender,
-    List<String>? allergies,
+    String? traumaType,
+    String? agenteCausal,
     String? vitalSigns,
     bool? hasPathologicalHistory,
     String? priorityLevel,
@@ -57,7 +60,8 @@ class SearchFilters {
       minAge: minAge ?? this.minAge,
       maxAge: maxAge ?? this.maxAge,
       gender: gender ?? this.gender,
-      allergies: allergies ?? this.allergies,
+      traumaType: traumaType ?? this.traumaType,
+      agenteCausal: agenteCausal ?? this.agenteCausal,
       vitalSigns: vitalSigns ?? this.vitalSigns,
       hasPathologicalHistory:
           hasPathologicalHistory ?? this.hasPathologicalHistory,
@@ -75,7 +79,8 @@ class SearchFilters {
         minAge == null &&
         maxAge == null &&
         gender == null &&
-        allergies == null &&
+        traumaType == null &&
+        agenteCausal == null &&
         vitalSigns == null &&
         hasPathologicalHistory == null &&
         priorityLevel == null;

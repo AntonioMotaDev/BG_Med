@@ -110,29 +110,45 @@ class SampleDisplayData {
 
 class ClinicalDisplayData {
   final String currentCondition;
-  final String allergies;
-  final String medications;
-  final String previousIllnesses;
-  final String previousSurgeries;
-  final String hospitalizations;
-  final String transfusions;
-  final Map<String, bool> accidentTypes;
+  final bool traumaCraneo;
+  final String traumaCraneoEspecifique;
+  final bool traumaTorax;
+  final String traumaToraxEspecifique;
+  final bool traumaAbdomen;
+  final String traumaAbdomenEspecifique;
+  final bool traumaColumna;
+  final String traumaColumnaEspecifique;
+  final bool traumaExtremidades;
+  final String traumaExtremidadesEspecifique;
+  final bool traumaPelvis;
+  final String traumaPelvisEspecifique;
+  final bool traumaOtros;
+  final String traumaOtrosEspecifique;
   final String agenteCausal;
   final String cinematica;
   final String medidaSeguridad;
+  final String observaciones;
 
   ClinicalDisplayData({
     required this.currentCondition,
-    required this.allergies,
-    required this.medications,
-    required this.previousIllnesses,
-    required this.previousSurgeries,
-    required this.hospitalizations,
-    required this.transfusions,
-    required this.accidentTypes,
-    required this.agenteCausal,
-    required this.cinematica,
-    required this.medidaSeguridad,
+    this.traumaCraneo = false,
+    this.traumaCraneoEspecifique = '',
+    this.traumaTorax = false,
+    this.traumaToraxEspecifique = '',
+    this.traumaAbdomen = false,
+    this.traumaAbdomenEspecifique = '',
+    this.traumaColumna = false,
+    this.traumaColumnaEspecifique = '',
+    this.traumaExtremidades = false,
+    this.traumaExtremidadesEspecifique = '',
+    this.traumaPelvis = false,
+    this.traumaPelvisEspecifique = '',
+    this.traumaOtros = false,
+    this.traumaOtrosEspecifique = '',
+    this.agenteCausal = '',
+    this.cinematica = '',
+    this.medidaSeguridad = '',
+    this.observaciones = '',
   });
 }
 
@@ -455,26 +471,7 @@ class PdfGeneratorService {
               _buildCompactHeader(),
               pw.SizedBox(height: 4),
 
-              // SECCIONES PRINCIPALES EN ORDEN COMPACTO
-              _buildCompactAdminDetails(displayData.registry),
-              pw.SizedBox(height: 4),
-
-              _buildCompactTimeTracking(displayData.service),
-              pw.SizedBox(height: 4),
-
-              _buildCompactPatientInfo(
-                displayData.patient,
-                displayData.service.currentCondition,
-              ),
-              pw.SizedBox(height: 4),
-
-              _buildCompactServiceInfo(displayData.service),
-              pw.SizedBox(height: 4),
-
-              _buildCompactInjuryLocationSection(record, combinedImage),
-              pw.SizedBox(height: 4),
-
-              // SECCIONES EN COLUMNAS PARA AHORRAR ESPACIO
+              // SECCIONES EN COLUMNAS
               pw.Row(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
@@ -482,13 +479,25 @@ class PdfGeneratorService {
                   pw.Expanded(
                     child: pw.Column(
                       children: [
-                        _buildCompactManagementSection(displayData.management),
+                        _buildCompactTimeTracking(displayData.service),
                         pw.SizedBox(height: 4),
-                        _buildCompactMedicationsSection(displayData.management),
+                        _buildCompactServiceInfo(displayData.service),
+                        pw.SizedBox(height: 4),
+                        _buildCompactPatientInfo(
+                          displayData.patient,
+                          displayData.service.currentCondition,
+                        ),
                         pw.SizedBox(height: 4),
                         _buildCompactPathologicalHistory(displayData.clinical),
                         pw.SizedBox(height: 4),
                         _buildCompactClinicalHistory(displayData.clinical),
+                        pw.SizedBox(height: 4),
+                        _buildCompactVitalSignsTable(displayData.vitalSigns),
+                        pw.SizedBox(height: 4),
+                        _buildCompactInjuryLocationSection(
+                          record,
+                          combinedImage,
+                        ),
                       ],
                     ),
                   ),
@@ -497,39 +506,45 @@ class PdfGeneratorService {
                   pw.Expanded(
                     child: pw.Column(
                       children: [
-                        _buildCompactSampleSection(displayData.sample),
+                        _buildCompactAdminDetails(displayData.registry),
                         pw.SizedBox(height: 4),
-                        _buildCompactVitalSignsTable(displayData.vitalSigns),
+                        _buildCompactManagementSection(displayData.management),
                         pw.SizedBox(height: 4),
+                        _buildCompactMedicationsSection(displayData.management),
+                        pw.SizedBox(height: 4),
+                        // gineco obstetricia solo si es mujer
+                        if (displayData.patient.sex.toLowerCase() ==
+                            'femenino') ...[
+                          _buildCompactGynecoObstetricSection(
+                            displayData.gynecoObstetric,
+                          ),
+                        ],
                         _buildCompactPriorityJustification(
                           displayData.priority,
+                        ),
+                        pw.SizedBox(height: 4),
+                        _buildCompactReceivingUnitSection(
+                          displayData.reception,
+                        ),
+                        _buildCompactAmbulanceSection(displayData.ambulance),
+                        pw.SizedBox(height: 4),
+                        pw.SizedBox(height: 4),
+                        _buildCompactSampleSection(displayData.sample),
+                        pw.SizedBox(height: 4),
+                        _buildCompactInsumosSection(displayData.insumos),
+                        pw.SizedBox(height: 4),
+                        _buildCompactPersonalMedicoSection(
+                          displayData.management,
+                        ),
+                        pw.SizedBox(height: 4),
+                        _buildCompactReceivingUnitSection(
+                          displayData.reception,
                         ),
                       ],
                     ),
                   ),
                 ],
               ),
-              pw.SizedBox(height: 4),
-
-              // SECCIONES ADICIONALES
-              if (displayData.patient.sex.toLowerCase() == 'femenino') ...[
-                _buildCompactGynecoObstetricSection(
-                  displayData.gynecoObstetric,
-                ),
-                pw.SizedBox(height: 4),
-              ],
-
-              _buildCompactInsumosSection(displayData.insumos),
-              pw.SizedBox(height: 4),
-
-              _buildCompactPersonalMedicoSection(displayData.management),
-              pw.SizedBox(height: 4),
-
-              _buildCompactReceivingUnitSection(displayData.reception),
-              pw.SizedBox(height: 4),
-
-              _buildCompactAmbulanceSection(displayData.ambulance),
-              pw.SizedBox(height: 4),
 
               // FIRMAS COMPACTAS
               _buildCompactAllSignaturesSection(displayData, record),
@@ -548,10 +563,6 @@ class PdfGeneratorService {
     return pw.Container(
       width: double.infinity,
       padding: const pw.EdgeInsets.all(4),
-      decoration: pw.BoxDecoration(
-        color: PdfColors.grey200,
-        border: pw.Border.all(color: PdfColors.black, width: 0.5),
-      ),
       child: pw.Center(
         child: pw.Text(
           'REGISTRO DE ATENCIÓN PREHOSPITALARIA',
@@ -570,10 +581,10 @@ class PdfGeneratorService {
       child: pw.Table(
         border: pw.TableBorder.all(width: 0.3),
         columnWidths: {
-          0: const pw.FlexColumnWidth(1.5),
-          1: const pw.FlexColumnWidth(2),
+          0: const pw.FlexColumnWidth(1),
+          1: const pw.FlexColumnWidth(1),
           2: const pw.FlexColumnWidth(1.5),
-          3: const pw.FlexColumnWidth(1),
+          3: const pw.FlexColumnWidth(1.5),
           4: const pw.FlexColumnWidth(1.5),
         },
         children: [
@@ -959,13 +970,32 @@ class PdfGeneratorService {
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                _buildCompactDetailRow('Alergias:', clinical.allergies),
-                _buildCompactDetailRow('Medicamentos:', clinical.medications),
-                _buildCompactDetailRow(
-                  'Enfermedades:',
-                  clinical.previousIllnesses,
-                ),
-                _buildCompactDetailRow('Cirugías:', clinical.previousSurgeries),
+                if (clinical.traumaCraneo)
+                  _buildCompactDetailRow(
+                    'Trauma Cráneo:',
+                    clinical.traumaCraneoEspecifique.isEmpty
+                        ? 'Sí'
+                        : clinical.traumaCraneoEspecifique,
+                  ),
+                if (clinical.traumaTorax)
+                  _buildCompactDetailRow(
+                    'Trauma Tórax:',
+                    clinical.traumaToraxEspecifique.isEmpty
+                        ? 'Sí'
+                        : clinical.traumaToraxEspecifique,
+                  ),
+                if (clinical.traumaAbdomen)
+                  _buildCompactDetailRow(
+                    'Trauma Abdomen:',
+                    clinical.traumaAbdomenEspecifique.isEmpty
+                        ? 'Sí'
+                        : clinical.traumaAbdomenEspecifique,
+                  ),
+                if (clinical.agenteCausal.isNotEmpty)
+                  _buildCompactDetailRow(
+                    'Agente Causal:',
+                    clinical.agenteCausal,
+                  ),
               ],
             ),
           ),
@@ -975,11 +1005,14 @@ class PdfGeneratorService {
   }
 
   pw.Widget _buildCompactClinicalHistory(ClinicalDisplayData clinical) {
-    final selectedAccidents =
-        clinical.accidentTypes.entries
-            .where((entry) => entry.value)
-            .map((entry) => _getAccidentTypeName(entry.key))
-            .toList();
+    final traumasList = <String>[];
+    if (clinical.traumaCraneo) traumasList.add('Cráneo');
+    if (clinical.traumaTorax) traumasList.add('Tórax');
+    if (clinical.traumaAbdomen) traumasList.add('Abdomen');
+    if (clinical.traumaColumna) traumasList.add('Columna');
+    if (clinical.traumaExtremidades) traumasList.add('Extremidades');
+    if (clinical.traumaPelvis) traumasList.add('Pelvis');
+    if (clinical.traumaOtros) traumasList.add('Otros');
 
     return pw.Container(
       width: double.infinity,
@@ -994,15 +1027,15 @@ class PdfGeneratorService {
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                if (selectedAccidents.isNotEmpty) ...[
-                  pw.Text('Accidentes:', style: _labelStyle),
+                if (traumasList.isNotEmpty) ...[
+                  pw.Text('Traumas:', style: _labelStyle),
                   pw.Wrap(
                     spacing: 2,
                     runSpacing: 1,
                     children:
-                        selectedAccidents
+                        traumasList
                             .map(
-                              (accident) => pw.Container(
+                              (trauma) => pw.Container(
                                 padding: const pw.EdgeInsets.symmetric(
                                   horizontal: 3,
                                   vertical: 1,
@@ -1015,7 +1048,7 @@ class PdfGeneratorService {
                                     width: 0.3,
                                   ),
                                 ),
-                                child: pw.Text(accident, style: _smallStyle),
+                                child: pw.Text(trauma, style: _smallStyle),
                               ),
                             )
                             .toList(),
@@ -2213,49 +2246,80 @@ class PdfGeneratorService {
     if (record.localRecord != null) {
       final clinicalHistory = record.localRecord!.clinicalHistory;
       return ClinicalDisplayData(
-        currentCondition: clinicalHistory.currentSymptoms,
-        allergies: clinicalHistory.allergies,
-        medications: clinicalHistory.medications,
-        previousIllnesses: clinicalHistory.previousIllnesses,
-        previousSurgeries: clinicalHistory.previousSurgeries,
-        hospitalizations: clinicalHistory.hospitalizations,
-        transfusions: clinicalHistory.transfusions,
-        accidentTypes: _extractAccidentTypes(detailedInfo),
-        agenteCausal: _getFromClinicalHistory(detailedInfo, 'agenteCausal'),
-        cinematica: _getFromClinicalHistory(detailedInfo, 'cinematica'),
-        medidaSeguridad: _getFromClinicalHistory(
-          detailedInfo,
-          'medidaSeguridad',
-        ),
+        currentCondition: '',
+        traumaCraneo: clinicalHistory.traumaCraneo,
+        traumaCraneoEspecifique: clinicalHistory.traumaCraneoEspecifique,
+        traumaTorax: clinicalHistory.traumaTorax,
+        traumaToraxEspecifique: clinicalHistory.traumaToraxEspecifique,
+        traumaAbdomen: clinicalHistory.traumaAbdomen,
+        traumaAbdomenEspecifique: clinicalHistory.traumaAbdomenEspecifique,
+        traumaColumna: clinicalHistory.traumaColumna,
+        traumaColumnaEspecifique: clinicalHistory.traumaColumnaEspecifique,
+        traumaExtremidades: clinicalHistory.traumaExtremidades,
+        traumaExtremidadesEspecifique:
+            clinicalHistory.traumaExtremidadesEspecifique,
+        traumaPelvis: clinicalHistory.traumaPelvis,
+        traumaPelvisEspecifique: clinicalHistory.traumaPelvisEspecifique,
+        traumaOtros: clinicalHistory.traumaOtros,
+        traumaOtrosEspecifique: clinicalHistory.traumaOtrosEspecifique,
+        agenteCausal: clinicalHistory.agenteCausal,
+        cinematica: clinicalHistory.cinematica,
+        medidaSeguridad: clinicalHistory.medidaSeguridad,
+        observaciones: clinicalHistory.observaciones,
       );
     } else {
       return ClinicalDisplayData(
-        currentCondition: _getFromClinicalHistory(
+        currentCondition: '',
+        traumaCraneo:
+            _getFromClinicalHistory(detailedInfo, 'traumaCraneo') == 'true',
+        traumaCraneoEspecifique: _getFromClinicalHistory(
           detailedInfo,
-          'currentSymptoms',
+          'traumaCraneoEspecifique',
         ),
-        allergies: _getFromClinicalHistory(detailedInfo, 'allergies'),
-        medications: _getFromClinicalHistory(detailedInfo, 'medications'),
-        previousIllnesses: _getFromClinicalHistory(
+        traumaTorax:
+            _getFromClinicalHistory(detailedInfo, 'traumaTorax') == 'true',
+        traumaToraxEspecifique: _getFromClinicalHistory(
           detailedInfo,
-          'previousIllnesses',
+          'traumaToraxEspecifique',
         ),
-        previousSurgeries: _getFromClinicalHistory(
+        traumaAbdomen:
+            _getFromClinicalHistory(detailedInfo, 'traumaAbdomen') == 'true',
+        traumaAbdomenEspecifique: _getFromClinicalHistory(
           detailedInfo,
-          'previousSurgeries',
+          'traumaAbdomenEspecifique',
         ),
-        hospitalizations: _getFromClinicalHistory(
+        traumaColumna:
+            _getFromClinicalHistory(detailedInfo, 'traumaColumna') == 'true',
+        traumaColumnaEspecifique: _getFromClinicalHistory(
           detailedInfo,
-          'hospitalizations',
+          'traumaColumnaEspecifique',
         ),
-        transfusions: _getFromClinicalHistory(detailedInfo, 'transfusions'),
-        accidentTypes: _extractAccidentTypes(detailedInfo),
+        traumaExtremidades:
+            _getFromClinicalHistory(detailedInfo, 'traumaExtremidades') ==
+            'true',
+        traumaExtremidadesEspecifique: _getFromClinicalHistory(
+          detailedInfo,
+          'traumaExtremidadesEspecifique',
+        ),
+        traumaPelvis:
+            _getFromClinicalHistory(detailedInfo, 'traumaPelvis') == 'true',
+        traumaPelvisEspecifique: _getFromClinicalHistory(
+          detailedInfo,
+          'traumaPelvisEspecifique',
+        ),
+        traumaOtros:
+            _getFromClinicalHistory(detailedInfo, 'traumaOtros') == 'true',
+        traumaOtrosEspecifique: _getFromClinicalHistory(
+          detailedInfo,
+          'traumaOtrosEspecifique',
+        ),
         agenteCausal: _getFromClinicalHistory(detailedInfo, 'agenteCausal'),
         cinematica: _getFromClinicalHistory(detailedInfo, 'cinematica'),
         medidaSeguridad: _getFromClinicalHistory(
           detailedInfo,
           'medidaSeguridad',
         ),
+        observaciones: _getFromClinicalHistory(detailedInfo, 'observaciones'),
       );
     }
   }
