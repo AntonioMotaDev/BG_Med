@@ -275,8 +275,14 @@ class _FrapRecordDetailsScreenState
         icon: Icons.medication,
         color: Colors.orange,
         fieldMappings: {
-          'medications': 'Medicamentos',
           'observaciones': 'Observaciones',
+        },
+        specialFields: {
+          'medicationsList': {
+            'label': 'Medicamentos administrados',
+            'isFullWidth': true,
+            'customBuilder': (data) => _buildMedicationsList(data),
+          },
         },
       ),
       // Urgencias Gineco-Obstétricas
@@ -2669,6 +2675,204 @@ class _FrapRecordDetailsScreenState
             ),
         ],
       ),
+    );
+  }
+
+  Widget _buildMedicationsList(Map<String, dynamic> data) {
+    final medicationsListRaw = data['medicationsList'] as List<dynamic>? ?? [];
+
+    if (medicationsListRaw.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey[300]!),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.info_outline, color: Colors.grey[600], size: 20),
+            const SizedBox(width: 8),
+            Text(
+              'No se administraron medicamentos',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.orange[50],
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+            border: Border.all(color: Colors.orange[200]!),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.medication, color: Colors.orange[700], size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Total de medicamentos: ${medicationsListRaw.length}',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.orange[900],
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+        ...medicationsListRaw.asMap().entries.map((entry) {
+          final index = entry.key;
+          final medication = entry.value;
+          
+          if (medication is! Map) return const SizedBox.shrink();
+          
+          final medicationMap = Map<String, dynamic>.from(medication);
+          final medicamento = medicationMap['medicamento']?.toString() ?? 'Sin especificar';
+          final dosis = medicationMap['dosis']?.toString() ?? '';
+          final viaAdministracion = medicationMap['viaAdministracion']?.toString() ?? '';
+          final hora = medicationMap['hora']?.toString() ?? '';
+          final medicoIndico = medicationMap['medicoIndico']?.toString() ?? '';
+          final medicoOtro = medicationMap['medicoOtro']?.toString() ?? '';
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 1),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: index.isEven ? Colors.white : Colors.orange[50],
+              border: Border(
+                left: BorderSide(color: Colors.orange[200]!, width: 1),
+                right: BorderSide(color: Colors.orange[200]!, width: 1),
+                bottom: index == medicationsListRaw.length - 1
+                    ? BorderSide(color: Colors.orange[200]!, width: 1)
+                    : BorderSide.none,
+              ),
+              borderRadius: index == medicationsListRaw.length - 1
+                  ? const BorderRadius.vertical(bottom: Radius.circular(8))
+                  : BorderRadius.zero,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: Colors.orange[700],
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          '${index + 1}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            medicamento,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          if (dosis.isNotEmpty) ...[
+                            _buildMedicationDetailRow(
+                              Icons.medical_services,
+                              'Dosis',
+                              dosis,
+                            ),
+                            const SizedBox(height: 4),
+                          ],
+                          if (viaAdministracion.isNotEmpty) ...[
+                            _buildMedicationDetailRow(
+                              Icons.healing,
+                              'Vía de administración',
+                              viaAdministracion,
+                            ),
+                            const SizedBox(height: 4),
+                          ],
+                          if (hora.isNotEmpty) ...[
+                            _buildMedicationDetailRow(
+                              Icons.access_time,
+                              'Hora',
+                              hora,
+                            ),
+                            const SizedBox(height: 4),
+                          ],
+                          if (medicoIndico.isNotEmpty) ...[
+                            _buildMedicationDetailRow(
+                              Icons.person,
+                              'Médico que indicó',
+                              medicoIndico,
+                            ),
+                            const SizedBox(height: 4),
+                          ],
+                          if (medicoOtro.isNotEmpty) ...[
+                            _buildMedicationDetailRow(
+                              Icons.note,
+                              'Otro médico',
+                              medicoOtro,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _buildMedicationDetailRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: Colors.orange[700]),
+        const SizedBox(width: 6),
+        Text(
+          '$label: ',
+          style: TextStyle(
+            fontSize: 13,
+            color: Colors.grey[700],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(
+              fontSize: 13,
+              color: Colors.black87,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
