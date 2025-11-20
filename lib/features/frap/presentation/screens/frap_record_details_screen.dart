@@ -274,9 +274,7 @@ class _FrapRecordDetailsScreenState
         title: 'Medicamentos',
         icon: Icons.medication,
         color: Colors.orange,
-        fieldMappings: {
-          'observaciones': 'Observaciones',
-        },
+        fieldMappings: {'observaciones': 'Observaciones'},
         specialFields: {
           'medicationsList': {
             'label': 'Medicamentos administrados',
@@ -2695,10 +2693,7 @@ class _FrapRecordDetailsScreenState
             const SizedBox(width: 8),
             Text(
               'No se administraron medicamentos',
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 14,
-              ),
+              style: TextStyle(color: Colors.grey[600], fontSize: 14),
             ),
           ],
         ),
@@ -2733,13 +2728,15 @@ class _FrapRecordDetailsScreenState
         ...medicationsListRaw.asMap().entries.map((entry) {
           final index = entry.key;
           final medication = entry.value;
-          
+
           if (medication is! Map) return const SizedBox.shrink();
-          
+
           final medicationMap = Map<String, dynamic>.from(medication);
-          final medicamento = medicationMap['medicamento']?.toString() ?? 'Sin especificar';
+          final medicamento =
+              medicationMap['medicamento']?.toString() ?? 'Sin especificar';
           final dosis = medicationMap['dosis']?.toString() ?? '';
-          final viaAdministracion = medicationMap['viaAdministracion']?.toString() ?? '';
+          final viaAdministracion =
+              medicationMap['viaAdministracion']?.toString() ?? '';
           final hora = medicationMap['hora']?.toString() ?? '';
           final medicoIndico = medicationMap['medicoIndico']?.toString() ?? '';
           final medicoOtro = medicationMap['medicoOtro']?.toString() ?? '';
@@ -2752,13 +2749,15 @@ class _FrapRecordDetailsScreenState
               border: Border(
                 left: BorderSide(color: Colors.orange[200]!, width: 1),
                 right: BorderSide(color: Colors.orange[200]!, width: 1),
-                bottom: index == medicationsListRaw.length - 1
-                    ? BorderSide(color: Colors.orange[200]!, width: 1)
-                    : BorderSide.none,
+                bottom:
+                    index == medicationsListRaw.length - 1
+                        ? BorderSide(color: Colors.orange[200]!, width: 1)
+                        : BorderSide.none,
               ),
-              borderRadius: index == medicationsListRaw.length - 1
-                  ? const BorderRadius.vertical(bottom: Radius.circular(8))
-                  : BorderRadius.zero,
+              borderRadius:
+                  index == medicationsListRaw.length - 1
+                      ? const BorderRadius.vertical(bottom: Radius.circular(8))
+                      : BorderRadius.zero,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -2866,10 +2865,7 @@ class _FrapRecordDetailsScreenState
         Expanded(
           child: Text(
             value,
-            style: const TextStyle(
-              fontSize: 13,
-              color: Colors.black87,
-            ),
+            style: const TextStyle(fontSize: 13, color: Colors.black87),
           ),
         ),
       ],
