@@ -29,19 +29,32 @@ class _InsumosFormDialogState extends State<InsumosFormDialog> {
       final data = widget.initialData!;
 
       // Si hay insumos guardados en formato de tabla
-      if (data['insumosList'] != null && data['insumosList'] is List) {
-        final List<dynamic> insumosList = data['insumosList'];
-        _insumos =
-            insumosList.map((insumo) {
-              return InsumoRow(
-                cantidad: insumo['cantidad'] ?? 0,
-                articulo: insumo['articulo'] ?? '',
-              );
-            }).toList();
+      if (data['insumosList'] != null) {
+        try {
+          final dynamic insumosListData = data['insumosList'];
+
+          if (insumosListData is List) {
+            _insumos =
+                insumosListData.map((insumo) {
+                  if (insumo is Map) {
+                    return InsumoRow(
+                      cantidad: _parseIntSafely(insumo['cantidad']),
+                      articulo: insumo['articulo']?.toString() ?? '',
+                    );
+                  }
+                  return InsumoRow();
+                }).toList();
+          } else if (insumosListData is String) {
+            // Si viene como String, parsear
+            _insumos = _parseTextToInsumos(insumosListData);
+          }
+        } catch (e) {
+          print('Error al parsear insumosList: $e');
+        }
       } else if (data['insumos'] != null &&
           data['insumos'].toString().isNotEmpty) {
         // Migrar de formato texto libre a tabla
-        final String insumosText = data['insumos'];
+        final String insumosText = data['insumos'].toString();
         _insumos = _parseTextToInsumos(insumosText);
       }
     }
@@ -50,6 +63,13 @@ class _InsumosFormDialogState extends State<InsumosFormDialog> {
     if (_insumos.isEmpty) {
       _addInsumoRow();
     }
+  }
+
+  int _parseIntSafely(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value) ?? 0;
+    return 0;
   }
 
   List<InsumoRow> _parseTextToInsumos(String text) {
@@ -491,16 +511,18 @@ class _InsumosFormDialogState extends State<InsumosFormDialog> {
               )
               .toList();
 
+      final insumosList =
+          validInsumos
+              .map(
+                (insumo) => {
+                  'cantidad': insumo.cantidad,
+                  'articulo': insumo.articulo,
+                },
+              )
+              .toList();
+
       final formData = {
-        'insumosList':
-            validInsumos
-                .map(
-                  (insumo) => {
-                    'cantidad': insumo.cantidad,
-                    'articulo': insumo.articulo,
-                  },
-                )
-                .toList(),
+        'insumosList': insumosList,
         'insumos': validInsumos
             .map((insumo) => '${insumo.cantidad} - ${insumo.articulo}')
             .join('\n'),
@@ -511,6 +533,10 @@ class _InsumosFormDialogState extends State<InsumosFormDialog> {
         ),
         'timestamp': DateTime.now().toIso8601String(),
       };
+
+      print('=== GUARDANDO INSUMOS ===');
+      print('Insumos válidos: ${validInsumos.length}');
+      print('FormData: $formData');
 
       widget.onSave(formData);
 
@@ -529,7 +555,11 @@ class _InsumosFormDialogState extends State<InsumosFormDialog> {
           ),
         );
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('=== ERROR AL GUARDAR INSUMOS ===');
+      print('Error: $e');
+      print('StackTrace: $stackTrace');
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -537,11 +567,16 @@ class _InsumosFormDialogState extends State<InsumosFormDialog> {
               children: [
                 const Icon(Icons.error, color: Colors.white),
                 const SizedBox(width: 12),
-                Text('Error al guardar: $e'),
+                Expanded(
+                  child: Text(
+                    'Error al guardar: ${e.toString().substring(0, e.toString().length > 100 ? 100 : e.toString().length)}',
+                  ),
+                ),
               ],
             ),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 5),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),

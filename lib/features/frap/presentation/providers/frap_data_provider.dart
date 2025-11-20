@@ -189,7 +189,14 @@ class FrapDataNotifier extends StateNotifier<FrapData> {
         );
         break;
       case 'insumos':
-        state = state.copyWith(insumos: [...state.insumos, ...data['insumos']]);
+        // Usar insumosList que es la lista de mapas, no 'insumos' que es String
+        final insumosList = data['insumosList'] as List<dynamic>? ?? [];
+        final typedInsumos =
+            insumosList
+                .whereType<Map>()
+                .map((item) => Map<String, dynamic>.from(item))
+                .toList();
+        state = state.copyWith(insumos: typedInsumos);
         break;
     }
   }

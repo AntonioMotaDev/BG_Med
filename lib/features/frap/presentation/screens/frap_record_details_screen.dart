@@ -550,13 +550,6 @@ class _FrapRecordDetailsScreenState
           'otroLugar': 'Otro lugar',
           'observaciones': 'Observaciones',
         },
-        specialFields: {
-          'personalMedico': {
-            'label': 'Personal',
-            'isFullWidth': true,
-            'customBuilder': (data) => _buildPersonalMedicoList(data),
-          },
-        },
       ),
       // Recepción del Paciente
       SectionConfig(
@@ -604,21 +597,6 @@ class _FrapRecordDetailsScreenState
             'label': 'Lista de insumos',
             'isFullWidth': true,
             'customBuilder': (data) => _buildInsumosList(data),
-          },
-        },
-      ),
-      // Personal Médico
-      SectionConfig(
-        key: 'personalMedico',
-        title: 'Personal Médico',
-        icon: Icons.people,
-        color: Colors.purple,
-        fieldMappings: {},
-        specialFields: {
-          'personalMedicoList': {
-            'label': 'Lista de personal médico',
-            'isFullWidth': true,
-            'customBuilder': (data) => _buildPersonalMedicoList(data),
           },
         },
       ),
@@ -933,13 +911,13 @@ class _FrapRecordDetailsScreenState
                       // Unidad receptora
                       _buildSectionFromConfig(_sectionConfigs[11]),
 
+                      _buildPersonalMedicoSection(),
+
                       // Recepción del paciente
                       _buildSectionFromConfig(_sectionConfigs[12]),
 
                       // Nuevas secciones agregadas
                       _buildInsumosSection(),
-
-                      _buildPersonalMedicoSection(),
 
                       const SizedBox(height: 32),
                     ],
@@ -2695,7 +2673,39 @@ class _FrapRecordDetailsScreenState
   }
 
   Widget _buildPersonalMedicoList(Map<String, dynamic> data) {
-    final personalList = data['personalMedicoList'] as List<dynamic>? ?? [];
+    final personalListRaw = data['personalMedicoList'] as List<dynamic>? ?? [];
+
+    // Aplanar la lista si viene anidada (cada elemento puede ser una lista)
+    final personalList = <Map<String, dynamic>>[];
+    final seenPersonal = <String>{}; // Para evitar duplicados
+
+    for (var item in personalListRaw) {
+      if (item is List) {
+        // Si el item es una lista, agregar cada elemento
+        for (var subItem in item) {
+          if (subItem is Map) {
+            final nombre = subItem['nombre']?.toString() ?? '';
+            final cedula = subItem['cedula']?.toString() ?? '';
+            final key = '$nombre-$cedula'; // Clave única
+
+            if (!seenPersonal.contains(key) && nombre.isNotEmpty) {
+              seenPersonal.add(key);
+              personalList.add(Map<String, dynamic>.from(subItem));
+            }
+          }
+        }
+      } else if (item is Map) {
+        // Si el item es un mapa directamente
+        final nombre = item['nombre']?.toString() ?? '';
+        final cedula = item['cedula']?.toString() ?? '';
+        final key = '$nombre-$cedula';
+
+        if (!seenPersonal.contains(key) && nombre.isNotEmpty) {
+          seenPersonal.add(key);
+          personalList.add(Map<String, dynamic>.from(item));
+        }
+      }
+    }
 
     if (personalList.isEmpty) {
       return Container(
@@ -2727,7 +2737,7 @@ class _FrapRecordDetailsScreenState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Personal:',
+          'Personal médico (${personalList.length}):',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 16,
