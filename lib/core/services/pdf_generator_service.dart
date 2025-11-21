@@ -1197,6 +1197,7 @@ class PdfGeneratorService {
 
   pw.Widget _buildCompactClinicalHistory(ClinicalDisplayData clinical) {
     final traumasList = <String>[];
+    
     if (clinical.traumaCraneo) traumasList.add('Cráneo');
     if (clinical.traumaTorax) traumasList.add('Tórax');
     if (clinical.traumaAbdomen) traumasList.add('Abdomen');

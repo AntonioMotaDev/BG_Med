@@ -661,6 +661,64 @@ class _FrapRecordDetailsScreenState
     }
   }
 
+  // Agrega este método auxiliar en _FrapRecordDetailsScreenState
+  List<DrawnInjuryDisplay> _getAdjustedInjuries(
+    List<DrawnInjuryDisplay> originalInjuries,
+    Map<String, dynamic> injuryLocationMap,
+    Size targetSize,
+  ) {
+    if (originalInjuries.isEmpty) return originalInjuries;
+
+    // Obtener información del tamaño original si está disponible
+    final originalImageSize = injuryLocationMap['originalImageSize'];
+    final originalImageRect = injuryLocationMap['originalImageRect'];
+
+    Size? originalSize;
+    Rect? originalRect;
+
+    if (originalImageSize != null && originalImageSize is Map) {
+      originalSize = Size(
+        (originalImageSize['width'] ?? 400).toDouble(),
+        (originalImageSize['height'] ?? 600).toDouble(),
+      );
+    }
+
+    if (originalImageRect != null && originalImageRect is Map) {
+      originalRect = Rect.fromLTWH(
+        (originalImageRect['left'] ?? 0).toDouble(),
+        (originalImageRect['top'] ?? 0).toDouble(),
+        (originalImageRect['width'] ?? 400).toDouble(),
+        (originalImageRect['height'] ?? 600).toDouble(),
+      );
+    }
+
+    // Si no tenemos información del tamaño original, usar las lesiones tal cual
+    if (originalSize == null || originalRect == null) {
+      return originalInjuries;
+    }
+
+    // Calcular factores de escala
+    final scaleX = targetSize.width / originalRect.width;
+    final scaleY = targetSize.height / originalRect.height;
+
+    // Ajustar cada lesión
+    return originalInjuries.map((injury) {
+      final adjustedPoints =
+          injury.points.map((point) {
+            // Convertir del espacio original al espacio actual
+            final adjustedX = (point.dx - originalRect!.left) * scaleX;
+            final adjustedY = (point.dy - originalRect!.top) * scaleY;
+
+            return Offset(adjustedX, adjustedY);
+          }).toList();
+
+      return DrawnInjuryDisplay(
+        points: adjustedPoints,
+        injuryType: injury.injuryType,
+      );
+    }).toList();
+  }
+
   // Método para mostrar firma en tamaño grande
   void _showSignatureFullScreen(
     String title,
@@ -2292,7 +2350,7 @@ class _FrapRecordDetailsScreenState
     return details;
   }
 
-  Widget _buildInjuryLocationSection() {
+  /*Widget _buildInjuryLocationSection() {
     final injuryLocation = _detailedInfo['injuryLocation'];
     Map<String, dynamic> injuryLocationMap = {};
     if (injuryLocation is Map) {
@@ -2536,7 +2594,7 @@ class _FrapRecordDetailsScreenState
                     border: Border.all(color: Colors.grey[300]!),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
+                        color: Colors.black.withOpacity(0.1),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -2556,7 +2614,7 @@ class _FrapRecordDetailsScreenState
                                         ?.toDouble() ??
                                     600.0,
                               )
-                              : null, // Para registros antiguos sin esta información
+                              : const Size(400, 600), // Tamaño por defecto
                       originalImageRect:
                           injuryLocationMap['originalImageRect'] != null
                               ? Rect.fromLTWH(
@@ -2573,7 +2631,12 @@ class _FrapRecordDetailsScreenState
                                         ?.toDouble() ??
                                     600.0,
                               )
-                              : null, // Para registros antiguos sin esta información
+                              : const Rect.fromLTWH(
+                                0,
+                                0,
+                                400,
+                                600,
+                              ), // Rect por defecto
                     ),
                   ),
                 ),
@@ -2610,6 +2673,333 @@ class _FrapRecordDetailsScreenState
             return _buildDetailRow(detail['label'], detail['value']);
           }),
         ],
+      ),
+    );
+  }
+  */
+
+  Widget _buildInjuryLocationSection() {
+    final injuryLocation = _detailedInfo['injuryLocation'];
+    Map<String, dynamic> injuryLocationMap = {};
+    if (injuryLocation is Map) {
+      injuryLocationMap = Map<String, dynamic>.from(injuryLocation);
+    }
+    if (injuryLocationMap.isEmpty) return const SizedBox.shrink();
+
+    List<Map<String, dynamic>> details = [];
+    List<DrawnInjuryDisplay> drawnInjuries = [];
+
+    // Procesar lesiones dibujadas si existen
+    if (injuryLocationMap['drawnInjuries'] != null) {
+      final List<dynamic> injuriesData = injuryLocationMap['drawnInjuries'];
+
+      if (injuriesData.isNotEmpty) {
+        // Convertir datos a objetos DrawnInjuryDisplay
+        drawnInjuries =
+            injuriesData.map((injury) {
+              final List<dynamic> pointsData = injury['points'];
+              final points =
+                  pointsData
+                      .map((point) => Offset(point['dx'], point['dy']))
+                      .toList();
+              final injuryType = injury['injuryType'] as int;
+
+              return DrawnInjuryDisplay(points: points, injuryType: injuryType);
+            }).toList();
+
+        // Agrupar lesiones por tipo para mostrar resumen
+        Map<int, int> injuriesByType = {};
+        for (var injury in drawnInjuries) {
+          injuriesByType[injury.injuryType] =
+              (injuriesByType[injury.injuryType] ?? 0) + 1;
+        }
+
+        // Crear detalles para cada tipo de lesión
+        injuriesByType.forEach((typeIndex, count) {
+          final typeName = _getInjuryTypeName(typeIndex);
+          details.add({
+            'label': typeName,
+            'value':
+                '$count ${count == 1 ? 'lesión marcada' : 'lesiones marcadas'}',
+          });
+        });
+
+        // Mostrar total de lesiones
+        details.add({
+          'label': 'Total de lesiones',
+          'value':
+              '${drawnInjuries.length} ${drawnInjuries.length == 1 ? 'lesión' : 'lesiones'} dibujadas',
+        });
+      }
+    }
+
+    // Mostrar notas adicionales
+    if (injuryLocationMap['notes'] != null &&
+        injuryLocationMap['notes'].toString().trim().isNotEmpty) {
+      details.add({
+        'label': 'Notas adicionales',
+        'value': injuryLocationMap['notes'],
+        'isFullWidth': true,
+      });
+    }
+
+    return _buildSectionCard(
+      title: 'Localización de Lesiones',
+      icon: Icons.my_location,
+      color: Colors.red,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Definir el tamaño objetivo para el área de visualización
+          final targetSize = Size(constraints.maxWidth * 0.8, 400);
+
+          // Ajustar las lesiones al tamaño objetivo
+          final adjustedInjuries = _getAdjustedInjuries(
+            drawnInjuries,
+            injuryLocationMap,
+            targetSize,
+          );
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Layout horizontal: Lista de lesiones + Mapa visual
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Panel izquierdo - Lista de lesiones
+                  Container(
+                    width: 250,
+                    margin: const EdgeInsets.only(right: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Lesiones registradas:',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Lista de lesiones
+                        if (drawnInjuries.isNotEmpty) ...[
+                          ...drawnInjuries.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final injury = entry.value;
+                            final typeName = _getInjuryTypeName(
+                              injury.injuryType,
+                            );
+                            final color = _getInjuryTypeColor(
+                              injury.injuryType,
+                            );
+                            final number = injury.injuryType + 1;
+
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: color.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: color.withOpacity(0.3),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  // Número de la lesión
+                                  Container(
+                                    width: 28,
+                                    height: 28,
+                                    decoration: BoxDecoration(
+                                      color: color,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 2,
+                                      ),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        '$number',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+
+                                  // Información de la lesión
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          typeName,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: color.withOpacity(0.8),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          '${injury.points.length} ${injury.points.length == 1 ? 'punto' : 'puntos'} marcados',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+
+                          const SizedBox(height: 16),
+
+                          // Resumen
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: Colors.blue.withOpacity(0.3),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.info_outline,
+                                  color: Colors.blue[700],
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Total: ${drawnInjuries.length} ${drawnInjuries.length == 1 ? 'lesión' : 'lesiones'}',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.blue[700],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ] else ...[
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[50],
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.grey[300]!),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.info_outline,
+                                  color: Colors.grey[600],
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                const Expanded(
+                                  child: Text(
+                                    'No se han registrado lesiones',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey,
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  // Panel derecho - Mapa visual del cuerpo humano
+                  Expanded(
+                    child: Container(
+                      height: 400,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[300]!),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: InjuryLocationDisplayWidget(
+                          drawnInjuries:
+                              adjustedInjuries, // Usar lesiones ajustadas
+                          originalImageSize:
+                              targetSize, // Pasar el tamaño objetivo como "original"
+                          originalImageRect: Rect.fromLTWH(
+                            0,
+                            0,
+                            targetSize.width,
+                            targetSize.height,
+                          ), // Rect completo
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              // Leyenda de tipos de lesiones
+              if (drawnInjuries.isNotEmpty) ...[
+                const Text(
+                  'Leyenda de tipos:',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 6,
+                  children: _buildInjuryLegend(drawnInjuries),
+                ),
+                const SizedBox(height: 16),
+              ],
+
+              // Detalles en texto
+              ...details.map((detail) {
+                if (detail['isFullWidth'] == true) {
+                  return _buildFullWidthDetail(
+                    detail['label'],
+                    detail['value'],
+                  );
+                }
+                return _buildDetailRow(detail['label'], detail['value']);
+              }),
+            ],
+          );
+        },
       ),
     );
   }
