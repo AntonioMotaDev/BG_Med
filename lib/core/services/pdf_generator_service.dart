@@ -128,6 +128,28 @@ class ClinicalDisplayData {
   final String cinematica;
   final String medidaSeguridad;
   final String observaciones;
+  // Antecedentes Patológicos
+  final bool diabetes;
+  final String diabetesEspecifique;
+  final bool hipertension;
+  final String hipertensionEspecifique;
+  final bool cardiopatias;
+  final String cardiopatiasEspecifique;
+  final bool enfermedadesRenales;
+  final String enfermedadesRenalesEspecifique;
+  final bool enfermedadesHepaticas;
+  final String enfermedadesHepaticasEspecifique;
+  final bool enfermedadesRespiratorias;
+  final String enfermedadesRespiratoriasEspecifique;
+  final bool enfermedadesNeurologicas;
+  final String enfermedadesNeurologicasEspecifique;
+  final bool cancer;
+  final String cancerEspecifique;
+  final bool vih;
+  final String vihEspecifique;
+  final bool otras;
+  final String otrasEspecifique;
+  final String observacionesPatologicas;
 
   ClinicalDisplayData({
     required this.currentCondition,
@@ -149,6 +171,27 @@ class ClinicalDisplayData {
     this.cinematica = '',
     this.medidaSeguridad = '',
     this.observaciones = '',
+    this.diabetes = false,
+    this.diabetesEspecifique = '',
+    this.hipertension = false,
+    this.hipertensionEspecifique = '',
+    this.cardiopatias = false,
+    this.cardiopatiasEspecifique = '',
+    this.enfermedadesRenales = false,
+    this.enfermedadesRenalesEspecifique = '',
+    this.enfermedadesHepaticas = false,
+    this.enfermedadesHepaticasEspecifique = '',
+    this.enfermedadesRespiratorias = false,
+    this.enfermedadesRespiratoriasEspecifique = '',
+    this.enfermedadesNeurologicas = false,
+    this.enfermedadesNeurologicasEspecifique = '',
+    this.cancer = false,
+    this.cancerEspecifique = '',
+    this.vih = false,
+    this.vihEspecifique = '',
+    this.otras = false,
+    this.otrasEspecifique = '',
+    this.observacionesPatologicas = '',
   });
 }
 
@@ -157,7 +200,8 @@ class ManagementDisplayData {
   final String oxigenoLitros;
   final List<Map<String, dynamic>> insumos;
   final List<Map<String, dynamic>> personalMedico;
-  final String medicamentos;
+  final List<Map<String, dynamic>> medicamentos;
+  final String observaciones;
 
   ManagementDisplayData({
     required this.procedures,
@@ -165,6 +209,7 @@ class ManagementDisplayData {
     required this.insumos,
     required this.personalMedico,
     required this.medicamentos,
+    this.observaciones = '',
   });
 }
 
@@ -196,6 +241,9 @@ class GynecoObstetricDisplayData {
   final String metodosAnticonceptivos;
   final bool ruidosCardiacosFetales;
   final bool expulsionPlacenta;
+  final String frecuenciaCardiacaFetal;
+  final String contracciones;
+  final String observaciones;
   final Map<String, dynamic>? escalasObstetricas;
 
   GynecoObstetricDisplayData({
@@ -210,6 +258,9 @@ class GynecoObstetricDisplayData {
     required this.metodosAnticonceptivos,
     required this.ruidosCardiacosFetales,
     required this.expulsionPlacenta,
+    this.frecuenciaCardiacaFetal = '',
+    this.contracciones = '',
+    this.observaciones = '',
     this.escalasObstetricas,
   });
 }
@@ -252,17 +303,33 @@ class RegistryDisplayData {
 
 class ReceptionDisplayData {
   final String receivingDoctor;
+  final String doctorName;
+  final String doctorCedula;
   final String? doctorSignature;
-  final String originPlace;
-  final String consultPlace;
-  final String destinationPlace;
+  final String lugarOrigen;
+  final String lugarDestino;
+  final String lugarConsulta;
+  final String ambulanciaNumero;
+  final String ambulanciaPlacas;
+  final String personal;
+  final String doctor;
+  final String otroLugar;
+  final String observaciones;
 
   ReceptionDisplayData({
     required this.receivingDoctor,
+    this.doctorName = '',
+    this.doctorCedula = '',
     this.doctorSignature,
-    required this.originPlace,
-    required this.consultPlace,
-    required this.destinationPlace,
+    this.lugarOrigen = '',
+    this.lugarDestino = '',
+    this.lugarConsulta = '',
+    this.ambulanciaNumero = '',
+    this.ambulanciaPlacas = '',
+    this.personal = '',
+    this.doctor = '',
+    this.otroLugar = '',
+    this.observaciones = '',
   });
 }
 
@@ -324,13 +391,13 @@ class PdfGeneratorService {
   );
 
   late pw.TextStyle _labelStyle = pw.TextStyle(
-    fontSize: 5,
+    fontSize: 18,
     fontWeight: pw.FontWeight.bold,
-    color: PdfColors.grey800,
+    color: PdfColors.grey900,
   );
 
   late pw.TextStyle _valueStyle = pw.TextStyle(
-    fontSize: 5,
+    fontSize: 16,
     color: PdfColors.black,
   );
 
@@ -481,14 +548,14 @@ class PdfGeneratorService {
                       children: [
                         _buildCompactTimeTracking(displayData.service),
                         pw.SizedBox(height: 4),
-                        _buildCompactServiceInfo(displayData.service),
-                        pw.SizedBox(height: 4),
                         _buildCompactPatientInfo(
                           displayData.patient,
                           displayData.service.currentCondition,
                         ),
                         pw.SizedBox(height: 4),
-                        _buildCompactPathologicalHistory(displayData.clinical),
+                        _buildCompactPathologicalAntecedents(
+                          displayData.clinical,
+                        ),
                         pw.SizedBox(height: 4),
                         _buildCompactClinicalHistory(displayData.clinical),
                         pw.SizedBox(height: 4),
@@ -522,12 +589,6 @@ class PdfGeneratorService {
                         _buildCompactPriorityJustification(
                           displayData.priority,
                         ),
-                        pw.SizedBox(height: 4),
-                        _buildCompactReceivingUnitSection(
-                          displayData.reception,
-                        ),
-                        _buildCompactAmbulanceSection(displayData.ambulance),
-                        pw.SizedBox(height: 4),
                         pw.SizedBox(height: 4),
                         _buildCompactSampleSection(displayData.sample),
                         pw.SizedBox(height: 4),
@@ -654,6 +715,42 @@ class PdfGeneratorService {
               ),
             ],
           ),
+          // Información adicional debajo de la tabla
+          pw.Container(
+            padding: const pw.EdgeInsets.all(4),
+            decoration: pw.BoxDecoration(
+              border: pw.Border(
+                top: pw.BorderSide(color: PdfColors.grey900, width: 1.2),
+              ),
+            ),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Row(
+                  children: [
+                    pw.Text('Tipo: ', style: _labelStyle),
+                    pw.Text(service.tipoServicio, style: _valueStyle),
+                    pw.SizedBox(width: 4),
+                    pw.Text('Lugar de ocurrencia: ', style: _labelStyle),
+                    pw.Text(
+                      (service.lugarOcurrencia == 'Otro' ||
+                              service.lugarOcurrencia.isEmpty)
+                          ? service.lugarOcurrenciaEspecifique
+                          : service.lugarOcurrencia,
+                      style: _valueStyle,
+                    ),
+                    pw.SizedBox(width: 4),
+                    pw.Text('Ubicación: ', style: _labelStyle),
+                    pw.Expanded(
+                      child: pw.Text(service.ubicacion, style: _valueStyle),
+                    ),
+                    pw.SizedBox(width: 4),
+                  ],
+                ),
+                pw.SizedBox(height: 2),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -724,61 +821,6 @@ class PdfGeneratorService {
                       'Padecimiento: $currentCondition',
                       alignLeft: true,
                       colSpan: 4,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  pw.Widget _buildCompactServiceInfo(ServiceDisplayData service) {
-    return pw.Container(
-      decoration: pw.BoxDecoration(
-        border: pw.Border.all(color: PdfColors.black, width: 0.5),
-      ),
-      child: pw.Column(
-        children: [
-          _buildCompactSectionHeader('INFORMACIÓN DEL SERVICIO'),
-          pw.Padding(
-            padding: const pw.EdgeInsets.all(4),
-            child: pw.Table(
-              border: null,
-              columnWidths: {
-                0: const pw.FlexColumnWidth(1),
-                1: const pw.FlexColumnWidth(2),
-                2: const pw.FlexColumnWidth(1),
-                3: const pw.FlexColumnWidth(1),
-              },
-              children: [
-                pw.TableRow(
-                  children: [
-                    _buildCompactTableCell('Lugar:', alignLeft: true),
-                    _buildCompactTableCell(service.ubicacion, alignLeft: true),
-                    _buildCompactTableCell('Tipo:', alignLeft: true),
-                    _buildCompactTableCell(
-                      service.tipoServicio,
-                      alignLeft: true,
-                    ),
-                  ],
-                ),
-                pw.TableRow(
-                  children: [
-                    _buildCompactTableCell('Ocurrencia:', alignLeft: true),
-                    _buildCompactTableCell(
-                      (service.lugarOcurrencia.isEmpty ||
-                              service.lugarOcurrencia == 'Otro')
-                          ? service.lugarOcurrenciaEspecifique
-                          : service.lugarOcurrencia,
-                      alignLeft: true,
-                    ),
-                    _buildCompactTableCell('Especifique:', alignLeft: true),
-                    _buildCompactTableCell(
-                      service.tipoServicioEspecifique,
-                      alignLeft: true,
                     ),
                   ],
                 ),
@@ -897,36 +939,59 @@ class PdfGeneratorService {
           _buildCompactSectionHeader('MANEJO'),
           pw.Padding(
             padding: const pw.EdgeInsets.all(4),
-            child:
-                selectedProcedures.isNotEmpty
-                    ? pw.Wrap(
-                      spacing: 3,
-                      runSpacing: 2,
-                      children:
-                          selectedProcedures
-                              .map(
-                                (procedure) => pw.Container(
-                                  padding: const pw.EdgeInsets.symmetric(
-                                    horizontal: 3,
-                                    vertical: 1,
-                                  ),
-                                  decoration: pw.BoxDecoration(
-                                    color: PdfColors.grey100,
-                                    borderRadius: pw.BorderRadius.circular(2),
-                                    border: pw.Border.all(
-                                      color: PdfColors.grey400,
-                                      width: 0.3,
-                                    ),
-                                  ),
-                                  child: pw.Text(procedure, style: _valueStyle),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                if (selectedProcedures.isNotEmpty)
+                  pw.Wrap(
+                    spacing: 3,
+                    runSpacing: 2,
+                    children:
+                        selectedProcedures
+                            .map(
+                              (procedure) => pw.Container(
+                                padding: const pw.EdgeInsets.symmetric(
+                                  horizontal: 3,
+                                  vertical: 1,
                                 ),
-                              )
-                              .toList(),
-                    )
-                    : pw.Text(
-                      'No se seleccionaron procedimientos',
-                      style: _valueStyle,
-                    ),
+                                decoration: pw.BoxDecoration(
+                                  color: PdfColors.grey100,
+                                  borderRadius: pw.BorderRadius.circular(2),
+                                  border: pw.Border.all(
+                                    color: PdfColors.grey400,
+                                    width: 0.3,
+                                  ),
+                                ),
+                                child: pw.Text(procedure, style: _valueStyle),
+                              ),
+                            )
+                            .toList(),
+                  )
+                else
+                  pw.Text(
+                    'No se seleccionaron procedimientos',
+                    style: _valueStyle,
+                  ),
+                // Mostrar observaciones si existen
+                if (management.observaciones.isNotEmpty) ...[
+                  pw.SizedBox(height: 3),
+                  _buildCompactDetailRow(
+                    'Observaciones:',
+                    management.observaciones,
+                  ),
+                ],
+                // Mostrar litros de oxígeno si hay oxígeno
+                if (management.procedures['oxigeno'] == 'Sí' &&
+                    management.oxigenoLitros != 'N/A' &&
+                    management.oxigenoLitros.isNotEmpty) ...[
+                  pw.SizedBox(height: 2),
+                  _buildCompactDetailRow(
+                    'Oxígeno (Lt/min):',
+                    management.oxigenoLitros,
+                  ),
+                ],
+              ],
+            ),
           ),
         ],
       ),
@@ -934,6 +999,27 @@ class PdfGeneratorService {
   }
 
   pw.Widget _buildCompactMedicationsSection(ManagementDisplayData management) {
+    if (management.medicamentos.isEmpty) {
+      return pw.Container(
+        width: double.infinity,
+        decoration: pw.BoxDecoration(
+          border: pw.Border.all(color: PdfColors.black, width: 0.5),
+        ),
+        child: pw.Column(
+          children: [
+            _buildCompactSectionHeader('MEDICAMENTOS'),
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(4),
+              child: pw.Text(
+                'No se registraron medicamentos',
+                style: _valueStyle,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return pw.Container(
       width: double.infinity,
       decoration: pw.BoxDecoration(
@@ -943,20 +1029,78 @@ class PdfGeneratorService {
         children: [
           _buildCompactSectionHeader('MEDICAMENTOS'),
           pw.Padding(
-            padding: const pw.EdgeInsets.all(4),
-            child: pw.Text(
-              management.medicamentos.isNotEmpty
-                  ? management.medicamentos
-                  : 'No se registraron medicamentos',
-              style: _valueStyle,
+            padding: const pw.EdgeInsets.all(2),
+            child: pw.Table(
+              border: pw.TableBorder.all(width: 0.3, color: PdfColors.grey400),
+              columnWidths: {
+                0: const pw.FlexColumnWidth(2.5),
+                1: const pw.FlexColumnWidth(1.5),
+                2: const pw.FlexColumnWidth(1.5),
+                3: const pw.FlexColumnWidth(2),
+              },
+              children: [
+                // Header
+                pw.TableRow(
+                  decoration: pw.BoxDecoration(color: PdfColors.grey300),
+                  children: [
+                    _buildCompactTableCell('Medicamento', isHeader: true),
+                    _buildCompactTableCell('Dosis', isHeader: true),
+                    _buildCompactTableCell('Vía', isHeader: true),
+                    _buildCompactTableCell('Médico', isHeader: true),
+                  ],
+                ),
+                // Datos
+                ...management.medicamentos.map((med) {
+                  final medicamento = med['medicamento']?.toString() ?? '';
+                  final dosis = med['dosis']?.toString() ?? '';
+                  final via = med['viaAdministracion']?.toString() ?? '';
+                  final medico =
+                      med['medicoIndico']?.toString() ??
+                      med['medicoOtro']?.toString() ??
+                      '';
+
+                  return pw.TableRow(
+                    children: [
+                      _buildCompactTableCell(medicamento, alignLeft: true),
+                      _buildCompactTableCell(dosis, alignLeft: true),
+                      _buildCompactTableCell(via, alignLeft: true),
+                      _buildCompactTableCell(medico, alignLeft: true),
+                    ],
+                  );
+                }),
+              ],
             ),
           ),
+          if (management.observaciones.isNotEmpty)
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(4),
+              child: pw.Text(
+                'Obs: ${management.observaciones}',
+                style: _smallStyle,
+              ),
+            ),
         ],
       ),
     );
   }
 
-  pw.Widget _buildCompactPathologicalHistory(ClinicalDisplayData clinical) {
+  pw.Widget _buildCompactPathologicalAntecedents(ClinicalDisplayData clinical) {
+    // Verificar si hay algún antecedente patológico
+    final hasAntecedents =
+        clinical.diabetes ||
+        clinical.hipertension ||
+        clinical.cardiopatias ||
+        clinical.enfermedadesRenales ||
+        clinical.enfermedadesHepaticas ||
+        clinical.enfermedadesRespiratorias ||
+        clinical.enfermedadesNeurologicas ||
+        clinical.cancer ||
+        clinical.vih ||
+        clinical.otras ||
+        clinical.observacionesPatologicas.isNotEmpty;
+
+    if (!hasAntecedents) return pw.SizedBox();
+
     return pw.Container(
       width: double.infinity,
       decoration: pw.BoxDecoration(
@@ -970,31 +1114,80 @@ class PdfGeneratorService {
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                if (clinical.traumaCraneo)
+                if (clinical.diabetes)
                   _buildCompactDetailRow(
-                    'Trauma Cráneo:',
-                    clinical.traumaCraneoEspecifique.isEmpty
+                    'Diabetes:',
+                    clinical.diabetesEspecifique.isEmpty
                         ? 'Sí'
-                        : clinical.traumaCraneoEspecifique,
+                        : clinical.diabetesEspecifique,
                   ),
-                if (clinical.traumaTorax)
+                if (clinical.hipertension)
                   _buildCompactDetailRow(
-                    'Trauma Tórax:',
-                    clinical.traumaToraxEspecifique.isEmpty
+                    'Hipertensión:',
+                    clinical.hipertensionEspecifique.isEmpty
                         ? 'Sí'
-                        : clinical.traumaToraxEspecifique,
+                        : clinical.hipertensionEspecifique,
                   ),
-                if (clinical.traumaAbdomen)
+                if (clinical.cardiopatias)
                   _buildCompactDetailRow(
-                    'Trauma Abdomen:',
-                    clinical.traumaAbdomenEspecifique.isEmpty
+                    'Cardiopatías:',
+                    clinical.cardiopatiasEspecifique.isEmpty
                         ? 'Sí'
-                        : clinical.traumaAbdomenEspecifique,
+                        : clinical.cardiopatiasEspecifique,
                   ),
-                if (clinical.agenteCausal.isNotEmpty)
+                if (clinical.enfermedadesRenales)
                   _buildCompactDetailRow(
-                    'Agente Causal:',
-                    clinical.agenteCausal,
+                    'Enf. Renales:',
+                    clinical.enfermedadesRenalesEspecifique.isEmpty
+                        ? 'Sí'
+                        : clinical.enfermedadesRenalesEspecifique,
+                  ),
+                if (clinical.enfermedadesHepaticas)
+                  _buildCompactDetailRow(
+                    'Enf. Hepáticas:',
+                    clinical.enfermedadesHepaticasEspecifique.isEmpty
+                        ? 'Sí'
+                        : clinical.enfermedadesHepaticasEspecifique,
+                  ),
+                if (clinical.enfermedadesRespiratorias)
+                  _buildCompactDetailRow(
+                    'Enf. Respiratorias:',
+                    clinical.enfermedadesRespiratoriasEspecifique.isEmpty
+                        ? 'Sí'
+                        : clinical.enfermedadesRespiratoriasEspecifique,
+                  ),
+                if (clinical.enfermedadesNeurologicas)
+                  _buildCompactDetailRow(
+                    'Enf. Neurológicas:',
+                    clinical.enfermedadesNeurologicasEspecifique.isEmpty
+                        ? 'Sí'
+                        : clinical.enfermedadesNeurologicasEspecifique,
+                  ),
+                if (clinical.cancer)
+                  _buildCompactDetailRow(
+                    'Cáncer:',
+                    clinical.cancerEspecifique.isEmpty
+                        ? 'Sí'
+                        : clinical.cancerEspecifique,
+                  ),
+                if (clinical.vih)
+                  _buildCompactDetailRow(
+                    'VIH:',
+                    clinical.vihEspecifique.isEmpty
+                        ? 'Sí'
+                        : clinical.vihEspecifique,
+                  ),
+                if (clinical.otras)
+                  _buildCompactDetailRow(
+                    'Otras:',
+                    clinical.otrasEspecifique.isEmpty
+                        ? 'Sí'
+                        : clinical.otrasEspecifique,
+                  ),
+                if (clinical.observacionesPatologicas.isNotEmpty)
+                  _buildCompactDetailRow(
+                    'Observaciones:',
+                    clinical.observacionesPatologicas,
                   ),
               ],
             ),
@@ -1013,6 +1206,16 @@ class PdfGeneratorService {
     if (clinical.traumaExtremidades) traumasList.add('Extremidades');
     if (clinical.traumaPelvis) traumasList.add('Pelvis');
     if (clinical.traumaOtros) traumasList.add('Otros');
+
+    // Verificar si hay algún dato para mostrar
+    final hasData =
+        traumasList.isNotEmpty ||
+        clinical.agenteCausal.isNotEmpty ||
+        clinical.cinematica.isNotEmpty ||
+        clinical.medidaSeguridad.isNotEmpty ||
+        clinical.observaciones.isNotEmpty;
+
+    if (!hasData) return pw.SizedBox();
 
     return pw.Container(
       width: double.infinity,
@@ -1055,8 +1258,23 @@ class PdfGeneratorService {
                   ),
                   pw.SizedBox(height: 4),
                 ],
-                _buildCompactDetailRow('Agente causal:', clinical.agenteCausal),
-                _buildCompactDetailRow('Cinemática:', clinical.cinematica),
+                if (clinical.agenteCausal.isNotEmpty)
+                  _buildCompactDetailRow(
+                    'Agente causal:',
+                    clinical.agenteCausal,
+                  ),
+                if (clinical.cinematica.isNotEmpty)
+                  _buildCompactDetailRow('Cinemática:', clinical.cinematica),
+                if (clinical.medidaSeguridad.isNotEmpty)
+                  _buildCompactDetailRow(
+                    'Medida de seguridad:',
+                    clinical.medidaSeguridad,
+                  ),
+                if (clinical.observaciones.isNotEmpty)
+                  _buildCompactDetailRow(
+                    'Observaciones:',
+                    clinical.observaciones,
+                  ),
               ],
             ),
           ),
@@ -1247,37 +1465,158 @@ class PdfGeneratorService {
           _buildCompactSectionHeader('URGENCIAS GINECO-OBSTÉTRICAS'),
           pw.Padding(
             padding: const pw.EdgeInsets.all(4),
-            child: pw.Table(
-              border: null,
-              columnWidths: {
-                0: const pw.FlexColumnWidth(1),
-                1: const pw.FlexColumnWidth(1),
-              },
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                pw.TableRow(
+                // Datos principales
+                pw.Table(
+                  border: null,
+                  columnWidths: {
+                    0: const pw.FlexColumnWidth(1),
+                    1: const pw.FlexColumnWidth(1),
+                  },
                   children: [
-                    _buildCompactTableCell(
-                      'FUM: ${gynecoObstetric.fum}',
-                      alignLeft: true,
+                    pw.TableRow(
+                      children: [
+                        _buildCompactTableCell(
+                          'FUM: ${gynecoObstetric.fum}',
+                          alignLeft: true,
+                        ),
+                        _buildCompactTableCell(
+                          'Semanas: ${gynecoObstetric.semanasGestacion}',
+                          alignLeft: true,
+                        ),
+                      ],
                     ),
-                    _buildCompactTableCell(
-                      'Semanas: ${gynecoObstetric.semanasGestacion}',
-                      alignLeft: true,
+                    pw.TableRow(
+                      children: [
+                        _buildCompactTableCell(
+                          'Gesta: ${gynecoObstetric.gesta}',
+                          alignLeft: true,
+                        ),
+                        _buildCompactTableCell(
+                          'Partos: ${gynecoObstetric.partos}',
+                          alignLeft: true,
+                        ),
+                      ],
                     ),
+                    if (gynecoObstetric.cesareas.isNotEmpty ||
+                        gynecoObstetric.abortos.isNotEmpty)
+                      pw.TableRow(
+                        children: [
+                          if (gynecoObstetric.cesareas.isNotEmpty)
+                            _buildCompactTableCell(
+                              'Cesáreas: ${gynecoObstetric.cesareas}',
+                              alignLeft: true,
+                            )
+                          else
+                            pw.SizedBox(),
+                          if (gynecoObstetric.abortos.isNotEmpty)
+                            _buildCompactTableCell(
+                              'Abortos: ${gynecoObstetric.abortos}',
+                              alignLeft: true,
+                            )
+                          else
+                            pw.SizedBox(),
+                        ],
+                      ),
                   ],
                 ),
-                pw.TableRow(
-                  children: [
-                    _buildCompactTableCell(
-                      'Gesta: ${gynecoObstetric.gesta}',
-                      alignLeft: true,
+
+                // Métodos anticonceptivos
+                if (gynecoObstetric.metodosAnticonceptivos.isNotEmpty) ...[
+                  pw.SizedBox(height: 3),
+                  _buildCompactDetailRow(
+                    'Métodos anticonceptivos:',
+                    gynecoObstetric.metodosAnticonceptivos,
+                  ),
+                ],
+
+                // Ruidos cardiacos fetales
+                _buildCompactDetailRow(
+                  'Ruidos cardíacos fetales:',
+                  gynecoObstetric.ruidosCardiacosFetales ? 'Sí' : 'No',
+                ),
+
+                // Frecuencia cardiaca fetal
+                if (gynecoObstetric.frecuenciaCardiacaFetal.isNotEmpty) ...[
+                  pw.SizedBox(height: 2),
+                  _buildCompactDetailRow(
+                    'Frecuencia cardíaca fetal:',
+                    gynecoObstetric.frecuenciaCardiacaFetal,
+                  ),
+                ],
+
+                // Contracciones
+                if (gynecoObstetric.contracciones.isNotEmpty) ...[
+                  pw.SizedBox(height: 2),
+                  _buildCompactDetailRow(
+                    'Contracciones:',
+                    gynecoObstetric.contracciones,
+                  ),
+                ],
+
+                // Expulsión placenta
+                _buildCompactDetailRow(
+                  'Expulsión placenta:',
+                  gynecoObstetric.expulsionPlacenta ? 'Sí' : 'No',
+                ),
+
+                // Escalas APGAR y Silverman-Anderson
+                if (gynecoObstetric.escalasObstetricas != null) ...[
+                  pw.SizedBox(height: 3),
+
+                  // APGAR
+                  if (gynecoObstetric.escalasObstetricas!['apgar'] != null) ...[
+                    pw.Text('APGAR:', style: _labelStyle),
+                    pw.Row(
+                      children: [
+                        if (gynecoObstetric
+                                .escalasObstetricas!['apgar']['minuto1'] !=
+                            null)
+                          pw.Text(
+                            '1min: ${gynecoObstetric.escalasObstetricas!['apgar']['minuto1']}  ',
+                            style: _smallStyle,
+                          ),
+                        if (gynecoObstetric
+                                .escalasObstetricas!['apgar']['minuto5'] !=
+                            null)
+                          pw.Text(
+                            '5min: ${gynecoObstetric.escalasObstetricas!['apgar']['minuto5']}  ',
+                            style: _smallStyle,
+                          ),
+                        if (gynecoObstetric
+                                .escalasObstetricas!['apgar']['minuto10'] !=
+                            null)
+                          pw.Text(
+                            '10min: ${gynecoObstetric.escalasObstetricas!['apgar']['minuto10']}',
+                            style: _smallStyle,
+                          ),
+                      ],
                     ),
-                    _buildCompactTableCell(
-                      'Partos: ${gynecoObstetric.partos}',
-                      alignLeft: true,
+                    pw.SizedBox(height: 2),
+                  ],
+
+                  // Silverman-Anderson
+                  if (gynecoObstetric
+                          .escalasObstetricas!['silvermanAnderson'] !=
+                      null) ...[
+                    _buildCompactDetailRow(
+                      'Silverman-Anderson:',
+                      gynecoObstetric.escalasObstetricas!['silvermanAnderson']
+                          .toString(),
                     ),
                   ],
-                ),
+                ],
+
+                // Observaciones
+                if (gynecoObstetric.observaciones.isNotEmpty) ...[
+                  pw.SizedBox(height: 3),
+                  _buildCompactDetailRow(
+                    'Observaciones:',
+                    gynecoObstetric.observaciones,
+                  ),
+                ],
               ],
             ),
           ),
@@ -1351,6 +1690,20 @@ class PdfGeneratorService {
   }
 
   pw.Widget _buildCompactReceivingUnitSection(ReceptionDisplayData reception) {
+    // Verificar si hay algún dato
+    final hasData =
+        reception.lugarOrigen.isNotEmpty ||
+        reception.lugarDestino.isNotEmpty ||
+        reception.lugarConsulta.isNotEmpty ||
+        reception.ambulanciaNumero.isNotEmpty ||
+        reception.ambulanciaPlacas.isNotEmpty ||
+        reception.personal.isNotEmpty ||
+        reception.doctor.isNotEmpty ||
+        reception.otroLugar.isNotEmpty ||
+        reception.observaciones.isNotEmpty;
+
+    if (!hasData) return pw.SizedBox();
+
     return pw.Container(
       width: double.infinity,
       decoration: pw.BoxDecoration(
@@ -1361,30 +1714,31 @@ class PdfGeneratorService {
           _buildCompactSectionHeader('UNIDAD MÉDICA QUE RECIBE'),
           pw.Padding(
             padding: const pw.EdgeInsets.all(4),
-            child: pw.Text(
-              'Lugar de origen: ${reception.originPlace}',
-              style: _valueStyle,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  pw.Widget _buildCompactAmbulanceSection(AmbulanceDisplayData ambulance) {
-    return pw.Container(
-      width: double.infinity,
-      decoration: pw.BoxDecoration(
-        border: pw.Border.all(color: PdfColors.black, width: 0.5),
-      ),
-      child: pw.Column(
-        children: [
-          _buildCompactSectionHeader('AMBULANCIA'),
-          pw.Padding(
-            padding: const pw.EdgeInsets.all(4),
-            child: pw.Text(
-              '${ambulance.numeroAmbulancia} - ${ambulance.tipoAmbulancia}',
-              style: _valueStyle,
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                if (reception.lugarOrigen.isNotEmpty)
+                  _buildCompactDetailRow('Origen:', reception.lugarOrigen),
+                if (reception.lugarDestino.isNotEmpty)
+                  _buildCompactDetailRow('Destino:', reception.lugarDestino),
+                if (reception.lugarConsulta.isNotEmpty)
+                  _buildCompactDetailRow('Consulta:', reception.lugarConsulta),
+                if (reception.ambulanciaNumero.isNotEmpty)
+                  _buildCompactDetailRow(
+                    'Ambulancia:',
+                    reception.ambulanciaNumero,
+                  ),
+                if (reception.ambulanciaPlacas.isNotEmpty)
+                  _buildCompactDetailRow('Placas:', reception.ambulanciaPlacas),
+                if (reception.personal.isNotEmpty)
+                  _buildCompactDetailRow('Personal:', reception.personal),
+                if (reception.doctor.isNotEmpty)
+                  _buildCompactDetailRow('Doctor:', reception.doctor),
+                if (reception.otroLugar.isNotEmpty)
+                  _buildCompactDetailRow('Otro:', reception.otroLugar),
+                if (reception.observaciones.isNotEmpty)
+                  _buildCompactDetailRow('Obs:', reception.observaciones),
+              ],
             ),
           ),
         ],
@@ -1427,29 +1781,30 @@ class PdfGeneratorService {
             padding: const pw.EdgeInsets.all(4),
             child: pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
-              children:
-                  [
-                    if (hasConsentimiento)
-                      _buildCompactSignature(
-                        'Consentimiento',
-                        displayData.consentimientoServicio!,
-                      ),
-                    if (hasPatientSignature)
-                      _buildCompactSignature(
-                        'Paciente',
-                        attentionNegative!['patientSignature']!,
-                      ),
-                    if (hasWitnessSignature)
-                      _buildCompactSignature(
-                        'Testigo',
-                        attentionNegative!['witnessSignature']!,
-                      ),
-                    if (hasDoctorSignature)
-                      _buildCompactSignature(
-                        'Médico',
-                        displayData.reception.doctorSignature!,
-                      ),
-                  ].where((element) => element != null).toList(),
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                if (hasConsentimiento)
+                  _buildCompactSignature(
+                    'Consentimiento',
+                    displayData.consentimientoServicio!,
+                  ),
+                if (hasPatientSignature)
+                  _buildCompactSignature(
+                    'Paciente',
+                    attentionNegative!['patientSignature']!,
+                  ),
+                if (hasWitnessSignature)
+                  _buildCompactSignature(
+                    'Testigo',
+                    attentionNegative!['witnessSignature']!,
+                  ),
+                if (hasDoctorSignature)
+                  _buildCompactDoctorSignature(
+                    displayData.reception.doctorSignature!,
+                    displayData.reception.doctorName,
+                    displayData.reception.doctorCedula,
+                  ),
+              ],
             ),
           ),
         ],
@@ -1561,13 +1916,55 @@ class PdfGeneratorService {
     );
   }
 
+  pw.Widget _buildCompactDoctorSignature(
+    String base64Data,
+    String doctorName,
+    String doctorCedula,
+  ) {
+    final signatureImage = _getImageFromBase64(base64Data);
+    return pw.Column(
+      children: [
+        if (signatureImage != null)
+          pw.Container(
+            width: 40,
+            height: 20,
+            child: pw.Image(signatureImage, fit: pw.BoxFit.contain),
+          )
+        else
+          pw.Container(
+            width: 40,
+            height: 20,
+            decoration: pw.BoxDecoration(
+              border: pw.Border.all(color: PdfColors.grey400),
+            ),
+            child: pw.Center(child: pw.Text('N/A', style: _smallStyle)),
+          ),
+        pw.SizedBox(height: 2),
+        pw.Text('Médico', style: _smallStyle),
+        if (doctorName.isNotEmpty) ...[
+          pw.SizedBox(height: 1),
+          pw.Text(doctorName, style: _smallStyle),
+        ],
+        if (doctorCedula.isNotEmpty) ...[
+          pw.SizedBox(height: 1),
+          pw.Text('Céd. $doctorCedula', style: _smallStyle),
+        ],
+      ],
+    );
+  }
+
   String _getProcedureName(String key) {
     final procedures = {
       'viaAerea': 'Vía aérea',
       'canalizacion': 'Canalización',
+      'empaquetamiento': 'Empaquetamiento',
       'inmovilizacion': 'Inmovilización',
       'monitor': 'Monitor',
       'rcpBasica': 'RCP Básica',
+      'mastPna': 'MAST/PNA',
+      'collarinCervical': 'Collarín cervical',
+      'desfibrilacion': 'Desfibrilación',
+      'apoyoVent': 'Apoyo ventilatorio',
       'oxigeno': 'Oxígeno',
     };
     return procedures[key] ?? key;
@@ -2040,23 +2437,6 @@ class PdfGeneratorService {
     return 'Tipo desconocido';
   }
 
-  String _getAccidentTypeName(String key) {
-    final accidentTypes = {
-      'atropellado': 'Atropellado',
-      'lxPorCaida': 'Lx por caída',
-      'intoxicacion': 'Intoxicación',
-      'amputacion': 'Amputación',
-      'choque': 'Choque',
-      'agresion': 'Agresión',
-      'hpab': 'HPAB',
-      'hpaf': 'HPAF',
-      'volcadura': 'Volcadura',
-      'quemadura': 'Quemadura',
-      'otroTipo': 'Otro tipo',
-    };
-    return accidentTypes[key] ?? key;
-  }
-
   // ========== MÉTODOS DE CONSTRUCCIÓN DE DATOS ==========
 
   FrapPdfDisplayData _buildDisplayData(UnifiedFrapRecord record) {
@@ -2266,6 +2646,17 @@ class PdfGeneratorService {
         cinematica: clinicalHistory.cinematica,
         medidaSeguridad: clinicalHistory.medidaSeguridad,
         observaciones: clinicalHistory.observaciones,
+        // Antecedentes patológicos - estos no existen en ClinicalHistory local, usar valores por defecto
+        diabetes: false,
+        hipertension: false,
+        cardiopatias: false,
+        enfermedadesRenales: false,
+        enfermedadesHepaticas: false,
+        enfermedadesRespiratorias: false,
+        enfermedadesNeurologicas: false,
+        cancer: false,
+        vih: false,
+        otras: false,
       );
     } else {
       return ClinicalDisplayData(
@@ -2320,8 +2711,95 @@ class PdfGeneratorService {
           'medidaSeguridad',
         ),
         observaciones: _getFromClinicalHistory(detailedInfo, 'observaciones'),
+        // Antecedentes patológicos desde detailedInfo
+        diabetes: _getFromPathologicalHistory(detailedInfo, 'diabetes') == 'Sí',
+        diabetesEspecifique: _getFromPathologicalHistory(
+          detailedInfo,
+          'diabetesEspecifique',
+        ),
+        hipertension:
+            _getFromPathologicalHistory(detailedInfo, 'hipertension') == 'Sí',
+        hipertensionEspecifique: _getFromPathologicalHistory(
+          detailedInfo,
+          'hipertensionEspecifique',
+        ),
+        cardiopatias:
+            _getFromPathologicalHistory(detailedInfo, 'cardiopatias') == 'Sí',
+        cardiopatiasEspecifique: _getFromPathologicalHistory(
+          detailedInfo,
+          'cardiopatiasEspecifique',
+        ),
+        enfermedadesRenales:
+            _getFromPathologicalHistory(detailedInfo, 'enfermedadesRenales') ==
+            'Sí',
+        enfermedadesRenalesEspecifique: _getFromPathologicalHistory(
+          detailedInfo,
+          'enfermedadesRenalesEspecifique',
+        ),
+        enfermedadesHepaticas:
+            _getFromPathologicalHistory(
+              detailedInfo,
+              'enfermedadesHepaticas',
+            ) ==
+            'Sí',
+        enfermedadesHepaticasEspecifique: _getFromPathologicalHistory(
+          detailedInfo,
+          'enfermedadesHepaticasEspecifique',
+        ),
+        enfermedadesRespiratorias:
+            _getFromPathologicalHistory(
+              detailedInfo,
+              'enfermedadesRespiratorias',
+            ) ==
+            'Sí',
+        enfermedadesRespiratoriasEspecifique: _getFromPathologicalHistory(
+          detailedInfo,
+          'enfermedadesRespiratoriasEspecifique',
+        ),
+        enfermedadesNeurologicas:
+            _getFromPathologicalHistory(
+              detailedInfo,
+              'enfermedadesNeurologicas',
+            ) ==
+            'Sí',
+        enfermedadesNeurologicasEspecifique: _getFromPathologicalHistory(
+          detailedInfo,
+          'enfermedadesNeurologicasEspecifique',
+        ),
+        cancer: _getFromPathologicalHistory(detailedInfo, 'cancer') == 'Sí',
+        cancerEspecifique: _getFromPathologicalHistory(
+          detailedInfo,
+          'cancerEspecifique',
+        ),
+        vih: _getFromPathologicalHistory(detailedInfo, 'vih') == 'Sí',
+        vihEspecifique: _getFromPathologicalHistory(
+          detailedInfo,
+          'vihEspecifique',
+        ),
+        otras: _getFromPathologicalHistory(detailedInfo, 'otras') == 'Sí',
+        otrasEspecifique: _getFromPathologicalHistory(
+          detailedInfo,
+          'otrasEspecifique',
+        ),
+        observacionesPatologicas: _getFromPathologicalHistory(
+          detailedInfo,
+          'observaciones',
+        ),
       );
     }
+  }
+
+  // Helper para obtener valores de pathologicalHistory
+  String _getFromPathologicalHistory(
+    Map<String, dynamic> detailedInfo,
+    String key,
+  ) {
+    final pathologicalHistory =
+        detailedInfo['pathologicalHistory'] as Map<String, dynamic>? ?? {};
+    final value = pathologicalHistory[key];
+    if (value == true) return 'Sí';
+    if (value == false) return 'No';
+    return value?.toString() ?? '';
   }
 
   ManagementDisplayData _buildManagementDisplayData(
@@ -2332,22 +2810,48 @@ class PdfGeneratorService {
         detailedInfo['management'] as Map<String, dynamic>? ?? {};
     final insumos = _getInsumos(record);
     final personalMedico = _getPersonalMedico(record);
+    final medicamentos = _getMedicamentos(record, detailedInfo);
 
     return ManagementDisplayData(
       procedures: {
         'viaAerea': _boolToString(management['viaAerea']),
         'canalizacion': _boolToString(management['canalizacion']),
+        'empaquetamiento': _boolToString(management['empaquetamiento']),
         'inmovilizacion': _boolToString(management['inmovilizacion']),
         'monitor': _boolToString(management['monitor']),
         'rcpBasica': _boolToString(management['rcpBasica']),
+        'mastPna': _boolToString(management['mastPna']),
+        'collarinCervical': _boolToString(management['collarinCervical']),
+        'desfibrilacion': _boolToString(management['desfibrilacion']),
+        'apoyoVent': _boolToString(management['apoyoVent']),
         'oxigeno': _boolToString(management['oxigeno']),
       },
       oxigenoLitros: management['ltMin']?.toString() ?? 'N/A',
       insumos: insumos,
       personalMedico: personalMedico,
-      medicamentos:
-          detailedInfo['medications']?['medications']?.toString() ?? 'N/A',
+      medicamentos: medicamentos,
+      observaciones: management['observaciones']?.toString() ?? '',
     );
+  }
+
+  // Helper para obtener medicamentos como lista
+  List<Map<String, dynamic>> _getMedicamentos(
+    UnifiedFrapRecord record,
+    Map<String, dynamic> detailedInfo,
+  ) {
+    final medicationsData =
+        detailedInfo['medications'] as Map<String, dynamic>? ?? {};
+    final medicationsList =
+        medicationsData['medicationsList'] as List<dynamic>? ?? [];
+
+    if (medicationsList.isNotEmpty) {
+      return medicationsList
+          .where((item) => item != null && item is Map)
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .toList();
+    }
+
+    return [];
   }
 
   AmbulanceDisplayData _buildAmbulanceDisplayData(
@@ -2386,6 +2890,10 @@ class PdfGeneratorService {
           gynecoObstetric['metodosAnticonceptivos']?.toString() ?? 'N/A',
       ruidosCardiacosFetales: gynecoObstetric['ruidosCardiacosFetales'] == true,
       expulsionPlacenta: gynecoObstetric['expulsionPlacenta'] == true,
+      frecuenciaCardiacaFetal:
+          gynecoObstetric['frecuenciaCardiacaFetal']?.toString() ?? '',
+      contracciones: gynecoObstetric['contracciones']?.toString() ?? '',
+      observaciones: gynecoObstetric['observaciones']?.toString() ?? '',
       escalasObstetricas: escalas,
     );
   }
@@ -2413,12 +2921,13 @@ class PdfGeneratorService {
   ) {
     final registryInfo =
         detailedInfo['registryInfo'] as Map<String, dynamic>? ?? {};
+    final fechaStr = registryInfo['fecha']?.toString();
     return RegistryDisplayData(
       convenio: registryInfo['convenio']?.toString() ?? 'N/A',
       episodio: registryInfo['episodio']?.toString() ?? 'N/A',
       solicitadoPor: registryInfo['solicitadoPor']?.toString() ?? 'N/A',
       folio: registryInfo['folio']?.toString() ?? 'N/A',
-      fecha: (registryInfo['fecha']?.toString()?.split('T')?.first ?? 'N/A'),
+      fecha: fechaStr != null ? fechaStr.split('T').first : 'N/A',
     );
   }
 
@@ -2432,11 +2941,19 @@ class PdfGeneratorService {
         detailedInfo['receivingUnit'] as Map<String, dynamic>? ?? {};
 
     return ReceptionDisplayData(
-      receivingDoctor: reception['receivingDoctor']?.toString() ?? 'N/A',
+      receivingDoctor: reception['receivingDoctor']?.toString() ?? '',
+      doctorName: reception['doctorName']?.toString() ?? '',
+      doctorCedula: reception['doctorCedula']?.toString() ?? '',
       doctorSignature: reception['doctorSignature']?.toString(),
-      originPlace: receivingUnit['originPlace']?.toString() ?? 'N/A',
-      consultPlace: receivingUnit['consultPlace']?.toString() ?? 'N/A',
-      destinationPlace: receivingUnit['destinationPlace']?.toString() ?? 'N/A',
+      lugarOrigen: receivingUnit['lugarOrigen']?.toString() ?? '',
+      lugarDestino: receivingUnit['lugarDestino']?.toString() ?? '',
+      lugarConsulta: receivingUnit['lugarConsulta']?.toString() ?? '',
+      ambulanciaNumero: receivingUnit['ambulanciaNumero']?.toString() ?? '',
+      ambulanciaPlacas: receivingUnit['ambulanciaPlacas']?.toString() ?? '',
+      personal: receivingUnit['personal']?.toString() ?? '',
+      doctor: receivingUnit['doctor']?.toString() ?? '',
+      otroLugar: receivingUnit['otroLugar']?.toString() ?? '',
+      observaciones: receivingUnit['observaciones']?.toString() ?? '',
     );
   }
 
@@ -2469,44 +2986,6 @@ class PdfGeneratorService {
       return 'Calculado';
     }
     return 'N/A';
-  }
-
-  Map<String, bool> _extractAccidentTypes(Map<String, dynamic> detailedInfo) {
-    final clinicalHistory =
-        detailedInfo['clinicalHistory'] as Map<String, dynamic>? ?? {};
-    return {
-      'atropellado':
-          clinicalHistory['atropellado'] == true ||
-          clinicalHistory['atropellado'] == 'Sí',
-      'lxPorCaida':
-          clinicalHistory['lxPorCaida'] == true ||
-          clinicalHistory['lxPorCaida'] == 'Sí',
-      'intoxicacion':
-          clinicalHistory['intoxicacion'] == true ||
-          clinicalHistory['intoxicacion'] == 'Sí',
-      'amputacion':
-          clinicalHistory['amputacion'] == true ||
-          clinicalHistory['amputacion'] == 'Sí',
-      'choque':
-          clinicalHistory['choque'] == true ||
-          clinicalHistory['choque'] == 'Sí',
-      'agresion':
-          clinicalHistory['agresion'] == true ||
-          clinicalHistory['agresion'] == 'Sí',
-      'hpab':
-          clinicalHistory['hpab'] == true || clinicalHistory['hpab'] == 'Sí',
-      'hpaf':
-          clinicalHistory['hpaf'] == true || clinicalHistory['hpaf'] == 'Sí',
-      'volcadura':
-          clinicalHistory['volcadura'] == true ||
-          clinicalHistory['volcadura'] == 'Sí',
-      'quemadura':
-          clinicalHistory['quemadura'] == true ||
-          clinicalHistory['quemadura'] == 'Sí',
-      'otroTipo':
-          clinicalHistory['otroTipo'] == true ||
-          clinicalHistory['otroTipo'] == 'Sí',
-    };
   }
 
   String _getFromClinicalHistory(
