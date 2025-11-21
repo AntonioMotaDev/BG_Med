@@ -78,6 +78,10 @@ class FrapFirestore extends Equatable {
   factory FrapFirestore.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
 
+    // Debug: Ver qué contiene attentionNegative en los datos raw de Firebase
+    print('🔥 [FIREBASE RAW] attentionNegative for doc ${doc.id}:');
+    print(data['attentionNegative']);
+
     // Helper function para convertir timestamps de manera segura
     DateTime parseTimestamp(dynamic timestamp) {
       if (timestamp == null) {

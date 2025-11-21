@@ -767,60 +767,124 @@ class PdfGeneratorService {
           _buildCompactSectionHeader('INFORMACIÓN DEL PACIENTE'),
           pw.Padding(
             padding: const pw.EdgeInsets.all(4),
-            child: pw.Table(
-              border: null,
-              columnWidths: {
-                0: const pw.FlexColumnWidth(2),
-                1: const pw.FlexColumnWidth(1),
-                2: const pw.FlexColumnWidth(1),
-                3: const pw.FlexColumnWidth(1.5),
-              },
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                pw.TableRow(
-                  children: [
-                    _buildCompactTableCell(
-                      'Nombre: ${patient.fullName}',
-                      alignLeft: true,
-                    ),
-                    _buildCompactTableCell(
-                      'Edad: ${patient.age}',
-                      alignLeft: true,
-                    ),
-                    _buildCompactTableCell(
-                      'Sexo: ${patient.sex}',
-                      alignLeft: true,
-                    ),
-                    _buildCompactTableCell(
-                      'Seguro: ${patient.insurance}',
-                      alignLeft: true,
-                    ),
-                  ],
+                // Primera fila: Nombre completo (dato largo)
+                pw.Container(
+                  padding: const pw.EdgeInsets.only(bottom: 3),
+                  child: pw.Row(
+                    children: [
+                      pw.Text('Nombre: ', style: _labelStyle),
+                      pw.Expanded(
+                        child: pw.Text(patient.fullName, style: _valueStyle),
+                      ),
+                    ],
+                  ),
                 ),
-                pw.TableRow(
-                  children: [
-                    _buildCompactTableCell(
-                      'Dirección: ${patient.address}',
-                      alignLeft: true,
-                      colSpan: 2,
-                    ),
-                    _buildCompactTableCell(
-                      'Tel: ${patient.phone}',
-                      alignLeft: true,
-                    ),
-                    _buildCompactTableCell(
-                      'Responsable: ${patient.responsiblePerson}',
-                      alignLeft: true,
-                    ),
-                  ],
+                // Segunda fila: Datos cortos (edad, sexo, seguro)
+                pw.Container(
+                  padding: const pw.EdgeInsets.only(bottom: 3),
+                  child: pw.Row(
+                    children: [
+                      pw.Expanded(
+                        flex: 2,
+                        child: pw.Row(
+                          children: [
+                            pw.Text('Edad: ', style: _labelStyle),
+                            pw.Text(patient.age, style: _valueStyle),
+                          ],
+                        ),
+                      ),
+                      pw.Expanded(
+                        flex: 2,
+                        child: pw.Row(
+                          children: [
+                            pw.Text('Sexo: ', style: _labelStyle),
+                            pw.Text(patient.sex, style: _valueStyle),
+                          ],
+                        ),
+                      ),
+                      pw.Expanded(
+                        flex: 3,
+                        child: pw.Row(
+                          children: [
+                            pw.Text('Seguro: ', style: _labelStyle),
+                            pw.Expanded(
+                              child: pw.Text(
+                                patient.insurance,
+                                style: _valueStyle,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                pw.TableRow(
-                  children: [
-                    _buildCompactTableCell(
-                      'Padecimiento: $currentCondition',
-                      alignLeft: true,
-                      colSpan: 4,
+                // Tercera fila: Dirección (dato largo)
+                pw.Container(
+                  padding: const pw.EdgeInsets.only(bottom: 3),
+                  child: pw.Row(
+                    children: [
+                      pw.Text('Dirección: ', style: _labelStyle),
+                      pw.Expanded(
+                        child: pw.Text(patient.address, style: _valueStyle),
+                      ),
+                    ],
+                  ),
+                ),
+                // Cuarta fila: Teléfono y Responsable
+                pw.Container(
+                  padding: const pw.EdgeInsets.only(bottom: 3),
+                  child: pw.Row(
+                    children: [
+                      pw.Expanded(
+                        flex: 3,
+                        child: pw.Row(
+                          children: [
+                            pw.Text('Teléfono: ', style: _labelStyle),
+                            pw.Expanded(
+                              child: pw.Text(patient.phone, style: _valueStyle),
+                            ),
+                          ],
+                        ),
+                      ),
+                      pw.SizedBox(width: 8),
+                      pw.Expanded(
+                        flex: 4,
+                        child: pw.Row(
+                          children: [
+                            pw.Text('Responsable: ', style: _labelStyle),
+                            pw.Expanded(
+                              child: pw.Text(
+                                patient.responsiblePerson,
+                                style: _valueStyle,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Quinta fila: Padecimiento actual (dato largo)
+                pw.Container(
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border(
+                      top: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
                     ),
-                  ],
+                  ),
+                  padding: const pw.EdgeInsets.only(top: 3),
+                  child: pw.Row(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text('Padecimiento actual: ', style: _labelStyle),
+                      pw.Expanded(
+                        child: pw.Text(currentCondition, style: _valueStyle),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -852,8 +916,8 @@ class PdfGeneratorService {
               children: [
                 // Imagen de lesiones
                 pw.Container(
-                  width: 80,
-                  height: 120,
+                  width: 160,
+                  height: 240,
                   decoration: pw.BoxDecoration(
                     border: pw.Border.all(color: PdfColors.grey400),
                   ),
@@ -872,12 +936,13 @@ class PdfGeneratorService {
                     children: [
                       pw.Text(
                         'Lesiones registradas: ${drawnInjuries?.length ?? 0}',
-                        style: _valueStyle,
+                        style: _labelStyle,
                       ),
                       if (drawnInjuries != null &&
                           drawnInjuries.isNotEmpty) ...[
                         pw.SizedBox(height: 4),
                         pw.Text('Tipos:', style: _labelStyle),
+                        pw.SizedBox(height: 4),
                         pw.Wrap(
                           spacing: 2,
                           runSpacing: 1,
@@ -914,7 +979,7 @@ class PdfGeneratorService {
         ),
         child: pw.Text(
           '${typeName.substring(0, 3)}: ${entry.value}',
-          style: _smallStyle,
+          style: _valueStyle,
         ),
       );
     }).toList();
@@ -1073,8 +1138,8 @@ class PdfGeneratorService {
             pw.Padding(
               padding: const pw.EdgeInsets.all(4),
               child: pw.Text(
-                'Obs: ${management.observaciones}',
-                style: _smallStyle,
+                'Observaciones: ${management.observaciones}',
+                style: _valueStyle,
               ),
             ),
         ],
@@ -1229,32 +1294,44 @@ class PdfGeneratorService {
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 if (traumasList.isNotEmpty) ...[
-                  pw.Text('Traumas:', style: _labelStyle),
-                  pw.Wrap(
-                    spacing: 2,
-                    runSpacing: 1,
-                    children:
-                        traumasList
-                            .map(
-                              (trauma) => pw.Container(
-                                padding: const pw.EdgeInsets.symmetric(
-                                  horizontal: 3,
-                                  vertical: 1,
-                                ),
-                                decoration: pw.BoxDecoration(
-                                  color: PdfColors.grey100,
-                                  borderRadius: pw.BorderRadius.circular(2),
-                                  border: pw.Border.all(
-                                    color: PdfColors.grey400,
-                                    width: 0.3,
-                                  ),
-                                ),
-                                child: pw.Text(trauma, style: _smallStyle),
-                              ),
-                            )
-                            .toList(),
+                  pw.Row(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text('Traumas: ', style: _labelStyle),
+                      pw.Expanded(
+                        child: pw.Wrap(
+                          spacing: 4,
+                          runSpacing: 2,
+                          children:
+                              traumasList
+                                  .map(
+                                    (trauma) => pw.Container(
+                                      padding: const pw.EdgeInsets.symmetric(
+                                        horizontal: 3,
+                                        vertical: 1,
+                                      ),
+                                      decoration: pw.BoxDecoration(
+                                        color: PdfColors.grey100,
+                                        borderRadius: pw.BorderRadius.circular(
+                                          2,
+                                        ),
+                                        border: pw.Border.all(
+                                          color: PdfColors.grey400,
+                                          width: 0.3,
+                                        ),
+                                      ),
+                                      child: pw.Text(
+                                        trauma,
+                                        style: _valueStyle,
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                        ),
+                      ),
+                    ],
                   ),
-                  pw.SizedBox(height: 4),
+                  pw.SizedBox(height: 3),
                 ],
                 if (clinical.agenteCausal.isNotEmpty)
                   _buildCompactDetailRow(
@@ -1351,7 +1428,7 @@ class PdfGeneratorService {
                       padding: const pw.EdgeInsets.all(2),
                       child: pw.Text(
                         'Signo',
-                        style: _smallStyle.copyWith(
+                        style: _valueStyle.copyWith(
                           fontWeight: pw.FontWeight.bold,
                         ),
                       ),
@@ -1362,7 +1439,7 @@ class PdfGeneratorService {
                             padding: const pw.EdgeInsets.all(2),
                             child: pw.Text(
                               time,
-                              style: _smallStyle.copyWith(
+                              style: _valueStyle.copyWith(
                                 fontWeight: pw.FontWeight.bold,
                               ),
                               textAlign: pw.TextAlign.center,
@@ -1379,7 +1456,7 @@ class PdfGeneratorService {
                     children: [
                       pw.Padding(
                         padding: const pw.EdgeInsets.all(2),
-                        child: pw.Text(vitalSign, style: _smallStyle),
+                        child: pw.Text(vitalSign, style: _valueStyle),
                       ),
                       ...vitalSigns.timeColumns
                           .map(
@@ -1387,7 +1464,7 @@ class PdfGeneratorService {
                               padding: const pw.EdgeInsets.all(2),
                               child: pw.Text(
                                 vitalData[time] ?? '-',
-                                style: _smallStyle,
+                                style: _valueStyle,
                                 textAlign: pw.TextAlign.center,
                               ),
                             ),
@@ -1422,6 +1499,9 @@ class PdfGeneratorService {
   }
 
   pw.Widget _buildCompactPriorityJustification(PriorityDisplayData priority) {
+    // Normalizar prioridad a minúsculas para comparación
+    final priorityLower = priority.priority.toLowerCase();
+
     return pw.Container(
       width: double.infinity,
       decoration: pw.BoxDecoration(
@@ -1432,16 +1512,71 @@ class PdfGeneratorService {
           _buildCompactSectionHeader('JUSTIFICACIÓN DE PRIORIDAD'),
           pw.Padding(
             padding: const pw.EdgeInsets.all(4),
-            child: pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                _buildPriorityOption('Rojo', priority.priority == 'Rojo'),
-                _buildPriorityOption(
-                  'Amarillo',
-                  priority.priority == 'Amarillo',
+                // Opciones de prioridad
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildPriorityOption('Rojo', priorityLower == 'rojo'),
+                    _buildPriorityOption(
+                      'Amarillo',
+                      priorityLower == 'amarillo',
+                    ),
+                    _buildPriorityOption('Verde', priorityLower == 'verde'),
+                    _buildPriorityOption('Negro', priorityLower == 'negro'),
+                  ],
                 ),
-                _buildPriorityOption('Verde', priority.priority == 'Verde'),
-                _buildPriorityOption('Negro', priority.priority == 'Negro'),
+                pw.SizedBox(height: 4),
+
+                // Información adicional en dos columnas
+                pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    // Columna izquierda
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          if (priority.pupils.isNotEmpty)
+                            _buildCompactDetailRow('Pupilas:', priority.pupils),
+                          if (priority.skinColor.isNotEmpty)
+                            _buildCompactDetailRow(
+                              'Color de piel:',
+                              priority.skinColor,
+                            ),
+                          if (priority.skin.isNotEmpty)
+                            _buildCompactDetailRow('Piel:', priority.skin),
+                        ],
+                      ),
+                    ),
+                    pw.SizedBox(width: 4),
+                    // Columna derecha
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          if (priority.temperature.isNotEmpty)
+                            _buildCompactDetailRow(
+                              'Temperatura:',
+                              priority.temperature,
+                            ),
+                          if (priority.influence.isNotEmpty)
+                            _buildCompactDetailRow(
+                              'Influencia:',
+                              priority.influence,
+                            ),
+                          if (priority.especifique.isNotEmpty)
+                            _buildCompactDetailRow(
+                              'Especifique:',
+                              priority.especifique,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -1803,6 +1938,13 @@ class PdfGeneratorService {
       return pw.SizedBox();
     }
 
+    // Determinar el título según si hay negativa de atención
+    final hasAttentionNegative = hasPatientSignature || hasWitnessSignature;
+    final sectionTitle =
+        hasAttentionNegative
+            ? 'NEGATIVA DE SERVICIO'
+            : 'RECEPCION DEL PACIENTE';
+
     return pw.Container(
       width: double.infinity,
       decoration: pw.BoxDecoration(
@@ -1810,7 +1952,30 @@ class PdfGeneratorService {
       ),
       child: pw.Column(
         children: [
-          _buildCompactSectionHeader('RECEPCION DEL PACIENTE'),
+          _buildCompactSectionHeader(sectionTitle),
+          // Texto de declaración si es negativa de atención
+          if (hasAttentionNegative)
+            pw.Container(
+              width: double.infinity,
+              padding: const pw.EdgeInsets.symmetric(
+                vertical: 6,
+                horizontal: 8,
+              ),
+              decoration: pw.BoxDecoration(
+                border: pw.Border(
+                  bottom: pw.BorderSide(color: PdfColors.grey400, width: 0.5),
+                ),
+              ),
+              child: pw.Text(
+                'Me he negado a recibir atención médica y a ser trasladado por los paramédicos de Ambulancias BgMed, habiéndoseme informado de los riesgos que conlleva mi decisión.',
+                style: pw.TextStyle(
+                  fontSize: 8,
+                  fontStyle: pw.FontStyle.italic,
+                  color: PdfColors.grey800,
+                ),
+                textAlign: pw.TextAlign.justify,
+              ),
+            ),
           pw.Padding(
             padding: const pw.EdgeInsets.all(4),
             child: pw.Row(
@@ -1819,12 +1984,12 @@ class PdfGeneratorService {
               children: [
                 if (hasConsentimiento)
                   _buildCompactSignature(
-                    'Consentimiento',
+                    'Consentimiento del Servicio',
                     displayData.consentimientoServicio!,
                   ),
                 if (hasPatientSignature)
                   _buildCompactSignature(
-                    'Paciente',
+                    'Negativa de Atencion',
                     attentionNegative!['patientSignature']!,
                   ),
                 if (hasWitnessSignature)
@@ -1870,7 +2035,6 @@ class PdfGeneratorService {
     String text, {
     bool isHeader = false,
     bool alignLeft = false,
-    int colSpan = 1,
   }) {
     return pw.Padding(
       padding: const pw.EdgeInsets.all(2),
@@ -1888,7 +2052,8 @@ class PdfGeneratorService {
       child: pw.Row(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
-          pw.SizedBox(width: 55, child: pw.Text(label, style: _labelStyle)),
+          pw.SizedBox(width: 70, child: pw.Text(label, style: _labelStyle)),
+          pw.SizedBox(width: 4),
           pw.Expanded(child: pw.Text(value, style: _valueStyle)),
         ],
       ),
@@ -1900,9 +2065,9 @@ class PdfGeneratorService {
       children: [
         pw.Text(
           label,
-          style: _smallStyle.copyWith(fontWeight: pw.FontWeight.bold),
+          style: _valueStyle.copyWith(fontWeight: pw.FontWeight.bold),
         ),
-        pw.Text(value, style: _smallStyle),
+        pw.Text(value, style: _valueStyle),
       ],
     );
   }
@@ -1920,7 +2085,7 @@ class PdfGeneratorService {
           ),
         ),
         pw.SizedBox(width: 2),
-        pw.Text(label, style: _smallStyle),
+        pw.Text(label, style: _valueStyle),
       ],
     );
   }
@@ -1931,8 +2096,8 @@ class PdfGeneratorService {
       children: [
         if (signatureImage != null)
           pw.Container(
-            width: 40,
-            height: 20,
+            width: 80,
+            height: 40,
             child: pw.Image(signatureImage, fit: pw.BoxFit.contain),
           )
         else
