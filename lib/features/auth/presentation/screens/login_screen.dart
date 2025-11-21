@@ -34,11 +34,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     ref.listen<AuthState>(authNotifierProvider, (previous, next) {
       if (next.status == AuthStatus.error && next.errorMessage != null) {
         final errorMessage = next.errorMessage!;
-        
+
         // Mostrar AlertDialog para errores de credenciales específicos
         if (errorMessage.contains('No se encontró un usuario con este email') ||
             errorMessage.contains('Contraseña incorrecta') ||
-            errorMessage.contains('Las credenciales proporcionadas son incorrectas') ||
+            errorMessage.contains(
+              'Las credenciales proporcionadas son incorrectas',
+            ) ||
             errorMessage.contains('El formato del email es inválido')) {
           _showCredentialsErrorDialog(context, errorMessage);
         } else {
@@ -51,7 +53,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           );
         }
-        
+
         // Limpiar error después de mostrarlo
         Future.delayed(const Duration(seconds: 3), () {
           ref.read(authNotifierProvider.notifier).clearError();
@@ -68,33 +70,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 60),
-              
+
               // Logo y título
               _buildHeader(),
               const SizedBox(height: 60),
-              
+
               // Formulario de login
               _buildLoginForm(authState),
               const SizedBox(height: 24),
-              
+
               // Botón de login
               _buildLoginButton(authState),
               const SizedBox(height: 16),
-              
+
               // Enlace de contraseña olvidada
               _buildForgotPasswordLink(),
               const SizedBox(height: 32),
-              
+
               // Divider
               _buildDivider(),
               const SizedBox(height: 32),
-              
+
               // Enlace de registro
               _buildRegisterLink(),
               const SizedBox(height: 16),
-              
-              // Botón de debug temporal
-              if (kDebugMode) _buildDebugButton(),
             ],
           ),
         ),
@@ -134,10 +133,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         const SizedBox(height: 8),
         Text(
           'Sistema de Registro Prehospitalario',
-          style: TextStyle(
-            fontSize: 16,
-            color: Colors.grey[600],
-          ),
+          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
           textAlign: TextAlign.center,
         ),
       ],
@@ -173,7 +169,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             },
           ),
           const SizedBox(height: 16),
-          
+
           // Campo de contraseña
           TextFormField(
             controller: _passwordController,
@@ -185,9 +181,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               prefixIcon: const Icon(Icons.lock_outlined),
               suffixIcon: IconButton(
                 icon: Icon(
-                  _isPasswordVisible 
-                      ? Icons.visibility_off 
-                      : Icons.visibility,
+                  _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
                 ),
                 onPressed: () {
                   setState(() {
@@ -218,9 +212,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return SizedBox(
       height: 56,
       child: ElevatedButton(
-        onPressed: authState.status == AuthStatus.loading 
-            ? null 
-            : _handleLogin,
+        onPressed: authState.status == AuthStatus.loading ? null : _handleLogin,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppTheme.primaryBlue,
           foregroundColor: Colors.white,
@@ -228,22 +220,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             borderRadius: BorderRadius.circular(12),
           ),
         ),
-        child: authState.status == AuthStatus.loading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
+        child:
+            authState.status == AuthStatus.loading
+                ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+                : const Text(
+                  'Iniciar Sesión',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
-              )
-            : const Text(
-                'Iniciar Sesión',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
       ),
     );
   }
@@ -253,17 +243,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       onPressed: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => const ForgotPasswordScreen(),
-          ),
+          MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
         );
       },
       child: const Text(
         '¿Olvidaste tu contraseña?',
-        style: TextStyle(
-          color: Colors.blue,
-          fontWeight: FontWeight.w500,
-        ),
+        style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w500),
       ),
     );
   }
@@ -291,51 +276,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(
-          '¿No tienes cuenta? ',
-          style: TextStyle(color: Colors.grey[600]),
-        ),
+        Text('¿No tienes cuenta? ', style: TextStyle(color: Colors.grey[600])),
         TextButton(
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (context) => const RegisterScreen(),
-              ),
+              MaterialPageRoute(builder: (context) => const RegisterScreen()),
             );
           },
           child: const Text(
             'Regístrate',
-            style: TextStyle(
-              color: Colors.blue,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w600),
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildDebugButton() {
-    return ElevatedButton(
-      onPressed: () {
-        final authState = ref.read(authNotifierProvider);
-        print('🔍 DEBUG - Estado actual: ${authState.status}');
-        print('🔍 DEBUG - Usuario: ${authState.user?.name}');
-        print('🔍 DEBUG - Error: ${authState.errorMessage}');
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Estado: ${authState.status}, Usuario: ${authState.user?.name ?? "null"}'),
-            backgroundColor: Colors.blue,
-          ),
-        );
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.orange,
-        foregroundColor: Colors.white,
-      ),
-      child: const Text('Debug Estado'),
     );
   }
 
@@ -343,79 +297,73 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(
-              Icons.error_outline,
-              color: Colors.red[600],
-              size: 24,
+      builder:
+          (context) => AlertDialog(
+            title: Row(
+              children: [
+                Icon(Icons.error_outline, color: Colors.red[600], size: 24),
+                const SizedBox(width: 8),
+                const Text(
+                  'Error de Autenticación',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            const Text(
-              'Error de Autenticación',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(errorMessage, style: const TextStyle(fontSize: 16)),
+                const SizedBox(height: 12),
+                Text(
+                  'Por favor verifica tus credenciales e intenta nuevamente.',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  // Limpiar campos según el tipo de error
+                  if (errorMessage.contains(
+                    'El formato del email es inválido',
+                  )) {
+                    _emailController.clear();
+                  } else if (errorMessage.contains('Contraseña incorrecta')) {
+                    _passwordController.clear();
+                  } else if (errorMessage.contains(
+                        'Las credenciales proporcionadas son incorrectas',
+                      ) ||
+                      errorMessage.contains(
+                        'No se encontró un usuario con este email',
+                      )) {
+                    // Para credenciales incorrectas generales, limpiar solo la contraseña
+                    _passwordController.clear();
+                  }
+                },
+                style: TextButton.styleFrom(foregroundColor: Colors.blue[600]),
+                child: const Text(
+                  'Entendido',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
               ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              errorMessage,
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Por favor verifica tus credenciales e intenta nuevamente.',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              // Limpiar campos según el tipo de error
-              if (errorMessage.contains('El formato del email es inválido')) {
-                _emailController.clear();
-              } else if (errorMessage.contains('Contraseña incorrecta')) {
-                _passwordController.clear();
-              } else if (errorMessage.contains('Las credenciales proporcionadas son incorrectas') ||
-                         errorMessage.contains('No se encontró un usuario con este email')) {
-                // Para credenciales incorrectas generales, limpiar solo la contraseña
-                _passwordController.clear();
-              }
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.blue[600],
-            ),
-            child: const Text(
-              'Entendido',
-              style: TextStyle(fontWeight: FontWeight.w600),
+            ],
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
           ),
-        ],
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
     );
   }
 
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
-      ref.read(authNotifierProvider.notifier).signIn(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-      );
+      ref
+          .read(authNotifierProvider.notifier)
+          .signIn(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+          );
     }
   }
-} 
+}

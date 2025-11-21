@@ -6,7 +6,8 @@ class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
   @override
-  ConsumerState<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+  ConsumerState<ForgotPasswordScreen> createState() =>
+      _ForgotPasswordScreenState();
 }
 
 class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
@@ -60,23 +61,23 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 40),
-              
+
               // Header
               _buildHeader(),
               const SizedBox(height: 40),
-              
+
               if (!_emailSent) ...[
                 // Formulario
                 _buildForm(),
                 const SizedBox(height: 24),
-                
+
                 // Botón de envío
                 _buildSendButton(),
               ] else ...[
                 // Mensaje de éxito
                 _buildSuccessMessage(),
                 const SizedBox(height: 24),
-                
+
                 // Botón para volver
                 _buildBackButton(),
               ],
@@ -95,17 +96,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           height: 60,
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.orange[600]!, Colors.orange[400]!],
+              colors: [Colors.blue[600]!, Colors.blue[400]!],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(16),
           ),
-          child: const Icon(
-            Icons.lock_reset,
-            color: Colors.white,
-            size: 30,
-          ),
+          child: const Icon(Icons.lock_reset, color: Colors.white, size: 30),
         ),
         const SizedBox(height: 24),
         const Text(
@@ -121,10 +118,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           _emailSent
               ? 'Te hemos enviado un enlace de restablecimiento'
               : 'Ingresa tu email para recibir un enlace de restablecimiento',
-          style: TextStyle(
-            fontSize: 16,
-            color: Colors.grey[600],
-          ),
+          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
           textAlign: TextAlign.center,
         ),
       ],
@@ -142,9 +136,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           labelText: 'Email',
           hintText: 'Ingresa tu email registrado',
           prefixIcon: const Icon(Icons.email_outlined),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         ),
         validator: (value) {
           if (value == null || value.isEmpty) {
@@ -165,28 +157,26 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       child: ElevatedButton(
         onPressed: _isLoading ? null : _handleSendReset,
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.orange[600],
+          backgroundColor: Colors.blue[600],
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
         ),
-        child: _isLoading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
+        child:
+            _isLoading
+                ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+                : const Text(
+                  'Enviar Enlace',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
-              )
-            : const Text(
-                'Enviar Enlace',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
       ),
     );
   }
@@ -201,11 +191,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       ),
       child: Column(
         children: [
-          Icon(
-            Icons.check_circle,
-            color: Colors.green[600],
-            size: 48,
-          ),
+          Icon(Icons.check_circle, color: Colors.green[600], size: 48),
           const SizedBox(height: 16),
           Text(
             'Email enviado exitosamente',
@@ -218,18 +204,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           const SizedBox(height: 8),
           Text(
             'Revisa tu bandeja de entrada y sigue las instrucciones para restablecer tu contraseña.',
-            style: TextStyle(
-              color: Colors.green[600],
-            ),
+            style: TextStyle(color: Colors.green[600]),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
           Text(
             'Si no recibes el email en unos minutos, revisa tu carpeta de spam.',
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 12,
-            ),
+            style: TextStyle(color: Colors.grey[600], fontSize: 12),
             textAlign: TextAlign.center,
           ),
         ],
@@ -251,10 +232,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         ),
         child: const Text(
           'Volver al Login',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
     );
@@ -267,15 +245,15 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       });
 
       try {
-        await ref.read(authNotifierProvider.notifier).resetPassword(
-          _emailController.text.trim(),
-        );
-        
+        await ref
+            .read(authNotifierProvider.notifier)
+            .resetPassword(_emailController.text.trim());
+
         setState(() {
           _isLoading = false;
           _emailSent = true;
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Enlace de restablecimiento enviado'),
@@ -291,4 +269,4 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       }
     }
   }
-} 
+}
