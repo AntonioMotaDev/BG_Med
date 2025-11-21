@@ -391,14 +391,14 @@ class PdfGeneratorService {
   );
 
   late pw.TextStyle _labelStyle = pw.TextStyle(
-    fontSize: 18,
+    fontSize: 8,
     fontWeight: pw.FontWeight.bold,
-    color: PdfColors.grey900,
+    color: PdfColors.black,
   );
 
   late pw.TextStyle _valueStyle = pw.TextStyle(
-    fontSize: 16,
-    color: PdfColors.black,
+    fontSize: 8,
+    color: PdfColors.grey800,
   );
 
   late pw.TextStyle _headerStyle = pw.TextStyle(
@@ -561,6 +561,8 @@ class PdfGeneratorService {
                         pw.SizedBox(height: 4),
                         _buildCompactVitalSignsTable(displayData.vitalSigns),
                         pw.SizedBox(height: 4),
+                        _buildCompactSampleSection(displayData.sample),
+                        pw.SizedBox(height: 4),
                         _buildCompactInjuryLocationSection(
                           record,
                           combinedImage,
@@ -586,29 +588,25 @@ class PdfGeneratorService {
                             displayData.gynecoObstetric,
                           ),
                         ],
+                        pw.SizedBox(height: 4),
                         _buildCompactPriorityJustification(
                           displayData.priority,
                         ),
                         pw.SizedBox(height: 4),
-                        _buildCompactSampleSection(displayData.sample),
-                        pw.SizedBox(height: 4),
                         _buildCompactInsumosSection(displayData.insumos),
-                        pw.SizedBox(height: 4),
-                        _buildCompactPersonalMedicoSection(
-                          displayData.management,
-                        ),
                         pw.SizedBox(height: 4),
                         _buildCompactReceivingUnitSection(
                           displayData.reception,
+                          displayData.management,
                         ),
+                        pw.SizedBox(height: 4),
+                        // FIRMAS COMPACTAS
+                        _buildCompactAllSignaturesSection(displayData, record),
                       ],
                     ),
                   ),
                 ],
               ),
-
-              // FIRMAS COMPACTAS
-              _buildCompactAllSignaturesSection(displayData, record),
             ],
           );
         },
@@ -1689,7 +1687,10 @@ class PdfGeneratorService {
     );
   }
 
-  pw.Widget _buildCompactReceivingUnitSection(ReceptionDisplayData reception) {
+  pw.Widget _buildCompactReceivingUnitSection(
+    ReceptionDisplayData reception,
+    ManagementDisplayData management,
+  ) {
     // Verificar si hay algún dato
     final hasData =
         reception.lugarOrigen.isNotEmpty ||
@@ -1714,33 +1715,66 @@ class PdfGeneratorService {
           _buildCompactSectionHeader('UNIDAD MÉDICA QUE RECIBE'),
           pw.Padding(
             padding: const pw.EdgeInsets.all(4),
-            child: pw.Column(
+            child: pw.Row(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                if (reception.lugarOrigen.isNotEmpty)
-                  _buildCompactDetailRow('Origen:', reception.lugarOrigen),
-                if (reception.lugarDestino.isNotEmpty)
-                  _buildCompactDetailRow('Destino:', reception.lugarDestino),
-                if (reception.lugarConsulta.isNotEmpty)
-                  _buildCompactDetailRow('Consulta:', reception.lugarConsulta),
-                if (reception.ambulanciaNumero.isNotEmpty)
-                  _buildCompactDetailRow(
-                    'Ambulancia:',
-                    reception.ambulanciaNumero,
+                // Columna izquierda
+                pw.Expanded(
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      if (reception.lugarOrigen.isNotEmpty)
+                        _buildCompactDetailRow(
+                          'Origen:',
+                          reception.lugarOrigen,
+                        ),
+                      if (reception.lugarDestino.isNotEmpty)
+                        _buildCompactDetailRow(
+                          'Destino:',
+                          reception.lugarDestino,
+                        ),
+                      if (reception.lugarConsulta.isNotEmpty)
+                        _buildCompactDetailRow(
+                          'Consulta:',
+                          reception.lugarConsulta,
+                        ),
+                    ],
                   ),
-                if (reception.ambulanciaPlacas.isNotEmpty)
-                  _buildCompactDetailRow('Placas:', reception.ambulanciaPlacas),
-                if (reception.personal.isNotEmpty)
-                  _buildCompactDetailRow('Personal:', reception.personal),
-                if (reception.doctor.isNotEmpty)
-                  _buildCompactDetailRow('Doctor:', reception.doctor),
-                if (reception.otroLugar.isNotEmpty)
-                  _buildCompactDetailRow('Otro:', reception.otroLugar),
-                if (reception.observaciones.isNotEmpty)
-                  _buildCompactDetailRow('Obs:', reception.observaciones),
+                ),
+                pw.SizedBox(width: 4),
+                // Columna derecha
+                pw.Expanded(
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      if (reception.ambulanciaNumero.isNotEmpty)
+                        _buildCompactDetailRow(
+                          'Ambulancia:',
+                          reception.ambulanciaNumero,
+                        ),
+                      if (reception.ambulanciaPlacas.isNotEmpty)
+                        _buildCompactDetailRow(
+                          'Placas:',
+                          reception.ambulanciaPlacas,
+                        ),
+                      if (reception.personal.isNotEmpty ||
+                          reception.doctor.isNotEmpty)
+                        _buildCompactDetailRow(
+                          reception.personal,
+                          reception.doctor,
+                        ),
+                      if (reception.otroLugar.isNotEmpty)
+                        _buildCompactDetailRow('Otro:', reception.otroLugar),
+                      if (reception.observaciones.isNotEmpty)
+                        _buildCompactDetailRow('Obs:', reception.observaciones),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
+          pw.SizedBox(height: 4),
+          _buildCompactPersonalMedicoSection(management),
         ],
       ),
     );
@@ -1776,7 +1810,7 @@ class PdfGeneratorService {
       ),
       child: pw.Column(
         children: [
-          _buildCompactSectionHeader('FIRMAS Y CONSENTIMIENTOS'),
+          _buildCompactSectionHeader('RECEPCION DEL PACIENTE'),
           pw.Padding(
             padding: const pw.EdgeInsets.all(4),
             child: pw.Row(
@@ -1854,7 +1888,7 @@ class PdfGeneratorService {
       child: pw.Row(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
-          pw.SizedBox(width: 40, child: pw.Text(label, style: _labelStyle)),
+          pw.SizedBox(width: 55, child: pw.Text(label, style: _labelStyle)),
           pw.Expanded(child: pw.Text(value, style: _valueStyle)),
         ],
       ),
@@ -1911,7 +1945,7 @@ class PdfGeneratorService {
             child: pw.Center(child: pw.Text('N/A', style: _smallStyle)),
           ),
         pw.SizedBox(height: 2),
-        pw.Text(label, style: _smallStyle),
+        pw.Text(label, style: _valueStyle),
       ],
     );
   }
@@ -1926,8 +1960,8 @@ class PdfGeneratorService {
       children: [
         if (signatureImage != null)
           pw.Container(
-            width: 40,
-            height: 20,
+            width: 80,
+            height: 40,
             child: pw.Image(signatureImage, fit: pw.BoxFit.contain),
           )
         else
@@ -1943,11 +1977,11 @@ class PdfGeneratorService {
         pw.Text('Médico', style: _smallStyle),
         if (doctorName.isNotEmpty) ...[
           pw.SizedBox(height: 1),
-          pw.Text(doctorName, style: _smallStyle),
+          pw.Text(doctorName, style: _valueStyle),
         ],
         if (doctorCedula.isNotEmpty) ...[
           pw.SizedBox(height: 1),
-          pw.Text('Céd. $doctorCedula', style: _smallStyle),
+          pw.Text('Cédula: $doctorCedula', style: _valueStyle),
         ],
       ],
     );
