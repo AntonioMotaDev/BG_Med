@@ -493,14 +493,14 @@ class _InjuryLocationFormDialogState extends State<InjuryLocationFormDialog> {
   }
 
   void _onPanUpdate(DragUpdateDetails details) {
-    final RenderBox renderBox = _paintKey.currentContext!.findRenderObject() as RenderBox;
+    /*final RenderBox renderBox = _paintKey.currentContext!.findRenderObject() as RenderBox;
     final localPosition = renderBox.globalToLocal(details.globalPosition);
     
     setState(() {
       if (_drawnInjuries.isNotEmpty) {
         _drawnInjuries.last.points.add(localPosition);
       }
-    });
+    });*/
   }
 
   void _onPanEnd(DragEndDetails details) {
