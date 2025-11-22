@@ -45,6 +45,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/key.properties
+
+# Keystore files
+*.jks
 
 # Gradle
 build.gradle.kts
