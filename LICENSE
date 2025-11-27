@@ -1,0 +1,132 @@
+LICENCIA DE SOFTWARE PROPIETARIO
+BG Med - Sistema de Atención Prehospitalaria
+
+
+================================================================================
+
+TÉRMINOS Y CONDICIONES DE USO
+
+1. CONCESIÓN DE LICENCIA
+
+   Este software y su documentación asociada (el "Software") son propiedad 
+   exclusiva de Antonio Mota y Diego Chacón (los "Propietarios"). El acceso
+   a este repositorio NO otorga ningún derecho de uso, modificación, 
+   distribución o comercialización del Software.
+
+2. RESTRICCIONES
+
+   Queda ESTRICTAMENTE PROHIBIDO, sin la autorización previa y por escrito 
+   de los Propietarios:
+
+   a) Usar el Software para cualquier propósito comercial o no comercial
+   b) Copiar, modificar, adaptar o crear trabajos derivados del Software
+   c) Distribuir, sublicenciar, vender, alquilar o transferir el Software
+   d) Realizar ingeniería inversa, descompilar o desensamblar el Software
+   e) Eliminar o alterar avisos de copyright, marcas o derechos de propiedad
+   f) Usar el Software en violación de leyes o regulaciones aplicables
+
+3. ACCESO AL CÓDIGO FUENTE
+
+   El acceso al código fuente de este repositorio se proporciona únicamente
+   con fines de:
+   
+   - Revisión por parte de colaboradores autorizados
+   - Evaluación por parte de instituciones médicas interesadas
+   - Auditorías de seguridad por parte de entidades autorizadas
+   
+   El acceso NO constituye una licencia de uso.
+
+4. DATOS MÉDICOS Y PRIVACIDAD
+
+   Este Software está diseñado para manejar información médica confidencial.
+   Cualquier uso del Software debe cumplir con:
+   
+   - Ley General de Protección de Datos Personales en Posesión de Sujetos 
+     Obligados (México)
+   - Norma Oficial Mexicana NOM-004-SSA3-2012
+   - Regulaciones de privacidad médica aplicables en la jurisdicción de uso
+
+5. GARANTÍAS Y RESPONSABILIDAD
+
+   EL SOFTWARE SE PROPORCIONA "TAL CUAL", SIN GARANTÍAS DE NINGÚN TIPO,
+   EXPRESAS O IMPLÍCITAS, INCLUYENDO PERO NO LIMITADO A GARANTÍAS DE
+   COMERCIABILIDAD, IDONEIDAD PARA UN PROPÓSITO PARTICULAR Y NO INFRACCIÓN.
+
+   EN NINGÚN CASO LOS PROPIETARIOS SERÁN RESPONSABLES POR DAÑOS DIRECTOS,
+   INDIRECTOS, INCIDENTALES, ESPECIALES, EJEMPLARES O CONSECUENTES
+   (INCLUYENDO PERO NO LIMITADO A LA ADQUISICIÓN DE BIENES O SERVICIOS
+   SUSTITUTOS, PÉRDIDA DE USO, DATOS O BENEFICIOS, O INTERRUPCIÓN DEL
+   NEGOCIO) QUE SURJAN DEL USO O LA IMPOSIBILIDAD DE USAR EL SOFTWARE.
+
+6. USO MÉDICO PROFESIONAL
+
+   Este Software está diseñado EXCLUSIVAMENTE para ser usado por profesionales
+   de la salud certificados. El uso inadecuado del Software puede resultar en:
+   
+   - Responsabilidad legal y profesional
+   - Compromiso de la seguridad del paciente
+   - Violaciones de privacidad médica
+   
+   Los usuarios son totalmente responsables del uso correcto y ético del Software.
+
+7. PROPIEDAD INTELECTUAL
+
+   Todos los derechos de propiedad intelectual sobre el Software, incluyendo
+   pero no limitado a:
+   
+   - Código fuente y código objeto
+   - Diseño de interfaz de usuario
+   - Algoritmos y lógica de negocio
+   - Documentación y materiales asociados
+   - Marcas comerciales y nombres comerciales
+   
+   Son y permanecerán como propiedad exclusiva de los Propietarios.
+
+8. CONTRIBUCIONES
+
+   Las contribuciones al Software solo pueden realizarse mediante acuerdo
+   previo con los Propietarios. Al contribuir al Software, usted:
+   
+   a) Garantiza que tiene derecho a realizar la contribución
+   b) Otorga a los Propietarios una licencia perpetua, mundial, no exclusiva,
+      transferible y libre de regalías para usar, modificar y distribuir
+      su contribución
+   c) Acepta que su contribución puede ser incorporada en versiones
+      comerciales del Software
+
+9. TERMINACIÓN
+
+   Esta licencia es efectiva hasta su terminación. Sus derechos bajo esta
+   licencia terminarán automáticamente sin previo aviso si incumple cualquiera
+   de estos términos.
+
+10. JURISDICCIÓN Y LEY APLICABLE
+
+    Esta licencia se regirá e interpretará de acuerdo con las leyes de
+    los Estados Unidos Mexicanos. Cualquier disputa relacionada con esta
+    licencia será sometida a la jurisdicción exclusiva de los tribunales
+    competentes en México.
+
+11. CONTACTO PARA LICENCIAS
+
+    Para consultas sobre licencias comerciales, uso autorizado o permisos
+    especiales, contactar a:
+    
+    Email: dev.antoniomota@gmail.com
+    GitHub: https://github.com/AntonioMotaDev/BG_Med_Flutter
+
+================================================================================
+
+AVISO IMPORTANTE:
+
+Si ha recibido este Software por error o sin autorización, debe:
+1. Eliminar inmediatamente todas las copias del Software
+2. Notificar a los Propietarios del incidente
+3. Abstenerse de cualquier uso o distribución del Software
+
+La violación de los términos de esta licencia puede resultar en acciones
+legales civiles y penales.
+
+================================================================================
+
+Última actualización: 27 de noviembre de 2025
