@@ -9,7 +9,6 @@ import 'package:bg_med/core/services/frap_unified_service.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 // DTO Classes for unified data representation
 class PatientDisplayData {
@@ -379,8 +378,8 @@ class PdfGeneratorService {
   // Cached fonts
   pw.Font? _robotoRegular;
   pw.Font? _robotoBold;
-  pw.Font? _robotoItalic;
-  pw.Font? _robotoBoldItalic;
+  // pw.Font? _robotoItalic;
+  // pw.Font? _robotoBoldItalic;
   bool _fontsLoaded = false;
 
   // Cached styles - INICIALIZADAS DIRECTAMENTE
@@ -432,12 +431,6 @@ class PdfGeneratorService {
       _robotoBold = pw.Font.ttf(
         await rootBundle.load('assets/fonts/Roboto-Bold.ttf'),
       );
-      _robotoItalic = pw.Font.ttf(
-        await rootBundle.load('assets/fonts/Roboto-Italic.ttf'),
-      );
-      _robotoBoldItalic = pw.Font.ttf(
-        await rootBundle.load('assets/fonts/Roboto-BoldItalic.ttf'),
-      );
 
       // Actualizar estilos con fuentes cargadas
       _sectionTitleStyle = _sectionTitleStyle.copyWith(font: _robotoBold);
@@ -451,8 +444,6 @@ class PdfGeneratorService {
       try {
         _robotoRegular = pw.Font.times();
         _robotoBold = pw.Font.timesBold();
-        _robotoItalic = pw.Font.timesItalic();
-        _robotoBoldItalic = pw.Font.timesBoldItalic();
 
         // Actualizar estilos con fuentes por defecto
         _sectionTitleStyle = _sectionTitleStyle.copyWith(font: _robotoBold);
@@ -464,8 +455,6 @@ class PdfGeneratorService {
         _log('Fallback fonts also failed');
         _robotoRegular = pw.Font.helvetica();
         _robotoBold = pw.Font.helveticaBold();
-        _robotoItalic = pw.Font.helveticaOblique();
-        _robotoBoldItalic = pw.Font.helveticaBoldOblique();
       }
     }
 
@@ -493,15 +482,15 @@ class PdfGeneratorService {
     await _initializeFontsAndStyles();
 
     // Preload the human silhouette image
-    pw.MemoryImage? silhouetteImage;
-    try {
-      final imageBytes = await rootBundle.load(
-        'assets/images/silueta_humana.jpeg',
-      );
-      silhouetteImage = pw.MemoryImage(imageBytes.buffer.asUint8List());
-    } catch (e) {
-      _log('Error loading silhouette image: $e');
-    }
+    // pw.MemoryImage? silhouetteImage;
+    // try {
+    //   final imageBytes = await rootBundle.load(
+    //     'assets/images/silueta_humana.jpeg',
+    //   );
+    //   silhouetteImage = pw.MemoryImage(imageBytes.buffer.asUint8List());
+    // } catch (e) {
+    //   _log('Error loading silhouette image: $e');
+    // }
 
     // Crear imagen combinada con silueta y lesiones
     pw.MemoryImage? combinedImage;

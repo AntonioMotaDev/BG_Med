@@ -4,7 +4,7 @@ import 'package:bg_med/features/auth/presentation/screens/forgot_password_screen
 import 'package:flutter/material.dart';
 import 'package:bg_med/core/theme/app_theme.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/foundation.dart';
+// import 'package:flutter/foundation.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -105,20 +105,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Column(
       children: [
         Container(
-          width: 80,
-          height: 80,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.blue[600]!, Colors.blue[400]!],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: const Icon(
-            Icons.local_hospital,
-            color: Colors.white,
-            size: 40,
+          width: 240,
+          height: 240,
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
+          child: Image.asset(
+            'assets/icons/icon.png',
+            width: 240,
+            height: 240,
+            fit: BoxFit.contain,
           ),
         ),
         const SizedBox(height: 24),

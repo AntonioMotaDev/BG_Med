@@ -201,6 +201,45 @@ class UnifiedFrapNotifier extends StateNotifier<UnifiedFrapState> {
     }
   }
 
+  // Actualizar registro (local y nube)
+  Future<UnifiedUpdateResult> updateRecord(
+    UnifiedFrapRecord originalRecord,
+    FrapData updatedData,
+  ) async {
+    try {
+      // Usar el servicio unificado para actualizar
+      final result = await _unifiedService.updateRecord(
+        originalRecord,
+        updatedData,
+      );
+
+      if (result.success || result.updatedLocally) {
+        // Recargar la lista si se actualizó localmente
+        await loadAllRecords();
+      }
+
+      // Actualizar estado con mensaje de error si hubo alguno
+      if (!result.success) {
+        state = state.copyWith(error: result.message);
+      }
+
+      return result;
+    } catch (e) {
+      final errorResult =
+          UnifiedUpdateResult()
+            ..success = false
+            ..message = 'Error actualizando registro: $e';
+
+      state = state.copyWith(error: errorResult.message);
+      return errorResult;
+    }
+  }
+
+  // Verificar permisos de edición
+  Future<EditPermission> canEditRecord(UnifiedFrapRecord record) async {
+    return await _unifiedService.canEditRecord(record);
+  }
+
   // Sincronizar registros
   Future<void> syncRecords() async {
     state = state.copyWith(syncStatus: SyncStatus.syncing);

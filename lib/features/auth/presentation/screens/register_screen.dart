@@ -1,3 +1,4 @@
+import 'package:bg_med/core/theme/app_theme.dart';
 import 'package:bg_med/features/auth/presentation/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -46,25 +47,28 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           ref.read(authNotifierProvider.notifier).clearError();
         });
       }
-      
+
       // Mostrar éxito cuando se crea el usuario
-      if (next.status == AuthStatus.authenticated && previous?.status == AuthStatus.loading) {
+      if (next.status == AuthStatus.authenticated &&
+          previous?.status == AuthStatus.loading) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('¡Usuario creado exitosamente! Redirigiendo al dashboard...'),
+            content: Text(
+              '¡Usuario creado exitosamente! Redirigiendo al dashboard...',
+            ),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
             duration: Duration(seconds: 3),
           ),
         );
-        
+
         // Redirigir al dashboard después de un breve delay
         Future.delayed(const Duration(seconds: 2), () {
           if (mounted) {
             Navigator.pushNamedAndRemoveUntil(
-              context, 
-              '/dashboard', 
-              (route) => false
+              context,
+              '/dashboard',
+              (route) => false,
             );
           }
         });
@@ -88,19 +92,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 20),
-              
+
               // Header
               _buildHeader(),
               const SizedBox(height: 40),
-              
+
               // Formulario de registro
               _buildRegisterForm(authState),
               const SizedBox(height: 24),
-              
+
               // Botón de registro
               _buildRegisterButton(authState),
               const SizedBox(height: 32),
-              
+
               // Enlace de login
               _buildLoginLink(),
             ],
@@ -114,20 +118,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     return Column(
       children: [
         Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.blue[600]!, Colors.blue[400]!],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: const Icon(
-            Icons.person_add,
-            color: Colors.white,
-            size: 30,
+          width: 240,
+          height: 240,
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
+          child: Image.asset(
+            'assets/icons/icon.png',
+            width: 240,
+            height: 240,
+            fit: BoxFit.contain,
           ),
         ),
         const SizedBox(height: 16),
@@ -142,10 +140,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         const SizedBox(height: 8),
         Text(
           'Completa los datos para crear tu cuenta',
-          style: TextStyle(
-            fontSize: 16,
-            color: Colors.grey[600],
-          ),
+          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
         ),
       ],
     );
@@ -176,7 +171,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             },
           ),
           const SizedBox(height: 16),
-          
+
           // Campo de email
           TextFormField(
             controller: _emailController,
@@ -194,14 +189,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               if (value == null || value.isEmpty) {
                 return 'Por favor ingresa tu correo electrónico';
               }
-              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+              if (!RegExp(
+                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+              ).hasMatch(value)) {
                 return 'Por favor ingresa un correo electrónico válido';
               }
               return null;
             },
           ),
           const SizedBox(height: 16),
-          
+
           // Campo de contraseña
           TextFormField(
             controller: _passwordController,
@@ -213,9 +210,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               prefixIcon: const Icon(Icons.lock_outlined),
               suffixIcon: IconButton(
                 icon: Icon(
-                  _isPasswordVisible 
-                      ? Icons.visibility_off 
-                      : Icons.visibility,
+                  _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
                 ),
                 onPressed: () {
                   setState(() {
@@ -238,7 +233,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             },
           ),
           const SizedBox(height: 16),
-          
+
           // Campo de confirmar contraseña
           TextFormField(
             controller: _confirmPasswordController,
@@ -250,8 +245,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               prefixIcon: const Icon(Icons.lock_outlined),
               suffixIcon: IconButton(
                 icon: Icon(
-                  _isConfirmPasswordVisible 
-                      ? Icons.visibility_off 
+                  _isConfirmPasswordVisible
+                      ? Icons.visibility_off
                       : Icons.visibility,
                 ),
                 onPressed: () {
@@ -283,32 +278,29 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     return SizedBox(
       height: 56,
       child: ElevatedButton(
-        onPressed: authState.status == AuthStatus.loading 
-            ? null 
-            : _handleRegister,
+        onPressed:
+            authState.status == AuthStatus.loading ? null : _handleRegister,
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blue[600],
+          backgroundColor: AppTheme.primaryBlue,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
         ),
-        child: authState.status == AuthStatus.loading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
+        child:
+            authState.status == AuthStatus.loading
+                ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+                : const Text(
+                  'Crear Cuenta',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
-              )
-            : const Text(
-                'Crear Cuenta',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
       ),
     );
   }
@@ -317,18 +309,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(
-          '¿Ya tienes cuenta? ',
-          style: TextStyle(color: Colors.grey[600]),
-        ),
+        Text('¿Ya tienes cuenta? ', style: TextStyle(color: Colors.grey[600])),
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: const Text(
             'Inicia sesión',
-            style: TextStyle(
-              color: Colors.blue,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w600),
           ),
         ),
       ],
@@ -337,12 +323,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   void _handleRegister() {
     if (_formKey.currentState!.validate()) {
-      ref.read(authNotifierProvider.notifier).register(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-        name: _nameController.text.trim(),
-        role: 'user', // Por defecto, los nuevos usuarios tienen rol 'user'
-      );
+      ref
+          .read(authNotifierProvider.notifier)
+          .register(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+            name: _nameController.text.trim(),
+            role: 'user', // Por defecto, los nuevos usuarios tienen rol 'user'
+          );
     }
   }
-} 
+}

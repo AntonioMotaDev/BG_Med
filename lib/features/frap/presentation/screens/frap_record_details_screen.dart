@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bg_med/core/services/frap_unified_service.dart';
 import 'package:bg_med/features/frap/presentation/screens/pdf_preview_screen.dart';
+import 'package:bg_med/features/frap/presentation/screens/frap_screen.dart';
 import 'package:bg_med/core/theme/app_theme.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
@@ -707,7 +708,7 @@ class _FrapRecordDetailsScreenState
           injury.points.map((point) {
             // Convertir del espacio original al espacio actual
             final adjustedX = (point.dx - originalRect!.left) * scaleX;
-            final adjustedY = (point.dy - originalRect!.top) * scaleY;
+            final adjustedY = (point.dy - originalRect.top) * scaleY;
 
             return Offset(adjustedX, adjustedY);
           }).toList();
@@ -2086,15 +2087,112 @@ class _FrapRecordDetailsScreenState
     );
   }
 
-  void _editRecord() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Función de edición para ${widget.record.patientName} próximamente disponible',
+  Future<void> _editRecord() async {
+    final context = this.context;
+    final notifier = ref.read(unifiedFrapProvider.notifier);
+    final messenger = ScaffoldMessenger.of(context);
+
+    // Verificar permisos de edición
+    final permission = await notifier.canEditRecord(widget.record);
+
+    if (!permission.canEdit) {
+      // Mostrar error si no se puede editar
+      if (mounted) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(permission.message!),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+      return;
+    }
+
+    if (permission.needsDownload) {
+      // Mostrar advertencia si necesita descarga
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              title: const Text('Descargar registro'),
+              content: Text(permission.message!),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Cancelar'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Continuar'),
+                ),
+              ],
+            ),
+      );
+
+      if (confirmed != true) return;
+
+      // Descargar el registro (sincronizar desde la nube)
+      if (mounted) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                SizedBox(width: 16),
+                Text('Descargando registro...'),
+              ],
+            ),
+            duration: Duration(seconds: 30),
+          ),
+        );
+      }
+
+      try {
+        // Sincronizar registros (esto descargará el registro de la nube)
+        await notifier.syncRecords();
+
+        if (mounted) {
+          messenger.hideCurrentSnackBar();
+          messenger.showSnackBar(
+            const SnackBar(
+              content: Text('Registro descargado correctamente'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          messenger.hideCurrentSnackBar();
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text('Error al descargar: $e'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+        return;
+      }
+    }
+
+    // Navegar a pantalla de edición
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => FrapScreen(editingRecord: widget.record),
         ),
-        backgroundColor: Colors.orange,
-      ),
-    );
+      );
+    }
   }
 
   void _generatePDF() {
@@ -2798,7 +2896,7 @@ class _FrapRecordDetailsScreenState
                         // Lista de lesiones
                         if (drawnInjuries.isNotEmpty) ...[
                           ...drawnInjuries.asMap().entries.map((entry) {
-                            final index = entry.key;
+                            // final index = entry.key;
                             final injury = entry.value;
                             final typeName = _getInjuryTypeName(
                               injury.injuryType,
@@ -3274,126 +3372,126 @@ class _FrapRecordDetailsScreenState
     );
   }
 
-  Widget _buildPersonalMedicoList(Map<String, dynamic> data) {
-    final personalListRaw = data['personalMedicoList'] as List<dynamic>? ?? [];
+  // Widget _buildPersonalMedicoList(Map<String, dynamic> data) {
+  //   final personalListRaw = data['personalMedicoList'] as List<dynamic>? ?? [];
 
-    // Aplanar la lista si viene anidada (cada elemento puede ser una lista)
-    final personalList = <Map<String, dynamic>>[];
-    final seenPersonal = <String>{}; // Para evitar duplicados
+  //   // Aplanar la lista si viene anidada (cada elemento puede ser una lista)
+  //   final personalList = <Map<String, dynamic>>[];
+  //   final seenPersonal = <String>{}; // Para evitar duplicados
 
-    for (var item in personalListRaw) {
-      if (item is List) {
-        // Si el item es una lista, agregar cada elemento
-        for (var subItem in item) {
-          if (subItem is Map) {
-            final nombre = subItem['nombre']?.toString() ?? '';
-            final cedula = subItem['cedula']?.toString() ?? '';
-            final key = '$nombre-$cedula'; // Clave única
+  //   for (var item in personalListRaw) {
+  //     if (item is List) {
+  //       // Si el item es una lista, agregar cada elemento
+  //       for (var subItem in item) {
+  //         if (subItem is Map) {
+  //           final nombre = subItem['nombre']?.toString() ?? '';
+  //           final cedula = subItem['cedula']?.toString() ?? '';
+  //           final key = '$nombre-$cedula'; // Clave única
 
-            if (!seenPersonal.contains(key) && nombre.isNotEmpty) {
-              seenPersonal.add(key);
-              personalList.add(Map<String, dynamic>.from(subItem));
-            }
-          }
-        }
-      } else if (item is Map) {
-        // Si el item es un mapa directamente
-        final nombre = item['nombre']?.toString() ?? '';
-        final cedula = item['cedula']?.toString() ?? '';
-        final key = '$nombre-$cedula';
+  //           if (!seenPersonal.contains(key) && nombre.isNotEmpty) {
+  //             seenPersonal.add(key);
+  //             personalList.add(Map<String, dynamic>.from(subItem));
+  //           }
+  //         }
+  //       }
+  //     } else if (item is Map) {
+  //       // Si el item es un mapa directamente
+  //       final nombre = item['nombre']?.toString() ?? '';
+  //       final cedula = item['cedula']?.toString() ?? '';
+  //       final key = '$nombre-$cedula';
 
-        if (!seenPersonal.contains(key) && nombre.isNotEmpty) {
-          seenPersonal.add(key);
-          personalList.add(Map<String, dynamic>.from(item));
-        }
-      }
-    }
+  //       if (!seenPersonal.contains(key) && nombre.isNotEmpty) {
+  //         seenPersonal.add(key);
+  //         personalList.add(Map<String, dynamic>.from(item));
+  //       }
+  //     }
+  //   }
 
-    if (personalList.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.grey.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.info_outline, color: Colors.grey[600], size: 20),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'No se ha registrado personal médico',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
+  //   if (personalList.isEmpty) {
+  //     return Container(
+  //       padding: const EdgeInsets.all(16),
+  //       decoration: BoxDecoration(
+  //         color: Colors.grey.withValues(alpha: 0.1),
+  //         borderRadius: BorderRadius.circular(8),
+  //         border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+  //       ),
+  //       child: Row(
+  //         children: [
+  //           Icon(Icons.info_outline, color: Colors.grey[600], size: 20),
+  //           const SizedBox(width: 12),
+  //           Expanded(
+  //             child: Text(
+  //               'No se ha registrado personal médico',
+  //               style: TextStyle(
+  //                 color: Colors.grey[600],
+  //                 fontStyle: FontStyle.italic,
+  //               ),
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     );
+  //   }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Personal médico (${personalList.length}):',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-            color: Colors.purple[700],
-          ),
-        ),
-        const SizedBox(height: 8),
-        ...personalList.map((personal) {
-          final nombre = personal['nombre']?.toString() ?? '';
-          final especialidad = personal['especialidad']?.toString() ?? '';
-          final cedula = personal['cedula']?.toString() ?? '';
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       Text(
+  //         'Personal médico (${personalList.length}):',
+  //         style: TextStyle(
+  //           fontWeight: FontWeight.bold,
+  //           fontSize: 16,
+  //           color: Colors.purple[700],
+  //         ),
+  //       ),
+  //       const SizedBox(height: 8),
+  //       ...personalList.map((personal) {
+  //         final nombre = personal['nombre']?.toString() ?? '';
+  //         final especialidad = personal['especialidad']?.toString() ?? '';
+  //         final cedula = personal['cedula']?.toString() ?? '';
 
-          return Container(
-            padding: const EdgeInsets.all(12),
-            margin: const EdgeInsets.only(bottom: 8),
-            decoration: BoxDecoration(
-              color: Colors.purple.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.purple.withValues(alpha: 0.3)),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.person, color: Colors.purple, size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        nombre,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                          color: Colors.purple,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '$especialidad (Cédula: $cedula)',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
-      ],
-    );
-  }
+  //         return Container(
+  //           padding: const EdgeInsets.all(12),
+  //           margin: const EdgeInsets.only(bottom: 8),
+  //           decoration: BoxDecoration(
+  //             color: Colors.purple.withValues(alpha: 0.1),
+  //             borderRadius: BorderRadius.circular(8),
+  //             border: Border.all(color: Colors.purple.withValues(alpha: 0.3)),
+  //           ),
+  //           child: Row(
+  //             children: [
+  //               Icon(Icons.person, color: Colors.purple, size: 20),
+  //               const SizedBox(width: 12),
+  //               Expanded(
+  //                 child: Column(
+  //                   crossAxisAlignment: CrossAxisAlignment.start,
+  //                   children: [
+  //                     Text(
+  //                       nombre,
+  //                       style: const TextStyle(
+  //                         fontWeight: FontWeight.bold,
+  //                         fontSize: 12,
+  //                         color: Colors.purple,
+  //                       ),
+  //                     ),
+  //                     const SizedBox(height: 4),
+  //                     Text(
+  //                       '$especialidad (Cédula: $cedula)',
+  //                       style: const TextStyle(
+  //                         fontSize: 11,
+  //                         color: Colors.black87,
+  //                       ),
+  //                     ),
+  //                   ],
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //         );
+  //       }),
+  //     ],
+  //   );
+  // }
 
   // Método para verificar si hay datos de atención negativa
   bool _hasAttentionNegativeData() {

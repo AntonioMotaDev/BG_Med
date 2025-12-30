@@ -44,21 +44,12 @@ class AuthWrapper extends ConsumerWidget {
           children: [
             // Logo
             Container(
-              width: 80,
-              height: 80,
+              width: 240,
+              height: 240,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.blue[600]!, Colors.blue[400]!],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Icon(
-                Icons.local_hospital,
-                color: Colors.blue,
-                size: 40,
-              ),
+              child: Image.asset('assets/icons/icon.png', fit: BoxFit.contain),
             ),
             const SizedBox(height: 24),
 

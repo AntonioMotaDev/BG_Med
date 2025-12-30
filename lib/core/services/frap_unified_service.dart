@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bg_med/core/services/frap_local_service.dart';
 import 'package:bg_med/core/services/frap_firestore_service.dart';
 import 'package:bg_med/core/services/folio_generator_service.dart';
@@ -733,6 +734,172 @@ class FrapUnifiedService {
     return result;
   }
 
+  /// Actualizar un registro de forma unificada (local y nube)
+  Future<UnifiedUpdateResult> updateRecord(
+    UnifiedFrapRecord originalRecord,
+    FrapData updatedData,
+  ) async {
+    final result = UnifiedUpdateResult();
+
+    try {
+      final localId = originalRecord.localRecord?.id;
+      final cloudId = originalRecord.cloudRecord?.id;
+
+      // Verificar que tenga al menos un ID
+      if (localId == null && cloudId == null) {
+        result.success = false;
+        result.message = 'No se puede actualizar: registro sin identificadores';
+        return result;
+      }
+
+      // Verificar conectividad
+      final hasInternet = await hasInternetConnection();
+
+      // 1. Actualizar en almacenamiento local si existe
+      if (localId != null) {
+        try {
+          await _localService.updateFrapRecord(
+            frapId: localId,
+            frapData: updatedData,
+          );
+          result.updatedLocally = true;
+        } catch (e) {
+          result.localError = 'Error al actualizar localmente: $e';
+          debugPrint(result.localError);
+        }
+      } else if (hasInternet) {
+        // Si no existe localmente pero vamos a actualizar en nube, crear copia local
+        try {
+          final newLocalId = await _localService.createFrapRecord(
+            frapData: updatedData,
+          );
+          result.updatedLocally = newLocalId != null;
+          if (result.updatedLocally) {
+            debugPrint('Copia local creada con ID: $newLocalId');
+          }
+        } catch (e) {
+          result.localError = 'Error al crear copia local: $e';
+          debugPrint(result.localError);
+        }
+      }
+
+      // 2. Actualizar en Firestore si existe y hay conexión
+      if (cloudId != null && hasInternet) {
+        try {
+          await _cloudService.updateFrapRecord(
+            frapId: cloudId,
+            frapData: updatedData,
+          );
+          result.updatedInCloud = true;
+        } catch (e) {
+          result.cloudError = 'Error al actualizar en la nube: $e';
+          debugPrint(result.cloudError);
+        }
+      } else if (cloudId != null && !hasInternet) {
+        // Marcar para sincronización posterior
+        result.requiresSync = true;
+        result.cloudError =
+            'Sin conexión. Los cambios se sincronizarán cuando haya internet';
+      }
+
+      // Determinar éxito general
+      final wasOnlyLocal = cloudId == null;
+      final wasOnlyCloud = localId == null && cloudId != null;
+
+      if (wasOnlyLocal) {
+        // Solo existía localmente
+        result.success = result.updatedLocally;
+        result.message =
+            result.success
+                ? 'Registro actualizado correctamente (solo local)'
+                : 'Error al actualizar el registro local';
+      } else if (wasOnlyCloud) {
+        // Solo existía en la nube
+        result.success = result.updatedInCloud || result.updatedLocally;
+        if (result.success) {
+          result.message =
+              result.updatedInCloud
+                  ? 'Registro actualizado correctamente'
+                  : 'Registro descargado y actualizado localmente';
+        } else {
+          result.message = 'Error al actualizar el registro';
+        }
+      } else if (!hasInternet) {
+        // Existe en ambos pero sin conexión
+        result.success = result.updatedLocally;
+        result.message =
+            result.success
+                ? 'Registro actualizado localmente. Se sincronizará cuando haya conexión'
+                : 'Error al actualizar el registro';
+      } else {
+        // Existe en ambos con internet
+        result.success = result.updatedLocally && result.updatedInCloud;
+        if (result.success) {
+          result.message = 'Registro actualizado completamente';
+        } else if (result.updatedLocally && !result.updatedInCloud) {
+          result.message =
+              'Registro actualizado localmente pero falló en la nube';
+        } else if (!result.updatedLocally && result.updatedInCloud) {
+          result.message =
+              'Registro actualizado en la nube pero falló localmente';
+        } else {
+          result.message = 'Error al actualizar el registro';
+        }
+      }
+    } catch (e) {
+      result.success = false;
+      result.message = 'Error inesperado al actualizar: $e';
+      debugPrint('Error en updateRecord: $e');
+    }
+
+    return result;
+  }
+
+  /// Verificar permisos de edición para un registro
+  Future<EditPermission> canEditRecord(UnifiedFrapRecord record) async {
+    try {
+      // Obtener el usuario actual
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        return EditPermission.denied(
+          'Debes iniciar sesión para editar registros',
+        );
+      }
+
+      final currentUserId = currentUser.uid;
+
+      // Obtener el userId del registro (solo disponible en cloudRecord)
+      final recordOwnerId = record.cloudRecord?.userId;
+
+      // 1. Verificar propiedad del registro (solo si existe en la nube)
+      if (recordOwnerId != null && currentUserId != recordOwnerId) {
+        return EditPermission.denied(
+          'No puedes editar registros de otros usuarios',
+        );
+      }
+
+      // 2. Si solo está en nube y no hay internet
+      if (record.localRecord == null && !await hasInternetConnection()) {
+        return EditPermission.denied(
+          'Sin conexión. No se puede editar este registro',
+        );
+      }
+
+      // 3. Si solo está en nube con internet (necesita descarga)
+      if (record.localRecord == null && await hasInternetConnection()) {
+        return EditPermission.allowedWithWarning(
+          'Este registro se descargará localmente para editarlo',
+        );
+      }
+
+      // 4. Permitir edición normal (tiene copia local o puede descargar)
+      return EditPermission.allowed();
+    } catch (e) {
+      debugPrint('Error al verificar permisos de edición: $e');
+      return EditPermission.denied('Error al verificar permisos: $e');
+    }
+  }
+
   /// Limpiar recursos
   void dispose() {
     _migrationService.dispose();
@@ -985,4 +1152,33 @@ class UnifiedDeleteResult {
   String? localError;
   String? cloudError;
   bool wasOnlyLocal = false;
+}
+
+// Resultado de actualización unificada
+class UnifiedUpdateResult {
+  bool success = false;
+  String message = '';
+  bool updatedLocally = false;
+  bool updatedInCloud = false;
+  String? localError;
+  String? cloudError;
+  bool requiresSync = false;
+}
+
+// Permisos de edición
+class EditPermission {
+  final bool canEdit;
+  final String? message;
+  final bool needsDownload;
+
+  EditPermission.allowed()
+    : canEdit = true,
+      message = null,
+      needsDownload = false;
+
+  EditPermission.allowedWithWarning(this.message)
+    : canEdit = true,
+      needsDownload = true;
+
+  EditPermission.denied(this.message) : canEdit = false, needsDownload = false;
 }

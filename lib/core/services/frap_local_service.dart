@@ -85,6 +85,25 @@ class FrapLocalService {
     }
   }
 
+  // ACTUALIZAR un registro FRAP local existente (sobrecarga con modelo Frap)
+  Future<void> updateFrapRecordDirect(String frapId, Frap updatedFrap) async {
+    try {
+      final box = await _getFrapBox;
+      final existingIndex = box.values.toList().indexWhere(
+        (frap) => frap.id == frapId,
+      );
+
+      if (existingIndex == -1) {
+        throw Exception('Registro no encontrado con ID: $frapId');
+      }
+
+      // Actualizar en Hive
+      await box.putAt(existingIndex, updatedFrap);
+    } catch (e) {
+      throw Exception('Error al actualizar el registro FRAP local: $e');
+    }
+  }
+
   // OBTENER un registro FRAP por ID
   Future<Frap?> getFrapRecord(String frapId) async {
     try {

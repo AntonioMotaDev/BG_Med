@@ -21,7 +21,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class FrapScreen extends ConsumerStatefulWidget {
-  const FrapScreen({super.key});
+  final UnifiedFrapRecord? editingRecord;
+
+  const FrapScreen({super.key, this.editingRecord});
 
   @override
   ConsumerState<FrapScreen> createState() => _FrapScreenState();
@@ -35,18 +37,86 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
     super.initState();
     // Inicializar el servicio de sincronización automática
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Remover la llamada a initialize ya que no existe
-      // ref.read(unifiedRecordsNotifierProvider.notifier).initialize();
+      // Si estamos editando, cargar los datos del registro
+      if (widget.editingRecord != null) {
+        _loadRecordForEditing();
+      }
     });
+  }
+
+  void _loadRecordForEditing() {
+    final record = widget.editingRecord!;
+    final detailedInfo = record.getDetailedInfo();
+
+    // Crear FrapData desde el registro existente
+    final frapData = FrapData(
+      serviceInfo: Map<String, dynamic>.from(detailedInfo['serviceInfo'] ?? {}),
+      registryInfo: Map<String, dynamic>.from(
+        detailedInfo['registryInfo'] ?? {},
+      ),
+      patientInfo: Map<String, dynamic>.from(detailedInfo['patientInfo'] ?? {}),
+      management: Map<String, dynamic>.from(detailedInfo['management'] ?? {}),
+      medications: Map<String, dynamic>.from(detailedInfo['medications'] ?? {}),
+      gynecoObstetric: Map<String, dynamic>.from(
+        detailedInfo['gynecoObstetric'] ?? {},
+      ),
+      attentionNegative: Map<String, dynamic>.from(
+        detailedInfo['attentionNegative'] ?? {},
+      ),
+      pathologicalHistory: Map<String, dynamic>.from(
+        detailedInfo['pathologicalHistory'] ?? {},
+      ),
+      clinicalHistory: Map<String, dynamic>.from(
+        detailedInfo['clinicalHistory'] ?? {},
+      ),
+      physicalExam: Map<String, dynamic>.from(
+        detailedInfo['physicalExam'] ?? {},
+      ),
+      priorityJustification: Map<String, dynamic>.from(
+        detailedInfo['priorityJustification'] ?? {},
+      ),
+      injuryLocation: Map<String, dynamic>.from(
+        detailedInfo['injuryLocation'] ?? {},
+      ),
+      receivingUnit: Map<String, dynamic>.from(
+        detailedInfo['receivingUnit'] ?? {},
+      ),
+      patientReception: Map<String, dynamic>.from(
+        detailedInfo['patientReception'] ?? {},
+      ),
+      insumos:
+          (detailedInfo['insumos'] as List?)
+              ?.map((i) => Map<String, dynamic>.from(i as Map))
+              .toList() ??
+          [],
+    );
+
+    // Cargar los datos en el provider
+    ref.read(frapDataProvider.notifier).setAllData(frapData);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Editando registro de ${record.patientName}'),
+          backgroundColor: Colors.blue,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final frapData = ref.watch(frapDataProvider);
+    final isEditing = widget.editingRecord != null;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Registro de Atención Prehospitalaria'),
+        title: Text(
+          isEditing
+              ? 'Editar Registro FRAP'
+              : 'Registro de Atención Prehospitalaria',
+        ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         actions: [
@@ -363,7 +433,13 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
                           ),
                         )
                         : const Icon(Icons.cloud_upload),
-                label: Text(_isSaving ? 'Guardando...' : 'Guardar Registro'),
+                label: Text(
+                  _isSaving
+                      ? (isEditing ? 'Actualizando...' : 'Guardando...')
+                      : (isEditing
+                          ? 'Actualizar Registro'
+                          : 'Guardar Registro'),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryBlue,
                   foregroundColor: Colors.white,
@@ -911,28 +987,53 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
 
     try {
       final frapData = ref.read(frapDataProvider);
+      final isEditing = widget.editingRecord != null;
 
-      // Usar el servicio unificado
-      final result = await ref
-          .read(unifiedRecordsNotifierProvider.notifier)
-          .saveRecord(frapData);
+      if (isEditing) {
+        // Modo edición: actualizar registro existente
+        final originalRecord = widget.editingRecord!;
 
-      if (!mounted) return;
+        final result = await ref
+            .read(unifiedFrapProvider.notifier)
+            .updateRecord(originalRecord, frapData);
 
-      if (result.success) {
-        // Mostrar diálogo de éxito
-        _showSuccessDialog(result);
+        if (!mounted) return;
 
-        // Limpiar datos del formulario
-        ref.read(frapDataProvider.notifier).clearAllData();
+        if (result.success || result.updatedLocally) {
+          _showUpdateSuccessDialog(result);
+          // Regresar a la pantalla anterior
+          Navigator.of(context).pop();
+        } else {
+          _showErrorDialog(
+            'Error al Actualizar',
+            result.message.isNotEmpty
+                ? result.message
+                : 'No se pudo actualizar el registro',
+          );
+        }
       } else {
-        // Mostrar error
-        _showErrorDialog(
-          'Error al Guardar',
-          result.message.isNotEmpty
-              ? result.message
-              : 'No se pudo guardar el registro',
-        );
+        // Modo creación: guardar nuevo registro
+        final result = await ref
+            .read(unifiedRecordsNotifierProvider.notifier)
+            .saveRecord(frapData);
+
+        if (!mounted) return;
+
+        if (result.success) {
+          // Mostrar diálogo de éxito
+          _showSuccessDialog(result);
+
+          // Limpiar datos del formulario
+          ref.read(frapDataProvider.notifier).clearAllData();
+        } else {
+          // Mostrar error
+          _showErrorDialog(
+            'Error al Guardar',
+            result.message.isNotEmpty
+                ? result.message
+                : 'No se pudo guardar el registro',
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -945,6 +1046,68 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
         });
       }
     }
+  }
+
+  void _showUpdateSuccessDialog(UnifiedUpdateResult result) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Row(
+              children: [
+                Icon(
+                  Icons.check_circle,
+                  color: result.success ? Colors.green : Colors.orange,
+                ),
+                const SizedBox(width: 8),
+                const Text('Registro Actualizado'),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(result.message),
+                if (result.requiresSync) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.sync,
+                          color: Colors.orange.shade700,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Se sincronizará con la nube cuando haya conexión.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.orange.shade700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Aceptar'),
+              ),
+            ],
+          ),
+    );
   }
 
   void _showSuccessDialog(UnifiedSaveResult result) {

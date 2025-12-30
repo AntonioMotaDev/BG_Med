@@ -30,7 +30,7 @@ class _FrapRecordsListScreenState extends ConsumerState<FrapRecordsListScreen> {
   // Paginación
   int _currentPage = 1;
   final int _itemsPerPage = 25;
-  final List<int> _itemsPerPageOptions = [10, 25, 50, 100];
+  // final List<int> _itemsPerPageOptions = [10, 25, 50, 100];
 
   @override
   void initState() {
@@ -120,17 +120,6 @@ class _FrapRecordsListScreenState extends ConsumerState<FrapRecordsListScreen> {
     return records.sublist(
       startIndex,
       endIndex > records.length ? records.length : endIndex,
-    );
-  }
-
-  void _goToPage(int page) {
-    setState(() {
-      _currentPage = page;
-    });
-    _scrollController.animateTo(
-      0,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
     );
   }
 
@@ -589,15 +578,112 @@ class _FrapRecordsListScreenState extends ConsumerState<FrapRecordsListScreen> {
     );
   }
 
-  void _editRecord(UnifiedFrapRecord record) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Función de edición para ${record.patientName} próximamente disponible',
+  Future<void> _editRecord(UnifiedFrapRecord record) async {
+    final context = this.context;
+    final notifier = ref.read(unifiedFrapProvider.notifier);
+    final messenger = ScaffoldMessenger.of(context);
+
+    // Verificar permisos de edición
+    final permission = await notifier.canEditRecord(record);
+
+    if (!permission.canEdit) {
+      // Mostrar error si no se puede editar
+      if (mounted) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(permission.message!),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+      return;
+    }
+
+    if (permission.needsDownload) {
+      // Mostrar advertencia si necesita descarga
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              title: const Text('Descargar registro'),
+              content: Text(permission.message!),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Cancelar'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Continuar'),
+                ),
+              ],
+            ),
+      );
+
+      if (confirmed != true) return;
+
+      // Descargar el registro (sincronizar desde la nube)
+      if (mounted) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                SizedBox(width: 16),
+                Text('Descargando registro...'),
+              ],
+            ),
+            duration: Duration(seconds: 30),
+          ),
+        );
+      }
+
+      try {
+        // Sincronizar registros (esto descargará el registro de la nube)
+        await notifier.syncRecords();
+
+        if (mounted) {
+          messenger.hideCurrentSnackBar();
+          messenger.showSnackBar(
+            const SnackBar(
+              content: Text('Registro descargado correctamente'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          messenger.hideCurrentSnackBar();
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text('Error al descargar: $e'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+        return;
+      }
+    }
+
+    // Navegar a pantalla de edición
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => FrapScreen(editingRecord: record),
         ),
-        backgroundColor: Colors.orange,
-      ),
-    );
+      );
+    }
   }
 
   Future<void> _duplicateRecord(UnifiedFrapRecord record) async {

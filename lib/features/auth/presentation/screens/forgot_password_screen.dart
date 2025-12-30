@@ -1,3 +1,4 @@
+import 'package:bg_med/core/theme/app_theme.dart';
 import 'package:bg_med/features/auth/presentation/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -92,17 +93,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     return Column(
       children: [
         Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.blue[600]!, Colors.blue[400]!],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: const Icon(Icons.lock_reset, color: Colors.white, size: 30),
+          width: 240,
+          height: 240,
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
+          child: Image.asset('assets/icons/icon.png', fit: BoxFit.contain),
         ),
         const SizedBox(height: 24),
         const Text(
@@ -157,7 +151,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       child: ElevatedButton(
         onPressed: _isLoading ? null : _handleSendReset,
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blue[600],
+          backgroundColor: AppTheme.primaryBlue,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),

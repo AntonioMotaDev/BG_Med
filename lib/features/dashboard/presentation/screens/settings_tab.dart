@@ -282,66 +282,66 @@ class SettingsTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildThemeTile(BuildContext context, WidgetRef ref, bool isDarkMode) {
-    final themeNotifier = ref.read(themeProvider.notifier);
-    final primaryColor =
-        isDarkMode ? AppTheme.primaryBlueDark : AppTheme.primaryBlue;
+  // Widget _buildThemeTile(BuildContext context, WidgetRef ref, bool isDarkMode) {
+  //   final themeNotifier = ref.read(themeProvider.notifier);
+  //   final primaryColor =
+  //       isDarkMode ? AppTheme.primaryBlueDark : AppTheme.primaryBlue;
 
-    return ListTile(
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: primaryColor.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(themeNotifier.themeIcon, color: primaryColor, size: 20),
-      ),
-      title: const Text(
-        'Tema de la App',
-        style: TextStyle(fontWeight: FontWeight.w600),
-      ),
-      subtitle: Text('Modo ${themeNotifier.themeDescription}'),
-      trailing: PopupMenuButton<AppThemeMode>(
-        icon: const Icon(Icons.arrow_drop_down),
-        onSelected: (AppThemeMode mode) {
-          themeNotifier.setTheme(mode);
-        },
-        itemBuilder:
-            (context) => [
-              const PopupMenuItem(
-                value: AppThemeMode.light,
-                child: Row(
-                  children: [
-                    Icon(Icons.light_mode, size: 20),
-                    SizedBox(width: 12),
-                    Text('Claro'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: AppThemeMode.dark,
-                child: Row(
-                  children: [
-                    Icon(Icons.dark_mode, size: 20),
-                    SizedBox(width: 12),
-                    Text('Oscuro'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: AppThemeMode.system,
-                child: Row(
-                  children: [
-                    Icon(Icons.brightness_auto, size: 20),
-                    SizedBox(width: 12),
-                    Text('Sistema'),
-                  ],
-                ),
-              ),
-            ],
-      ),
-    );
-  }
+  //   return ListTile(
+  //     leading: Container(
+  //       padding: const EdgeInsets.all(8),
+  //       decoration: BoxDecoration(
+  //         color: primaryColor.withOpacity(0.1),
+  //         borderRadius: BorderRadius.circular(8),
+  //       ),
+  //       child: Icon(themeNotifier.themeIcon, color: primaryColor, size: 20),
+  //     ),
+  //     title: const Text(
+  //       'Tema de la App',
+  //       style: TextStyle(fontWeight: FontWeight.w600),
+  //     ),
+  //     subtitle: Text('Modo ${themeNotifier.themeDescription}'),
+  //     trailing: PopupMenuButton<AppThemeMode>(
+  //       icon: const Icon(Icons.arrow_drop_down),
+  //       onSelected: (AppThemeMode mode) {
+  //         themeNotifier.setTheme(mode);
+  //       },
+  //       itemBuilder:
+  //           (context) => [
+  //             const PopupMenuItem(
+  //               value: AppThemeMode.light,
+  //               child: Row(
+  //                 children: [
+  //                   Icon(Icons.light_mode, size: 20),
+  //                   SizedBox(width: 12),
+  //                   Text('Claro'),
+  //                 ],
+  //               ),
+  //             ),
+  //             const PopupMenuItem(
+  //               value: AppThemeMode.dark,
+  //               child: Row(
+  //                 children: [
+  //                   Icon(Icons.dark_mode, size: 20),
+  //                   SizedBox(width: 12),
+  //                   Text('Oscuro'),
+  //                 ],
+  //               ),
+  //             ),
+  //             const PopupMenuItem(
+  //               value: AppThemeMode.system,
+  //               child: Row(
+  //                 children: [
+  //                   Icon(Icons.brightness_auto, size: 20),
+  //                   SizedBox(width: 12),
+  //                   Text('Sistema'),
+  //                 ],
+  //               ),
+  //             ),
+  //           ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildSettingsTile({
     required IconData icon,
@@ -483,79 +483,79 @@ class SettingsTab extends ConsumerWidget {
     );
   }
 
-  void _showNotificationsDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Notificaciones'),
-            content: const Text(
-              'Configuración de notificaciones próximamente disponible.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Entendido'),
-              ),
-            ],
-          ),
-    );
-  }
+  // void _showNotificationsDialog(BuildContext context) {
+  //   showDialog(
+  //     context: context,
+  //     builder:
+  //         (context) => AlertDialog(
+  //           title: const Text('Notificaciones'),
+  //           content: const Text(
+  //             'Configuración de notificaciones próximamente disponible.',
+  //           ),
+  //           actions: [
+  //             TextButton(
+  //               onPressed: () => Navigator.of(context).pop(),
+  //               child: const Text('Entendido'),
+  //             ),
+  //           ],
+  //         ),
+  //   );
+  // }
 
-  void _showLanguageDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Idioma'),
-            content: const Text(
-              'Configuración de idioma próximamente disponible.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Entendido'),
-              ),
-            ],
-          ),
-    );
-  }
+  // void _showLanguageDialog(BuildContext context) {
+  //   showDialog(
+  //     context: context,
+  //     builder:
+  //         (context) => AlertDialog(
+  //           title: const Text('Idioma'),
+  //           content: const Text(
+  //             'Configuración de idioma próximamente disponible.',
+  //           ),
+  //           actions: [
+  //             TextButton(
+  //               onPressed: () => Navigator.of(context).pop(),
+  //               child: const Text('Entendido'),
+  //             ),
+  //           ],
+  //         ),
+  //   );
+  // }
 
-  void _showBackupDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Respaldo de Datos'),
-            content: const Text('Función de respaldo próximamente disponible.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Entendido'),
-              ),
-            ],
-          ),
-    );
-  }
+  // void _showBackupDialog(BuildContext context) {
+  //   showDialog(
+  //     context: context,
+  //     builder:
+  //         (context) => AlertDialog(
+  //           title: const Text('Respaldo de Datos'),
+  //           content: const Text('Función de respaldo próximamente disponible.'),
+  //           actions: [
+  //             TextButton(
+  //               onPressed: () => Navigator.of(context).pop(),
+  //               child: const Text('Entendido'),
+  //             ),
+  //           ],
+  //         ),
+  //   );
+  // }
 
-  void _showExportDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Exportar Datos'),
-            content: const Text(
-              'Función de exportación próximamente disponible.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Entendido'),
-              ),
-            ],
-          ),
-    );
-  }
+  // void _showExportDialog(BuildContext context) {
+  //   showDialog(
+  //     context: context,
+  //     builder:
+  //         (context) => AlertDialog(
+  //           title: const Text('Exportar Datos'),
+  //           content: const Text(
+  //             'Función de exportación próximamente disponible.',
+  //           ),
+  //           actions: [
+  //             TextButton(
+  //               onPressed: () => Navigator.of(context).pop(),
+  //               child: const Text('Entendido'),
+  //             ),
+  //           ],
+  //         ),
+  //   );
+  // }
 
   void _showClearDataDialog(BuildContext context) {
     showDialog(

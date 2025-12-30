@@ -99,6 +99,39 @@ class FrapFirestoreService {
     }
   }
 
+  // ACTUALIZAR un registro FRAP existente (sobrecarga con modelo FrapFirestore)
+  Future<void> updateFrapRecordDirect(
+    String frapId,
+    FrapFirestore updatedFrap,
+  ) async {
+    try {
+      final userId = _currentUserId;
+      if (userId == null) {
+        throw Exception('Usuario no autenticado');
+      }
+
+      // Verificar que el registro existe y pertenece al usuario
+      final doc = await _collection.doc(frapId).get();
+      if (!doc.exists) {
+        throw Exception('Registro no encontrado');
+      }
+
+      final existingData = doc.data() as Map<String, dynamic>;
+      if (existingData['userId'] != userId) {
+        throw Exception('No tienes permisos para actualizar este registro');
+      }
+
+      // Actualizar el registro con todos los datos
+      final updateMap = updatedFrap.toMap();
+      updateMap['updatedAt'] = Timestamp.fromDate(DateTime.now());
+      updateMap['userId'] = userId; // Mantener el userId original
+
+      await _collection.doc(frapId).update(updateMap);
+    } catch (e) {
+      throw Exception('Error al actualizar el registro FRAP: $e');
+    }
+  }
+
   // ACTUALIZAR sección específica de un registro FRAP
   Future<void> updateFrapSection({
     required String frapId,
@@ -363,11 +396,12 @@ class FrapFirestoreService {
       }
 
       // Buscar por folio, que debería ser el identificador más fiable.
-      final querySnapshot = await _collection
-          .where('userId', isEqualTo: userId)
-          .where('registryInfo.folio', isEqualTo: folio)
-          .limit(1)
-          .get();
+      final querySnapshot =
+          await _collection
+              .where('userId', isEqualTo: userId)
+              .where('registryInfo.folio', isEqualTo: folio)
+              .limit(1)
+              .get();
 
       return querySnapshot.docs.isNotEmpty ? querySnapshot.docs.first.id : null;
     } catch (e) {
