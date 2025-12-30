@@ -481,6 +481,10 @@ class PdfGeneratorService {
     // Initialize fonts and styles
     await _initializeFontsAndStyles();
 
+    // Watermark image
+    final watermarkBytes = await rootBundle.load('assets/icons/icon.png');
+    final watermarkImage = pw.MemoryImage(watermarkBytes.buffer.asUint8List());
+
     // Preload the human silhouette image
     // pw.MemoryImage? silhouetteImage;
     // try {
@@ -523,83 +527,111 @@ class PdfGeneratorService {
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(10), // Márgenes reducidos
         build: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
+          return pw.Stack(
             children: [
-              // HEADER COMPACTO
-              _buildCompactHeader(),
-              pw.SizedBox(height: 4),
-
-              // SECCIONES EN COLUMNAS
-              pw.Row(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  // Columna izquierda
-                  pw.Expanded(
-                    child: pw.Column(
-                      children: [
-                        _buildCompactTimeTracking(displayData.service),
-                        pw.SizedBox(height: 4),
-                        _buildCompactPatientInfo(
-                          displayData.patient,
-                          displayData.service.currentCondition,
-                        ),
-                        pw.SizedBox(height: 4),
-                        _buildCompactPathologicalAntecedents(
-                          displayData.clinical,
-                        ),
-                        pw.SizedBox(height: 4),
-                        _buildCompactClinicalHistory(displayData.clinical),
-                        pw.SizedBox(height: 4),
-                        _buildCompactVitalSignsTable(displayData.vitalSigns),
-                        pw.SizedBox(height: 4),
-                        _buildCompactSampleSection(displayData.sample),
-                        pw.SizedBox(height: 4),
-                        _buildCompactInjuryLocationSection(
-                          record,
-                          combinedImage,
-                        ),
-                      ],
+              // Marca de agua centrada y transparente
+              pw.Positioned.fill(
+                child: pw.Center(
+                  child: pw.Opacity(
+                    opacity: 0.1,
+                    child: pw.Image(
+                      watermarkImage,
+                      width: 400,
+                      height: 400,
+                      fit: pw.BoxFit.contain,
                     ),
                   ),
-                  pw.SizedBox(width: 4),
-                  // Columna derecha
-                  pw.Expanded(
-                    child: pw.Column(
-                      children: [
-                        _buildCompactAdminDetails(displayData.registry),
-                        pw.SizedBox(height: 4),
-                        _buildCompactManagementSection(displayData.management),
-                        pw.SizedBox(height: 4),
-                        _buildCompactMedicationsSection(displayData.management),
-                        pw.SizedBox(height: 4),
-                        // gineco obstetricia solo si es mujer
-                        if (displayData.patient.sex.toLowerCase().contains(
-                              'f',
-                            ) ||
-                            displayData.patient.sex.toLowerCase().contains(
-                              'femenino',
-                            )) ...[
-                          _buildCompactGynecoObstetricSection(
-                            displayData.gynecoObstetric,
-                          ),
-                        ],
-                        pw.SizedBox(height: 4),
-                        _buildCompactPriorityJustification(
-                          displayData.priority,
+                ),
+              ),
+              // El resto del contenido encima
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  // HEADER COMPACTO
+                  _buildCompactHeader(),
+                  pw.SizedBox(height: 4),
+
+                  // SECCIONES EN COLUMNAS
+                  pw.Row(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      // Columna izquierda
+                      pw.Expanded(
+                        child: pw.Column(
+                          children: [
+                            _buildCompactTimeTracking(displayData.service),
+                            pw.SizedBox(height: 4),
+                            _buildCompactPatientInfo(
+                              displayData.patient,
+                              displayData.service.currentCondition,
+                            ),
+                            pw.SizedBox(height: 4),
+                            _buildCompactPathologicalAntecedents(
+                              displayData.clinical,
+                            ),
+                            pw.SizedBox(height: 4),
+                            _buildCompactClinicalHistory(displayData.clinical),
+                            pw.SizedBox(height: 4),
+                            _buildCompactVitalSignsTable(
+                              displayData.vitalSigns,
+                            ),
+                            pw.SizedBox(height: 4),
+                            _buildCompactSampleSection(displayData.sample),
+                            pw.SizedBox(height: 4),
+                            _buildCompactInjuryLocationSection(
+                              record,
+                              combinedImage,
+                            ),
+                          ],
                         ),
-                        pw.SizedBox(height: 4),
-                        _buildCompactInsumosSection(displayData.insumos),
-                        pw.SizedBox(height: 4),
-                        _buildCompactReceivingUnitSection(
-                          displayData.reception,
-                          displayData.management,
+                      ),
+                      pw.SizedBox(width: 4),
+                      // Columna derecha
+                      pw.Expanded(
+                        child: pw.Column(
+                          children: [
+                            _buildCompactAdminDetails(displayData.registry),
+                            pw.SizedBox(height: 4),
+                            _buildCompactManagementSection(
+                              displayData.management,
+                            ),
+                            pw.SizedBox(height: 4),
+                            _buildCompactMedicationsSection(
+                              displayData.management,
+                            ),
+                            pw.SizedBox(height: 4),
+                            // gineco obstetricia solo si es mujer
+                            if (displayData.patient.sex.toLowerCase().contains(
+                                  'f',
+                                ) ||
+                                displayData.patient.sex.toLowerCase().contains(
+                                  'femenino',
+                                )) ...[
+                              _buildCompactGynecoObstetricSection(
+                                displayData.gynecoObstetric,
+                              ),
+                            ],
+                            pw.SizedBox(height: 4),
+                            _buildCompactPriorityJustification(
+                              displayData.priority,
+                            ),
+                            pw.SizedBox(height: 4),
+                            _buildCompactInsumosSection(displayData.insumos),
+                            pw.SizedBox(height: 4),
+                            _buildCompactReceivingUnitSection(
+                              displayData.reception,
+                              displayData.management,
+                            ),
+                            pw.SizedBox(height: 4),
+                            // FIRMAS COMPACTAS
+                            _buildCompactAllSignaturesSection(
+                              displayData,
+                              record,
+                            ),
+                          ],
                         ),
-                        pw.SizedBox(height: 4),
-                        // FIRMAS COMPACTAS
-                        _buildCompactAllSignaturesSection(displayData, record),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ],
               ),
