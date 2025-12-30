@@ -2136,22 +2136,34 @@ class _FrapRecordDetailsScreenState
       final navigator = Navigator.of(context);
 
       try {
-        final success = await notifier.deleteRecord(widget.record);
+        final result = await notifier.deleteRecord(widget.record);
 
         if (mounted) {
+          // Determinar el color y mensaje según el resultado
+          Color snackBarColor;
+          String message;
+
+          if (result.success) {
+            snackBarColor = Colors.green;
+            message = result.message;
+          } else if (result.deletedFromLocal && result.cloudError != null) {
+            snackBarColor = Colors.orange;
+            message = result.message;
+          } else {
+            snackBarColor = Colors.red;
+            message = result.message;
+          }
+
           messenger.showSnackBar(
             SnackBar(
-              content: Text(
-                success
-                    ? 'Registro eliminado exitosamente'
-                    : 'Error al eliminar el registro',
-              ),
-              backgroundColor: success ? Colors.green : Colors.red,
+              content: Text(message),
+              backgroundColor: snackBarColor,
+              duration: const Duration(seconds: 4),
             ),
           );
 
-          if (success) {
-            navigator.pop(); // Regresar a la lista
+          if (result.success || result.deletedFromLocal) {
+            navigator.pop(); // Regresar a la lista si se eliminó localmente
           }
         }
       } catch (e) {

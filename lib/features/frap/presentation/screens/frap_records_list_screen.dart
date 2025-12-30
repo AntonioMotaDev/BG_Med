@@ -644,17 +644,29 @@ class _FrapRecordsListScreenState extends ConsumerState<FrapRecordsListScreen> {
       final messenger = ScaffoldMessenger.of(
         context,
       ); // Store messenger locally
-      final success = await notifier.deleteRecord(record);
+      final result = await notifier.deleteRecord(record);
 
       if (mounted) {
+        // Determinar el color y mensaje según el resultado
+        Color snackBarColor;
+        String message;
+
+        if (result.success) {
+          snackBarColor = Colors.green;
+          message = result.message;
+        } else if (result.deletedFromLocal && result.cloudError != null) {
+          snackBarColor = Colors.orange;
+          message = result.message;
+        } else {
+          snackBarColor = Colors.red;
+          message = result.message;
+        }
+
         messenger.showSnackBar(
           SnackBar(
-            content: Text(
-              success
-                  ? 'Registro eliminado exitosamente'
-                  : 'Error al eliminar el registro',
-            ),
-            backgroundColor: success ? Colors.green : Colors.red,
+            content: Text(message),
+            backgroundColor: snackBarColor,
+            duration: const Duration(seconds: 4),
           ),
         );
       }
@@ -798,29 +810,29 @@ class _FrapRecordsListScreenState extends ConsumerState<FrapRecordsListScreen> {
     );
   }
 
-  Future<void> _debugDatabaseStatus() async {
-    try {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Debug completado. Revisa la consola.'),
-            backgroundColor: Colors.blue,
-            duration: const Duration(seconds: 2),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error en debug: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    }
-  }
+  // Future<void> _debugDatabaseStatus() async {
+  //   try {
+  //     if (mounted) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(
+  //           content: Text('Debug completado. Revisa la consola.'),
+  //           backgroundColor: Colors.blue,
+  //           duration: const Duration(seconds: 2),
+  //         ),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     if (mounted) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(
+  //           content: Text('Error en debug: $e'),
+  //           backgroundColor: Colors.red,
+  //           duration: const Duration(seconds: 3),
+  //         ),
+  //       );
+  //     }
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -872,11 +884,11 @@ class _FrapRecordsListScreenState extends ConsumerState<FrapRecordsListScreen> {
                     ? 'Sincronizar y limpiar duplicados'
                     : 'Sincronizar registros',
           ),
-          IconButton(
-            icon: const Icon(Icons.bug_report),
-            onPressed: _debugDatabaseStatus,
-            tooltip: 'Ver estado de la base de datos',
-          ),
+          // IconButton(
+          //   icon: const Icon(Icons.bug_report),
+          //   onPressed: _debugDatabaseStatus,
+          //   tooltip: 'Ver estado de la base de datos',
+          // ),
           PopupMenuButton<String>(
             onSelected: (value) {
               setState(() {

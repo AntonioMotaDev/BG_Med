@@ -173,25 +173,31 @@ class UnifiedFrapNotifier extends StateNotifier<UnifiedFrapState> {
     }
   }
 
-  // Eliminar registro
-  Future<bool> deleteRecord(UnifiedFrapRecord record) async {
+  // Eliminar registro (local y nube)
+  Future<UnifiedDeleteResult> deleteRecord(UnifiedFrapRecord record) async {
     try {
-      bool success = false;
+      // Usar el servicio unificado para eliminar
+      final result = await _unifiedService.deleteRecord(record);
 
-      if (record.localRecord != null) {
-        success = await _localNotifier.deleteLocalFrapRecord(record.id);
-      }
-
-      if (success) {
+      if (result.success || result.deletedFromLocal) {
+        // Recargar la lista si se eliminó localmente
         await loadAllRecords();
-        return true;
-      } else {
-        state = state.copyWith(error: 'Error eliminando registro');
-        return false;
       }
+
+      // Actualizar estado con mensaje de error si hubo alguno
+      if (!result.success) {
+        state = state.copyWith(error: result.message);
+      }
+
+      return result;
     } catch (e) {
-      state = state.copyWith(error: 'Error eliminando registro: $e');
-      return false;
+      final errorResult =
+          UnifiedDeleteResult()
+            ..success = false
+            ..message = 'Error eliminando registro: $e';
+
+      state = state.copyWith(error: errorResult.message);
+      return errorResult;
     }
   }
 

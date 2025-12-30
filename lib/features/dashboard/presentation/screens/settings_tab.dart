@@ -34,43 +34,43 @@ class SettingsTab extends ConsumerWidget {
               ],
 
               // App Settings Section
-              _buildSectionTitle('Configuración de la App', isDarkMode),
-              _buildSettingsCard(context, ref, [
-                _buildThemeTile(context, ref, isDarkMode),
-                _buildSettingsTile(
-                  icon: Icons.notifications,
-                  title: 'Notificaciones',
-                  subtitle: 'Configurar alertas y recordatorios',
-                  onTap: () => _showNotificationsDialog(context),
-                  isDarkMode: isDarkMode,
-                ),
-                _buildSettingsTile(
-                  icon: Icons.language,
-                  title: 'Idioma',
-                  subtitle: 'Español (por defecto)',
-                  onTap: () => _showLanguageDialog(context),
-                  isDarkMode: isDarkMode,
-                ),
-              ]),
-              const SizedBox(height: 24),
+              // _buildSectionTitle('Configuración de la App', isDarkMode),
+              // _buildSettingsCard(context, ref, [
+              //   _buildThemeTile(context, ref, isDarkMode),
+              //   _buildSettingsTile(
+              //     icon: Icons.notifications,
+              //     title: 'Notificaciones',
+              //     subtitle: 'Configurar alertas y recordatorios',
+              //     onTap: () => _showNotificationsDialog(context),
+              //     isDarkMode: isDarkMode,
+              //   ),
+              //   _buildSettingsTile(
+              //     icon: Icons.language,
+              //     title: 'Idioma',
+              //     subtitle: 'Español (por defecto)',
+              //     onTap: () => _showLanguageDialog(context),
+              //     isDarkMode: isDarkMode,
+              //   ),
+              // ]),
+              // const SizedBox(height: 24),
 
               // Data Management Section
               _buildSectionTitle('Gestión de Datos', isDarkMode),
               _buildSettingsCard(context, ref, [
-                _buildSettingsTile(
-                  icon: Icons.backup,
-                  title: 'Respaldo de Datos',
-                  subtitle: 'Crear copia de seguridad',
-                  onTap: () => _showBackupDialog(context),
-                  isDarkMode: isDarkMode,
-                ),
-                _buildSettingsTile(
-                  icon: Icons.download,
-                  title: 'Exportar Datos',
-                  subtitle: 'Descargar registros en PDF',
-                  onTap: () => _showExportDialog(context),
-                  isDarkMode: isDarkMode,
-                ),
+                // _buildSettingsTile(
+                //   icon: Icons.backup,
+                //   title: 'Respaldo de Datos',
+                //   subtitle: 'Crear copia de seguridad',
+                //   onTap: () => _showBackupDialog(context),
+                //   isDarkMode: isDarkMode,
+                // ),
+                // _buildSettingsTile(
+                //   icon: Icons.download,
+                //   title: 'Exportar Datos',
+                //   subtitle: 'Descargar registros en PDF',
+                //   onTap: () => _showExportDialog(context),
+                //   isDarkMode: isDarkMode,
+                // ),
                 _buildSettingsTile(
                   icon: Icons.delete_forever,
                   title: 'Limpiar Datos Locales',
@@ -136,11 +136,7 @@ class SettingsTab extends ConsumerWidget {
               color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
-              Icons.settings,
-              color: Colors.white,
-              size: 24,
-            ),
+            child: const Icon(Icons.settings, color: Colors.white, size: 24),
           ),
           const SizedBox(width: 16),
           const Expanded(
@@ -157,10 +153,7 @@ class SettingsTab extends ConsumerWidget {
                 ),
                 Text(
                   'Personaliza tu experiencia médica',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
                 ),
               ],
             ),
@@ -184,11 +177,19 @@ class SettingsTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildUserProfileCard(BuildContext context, WidgetRef ref, dynamic user, bool isDarkMode) {
-    final primaryColor = isDarkMode ? AppTheme.primaryBlueDark : AppTheme.primaryBlue;
-    final secondaryColor = isDarkMode ? AppTheme.primaryGreenDark : AppTheme.primaryGreen;
+  Widget _buildUserProfileCard(
+    BuildContext context,
+    WidgetRef ref,
+    dynamic user,
+    bool isDarkMode,
+  ) {
+    final primaryColor =
+        isDarkMode ? AppTheme.primaryBlueDark : AppTheme.primaryBlue;
+    final secondaryColor =
+        isDarkMode ? AppTheme.primaryGreenDark : AppTheme.primaryGreen;
     final textColor = isDarkMode ? AppTheme.textLightMode : AppTheme.textDark;
-    final secondaryTextColor = isDarkMode ? AppTheme.textSecondaryDark : AppTheme.textLight;
+    final secondaryTextColor =
+        isDarkMode ? AppTheme.textSecondaryDark : AppTheme.textLight;
 
     return Card(
       elevation: 3,
@@ -234,7 +235,10 @@ class SettingsTab extends ConsumerWidget {
                       ),
                       Container(
                         margin: const EdgeInsets.only(top: 4),
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: secondaryColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
@@ -263,7 +267,11 @@ class SettingsTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildSettingsCard(BuildContext context, WidgetRef ref, List<Widget> children) {
+  Widget _buildSettingsCard(
+    BuildContext context,
+    WidgetRef ref,
+    List<Widget> children,
+  ) {
     return Card(
       elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -276,7 +284,8 @@ class SettingsTab extends ConsumerWidget {
 
   Widget _buildThemeTile(BuildContext context, WidgetRef ref, bool isDarkMode) {
     final themeNotifier = ref.read(themeProvider.notifier);
-    final primaryColor = isDarkMode ? AppTheme.primaryBlueDark : AppTheme.primaryBlue;
+    final primaryColor =
+        isDarkMode ? AppTheme.primaryBlueDark : AppTheme.primaryBlue;
 
     return ListTile(
       leading: Container(
@@ -285,11 +294,7 @@ class SettingsTab extends ConsumerWidget {
           color: primaryColor.withOpacity(0.1),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(
-          themeNotifier.themeIcon,
-          color: primaryColor,
-          size: 20,
-        ),
+        child: Icon(themeNotifier.themeIcon, color: primaryColor, size: 20),
       ),
       title: const Text(
         'Tema de la App',
@@ -301,38 +306,39 @@ class SettingsTab extends ConsumerWidget {
         onSelected: (AppThemeMode mode) {
           themeNotifier.setTheme(mode);
         },
-        itemBuilder: (context) => [
-          const PopupMenuItem(
-            value: AppThemeMode.light,
-            child: Row(
-              children: [
-                Icon(Icons.light_mode, size: 20),
-                SizedBox(width: 12),
-                Text('Claro'),
-              ],
-            ),
-          ),
-          const PopupMenuItem(
-            value: AppThemeMode.dark,
-            child: Row(
-              children: [
-                Icon(Icons.dark_mode, size: 20),
-                SizedBox(width: 12),
-                Text('Oscuro'),
-              ],
-            ),
-          ),
-          const PopupMenuItem(
-            value: AppThemeMode.system,
-            child: Row(
-              children: [
-                Icon(Icons.brightness_auto, size: 20),
-                SizedBox(width: 12),
-                Text('Sistema'),
-              ],
-            ),
-          ),
-        ],
+        itemBuilder:
+            (context) => [
+              const PopupMenuItem(
+                value: AppThemeMode.light,
+                child: Row(
+                  children: [
+                    Icon(Icons.light_mode, size: 20),
+                    SizedBox(width: 12),
+                    Text('Claro'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: AppThemeMode.dark,
+                child: Row(
+                  children: [
+                    Icon(Icons.dark_mode, size: 20),
+                    SizedBox(width: 12),
+                    Text('Oscuro'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: AppThemeMode.system,
+                child: Row(
+                  children: [
+                    Icon(Icons.brightness_auto, size: 20),
+                    SizedBox(width: 12),
+                    Text('Sistema'),
+                  ],
+                ),
+              ),
+            ],
       ),
     );
   }
@@ -345,8 +351,10 @@ class SettingsTab extends ConsumerWidget {
     bool isDestructive = false,
     bool isDarkMode = false,
   }) {
-    final primaryColor = isDarkMode ? AppTheme.primaryBlueDark : AppTheme.primaryBlue;
-    final destructiveColor = isDarkMode ? AppTheme.accentRedDark : AppTheme.accentRed;
+    final primaryColor =
+        isDarkMode ? AppTheme.primaryBlueDark : AppTheme.primaryBlue;
+    final destructiveColor =
+        isDarkMode ? AppTheme.accentRedDark : AppTheme.accentRed;
     final iconColor = isDestructive ? destructiveColor : primaryColor;
     final titleColor = isDestructive ? destructiveColor : null;
 
@@ -357,18 +365,11 @@ class SettingsTab extends ConsumerWidget {
           color: iconColor.withOpacity(0.1),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(
-          icon,
-          color: iconColor,
-          size: 20,
-        ),
+        child: Icon(icon, color: iconColor, size: 20),
       ),
       title: Text(
         title,
-        style: TextStyle(
-          fontWeight: FontWeight.w600,
-          color: titleColor,
-        ),
+        style: TextStyle(fontWeight: FontWeight.w600, color: titleColor),
       ),
       subtitle: Text(subtitle),
       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -376,8 +377,13 @@ class SettingsTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildLogoutCard(BuildContext context, WidgetRef ref, bool isDarkMode) {
-    final destructiveColor = isDarkMode ? AppTheme.accentRedDark : AppTheme.accentRed;
+  Widget _buildLogoutCard(
+    BuildContext context,
+    WidgetRef ref,
+    bool isDarkMode,
+  ) {
+    final destructiveColor =
+        isDarkMode ? AppTheme.accentRedDark : AppTheme.accentRed;
 
     return Card(
       elevation: 3,
@@ -389,11 +395,7 @@ class SettingsTab extends ConsumerWidget {
             color: destructiveColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(
-            Icons.logout,
-            color: destructiveColor,
-            size: 20,
-          ),
+          child: Icon(Icons.logout, color: destructiveColor, size: 20),
         ),
         title: Text(
           'Cerrar Sesión',
@@ -410,217 +412,249 @@ class SettingsTab extends ConsumerWidget {
   }
 
   // Dialog methods
-  void _showEditProfileDialog(BuildContext context, WidgetRef ref, dynamic user) {
+  void _showEditProfileDialog(
+    BuildContext context,
+    WidgetRef ref,
+    dynamic user,
+  ) {
     final nameController = TextEditingController(text: user.name);
-    
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Editar Perfil'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(
-                labelText: 'Nombre',
-                border: OutlineInputBorder(),
-              ),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Editar Perfil'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nombre',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancelar'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  // TODO: Implementar actualización de perfil
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Perfil actualizado')),
+                  );
+                },
+                child: const Text('Guardar'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () {
-              // TODO: Implementar actualización de perfil
-              Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Perfil actualizado')),
-              );
-            },
-            child: const Text('Guardar'),
-          ),
-        ],
-      ),
     );
   }
 
   void _showLogoutDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Cerrar Sesión'),
-        content: const Text('¿Estás seguro de que quieres cerrar sesión?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancelar'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Cerrar Sesión'),
+            content: const Text('¿Estás seguro de que quieres cerrar sesión?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  await ref.read(authNotifierProvider.notifier).logout();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFE53E3E),
+                ),
+                child: const Text('Cerrar Sesión'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              await ref.read(authNotifierProvider.notifier).logout();
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE53E3E)),
-            child: const Text('Cerrar Sesión'),
-          ),
-        ],
-      ),
     );
   }
 
   void _showNotificationsDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Notificaciones'),
-        content: const Text('Configuración de notificaciones próximamente disponible.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Entendido'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Notificaciones'),
+            content: const Text(
+              'Configuración de notificaciones próximamente disponible.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Entendido'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
   void _showLanguageDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Idioma'),
-        content: const Text('Configuración de idioma próximamente disponible.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Entendido'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Idioma'),
+            content: const Text(
+              'Configuración de idioma próximamente disponible.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Entendido'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
   void _showBackupDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Respaldo de Datos'),
-        content: const Text('Función de respaldo próximamente disponible.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Entendido'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Respaldo de Datos'),
+            content: const Text('Función de respaldo próximamente disponible.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Entendido'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
   void _showExportDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Exportar Datos'),
-        content: const Text('Función de exportación próximamente disponible.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Entendido'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Exportar Datos'),
+            content: const Text(
+              'Función de exportación próximamente disponible.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Entendido'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
   void _showClearDataDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Limpiar Datos Locales'),
-        content: const Text('¿Estás seguro? Esta acción eliminará todos los registros guardados localmente.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancelar'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Limpiar Datos Locales'),
+            content: const Text(
+              '¿Estás seguro? Esta acción eliminará todos los registros guardados localmente.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  // Limpiar datos de Hive
+                  final frapsBox = Hive.box<Frap>('fraps');
+                  await frapsBox.clear();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Datos locales eliminados')),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFE53E3E),
+                ),
+                child: const Text('Eliminar'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              // Limpiar datos de Hive
-              final frapsBox = Hive.box<Frap>('fraps');
-              await frapsBox.clear();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Datos locales eliminados')),
-              );
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE53E3E)),
-            child: const Text('Eliminar'),
-          ),
-        ],
-      ),
     );
   }
 
   void _showAboutDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Acerca de BG Med'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('BG Med v1.0.0'),
-            SizedBox(height: 8),
-            Text('Aplicación para el manejo de registros médicos prehospitalarios (FRAP).'),
-            SizedBox(height: 8),
-            Text('Desarrollado para profesionales de la salud.'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cerrar'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Acerca de BG Med'),
+            content: const Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('BG Med v1.0.0'),
+                SizedBox(height: 8),
+                Text(
+                  'Aplicación para el manejo de registros médicos prehospitalarios (FRAP).',
+                ),
+                SizedBox(height: 8),
+                Text('Desarrollado para profesionales de la salud.'),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cerrar'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
   void _showHelpDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Ayuda y Soporte'),
-        content: const Text('Para soporte técnico, contacta al administrador del sistema.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Entendido'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Ayuda y Soporte'),
+            content: const Text(
+              'Para soporte técnico, contacta al administrador del sistema.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Entendido'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
   void _showPrivacyDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Política de Privacidad'),
-        content: const Text('Toda la información médica es tratada con la máxima confidencialidad según las normativas de protección de datos.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Entendido'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Política de Privacidad'),
+            content: const Text(
+              'Toda la información médica es tratada con la máxima confidencialidad según las normativas de protección de datos.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Entendido'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
-} 
+}

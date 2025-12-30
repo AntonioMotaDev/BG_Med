@@ -5,7 +5,6 @@ import 'package:bg_med/core/models/frap.dart';
 import 'package:bg_med/core/models/frap_firestore.dart';
 import 'package:bg_med/core/models/frap_transition_model.dart';
 import 'package:bg_med/core/services/frap_conversion_logger.dart';
-import 'package:bg_med/features/frap/presentation/providers/frap_data_provider.dart';
 
 /// Resultado de migración
 class MigrationResult {
@@ -175,6 +174,13 @@ class FrapMigrationService {
       // Obtener registros locales existentes
       final localRecords = await _localService.getAllFrapRecords();
 
+      // Optimización: Crear mapa de registros locales por folio para búsqueda rápida
+      final localByFolio = <String, Frap>{
+        for (var record in localRecords)
+          if (record.registryInfo['folio']?.toString().isNotEmpty ?? false)
+            record.registryInfo['folio'].toString(): record,
+      };
+
       for (int i = 0; i < cloudRecords.length; i++) {
         // Verificar si la migración fue cancelada
         if (_isCancelled) {
@@ -205,9 +211,18 @@ class FrapMigrationService {
           // --- ¡CAMBIO CLAVE! ---
           // 1. Buscar si ya existe un registro local usando el folio.
           final folio = cloudRecord.registryInfo['folio']?.toString();
-          final Frap? existingLocal = folio != null && folio.isNotEmpty
-              ? await _localService.findRecordByFolio(folio)
-              : null;
+          Frap? existingLocal =
+              folio != null && folio.isNotEmpty ? localByFolio[folio] : null;
+
+          // 2. Si no hay folio o no se encontró por folio, buscar por equivalencia
+          if (existingLocal == null && (folio == null || folio.isEmpty)) {
+            for (final local in localRecords) {
+              if (_areRecordsEquivalent(local, cloudRecord)) {
+                existingLocal = local;
+                break;
+              }
+            }
+          }
 
           if (existingLocal == null) {
             // Crear modelo de transición
@@ -252,7 +267,7 @@ class FrapMigrationService {
               );
               await _retryOperation(
                 () => _localService.updateFrapRecord(
-                  frapId: existingLocal.id,
+                  frapId: existingLocal!.id,
                   frapData: frapData,
                 ),
                 'update_local_record',
@@ -363,6 +378,7 @@ class FrapMigrationService {
     int totalRecords = 0;
     int migratedRecords = 0;
     int failedRecords = 0;
+    int skippedRecords = 0;
 
     try {
       FrapConversionLogger.logConversionStart(
@@ -415,12 +431,13 @@ class FrapMigrationService {
 
           // --- ¡CAMBIO CLAVE! ---
           // 1. Verificar si ya existe un registro equivalente en la nube.
-          final existingCloudId =
-              await _cloudService.findExistingCloudRecord(frapData: frapData);
+          final existingCloudId = await _cloudService.findExistingCloudRecord(
+            frapData: frapData,
+          );
 
           if (existingCloudId != null) {
             // 2. Si ya existe, no creamos uno nuevo. Lo marcamos como sincronizado y continuamos.
-            migratedRecords++; // Lo contamos como "migrado" porque ya está en la nube.
+            skippedRecords++; // Lo contamos como omitido porque ya está en la nube.
             FrapConversionLogger.logConversionSuccess(
               'migration_local_to_cloud_skipped_duplicate',
               existingCloudId,
@@ -501,7 +518,7 @@ class FrapMigrationService {
           current: totalRecords,
           total: totalRecords,
           message:
-              'Migración completada: $migratedRecords exitosos, $failedRecords fallidos',
+              'Migración completada: $migratedRecords exitosos, $skippedRecords omitidos, $failedRecords fallidos',
           status: MigrationStatus.completed,
         ),
       );
@@ -509,13 +526,14 @@ class FrapMigrationService {
       final result = MigrationResult(
         success: failedRecords == 0,
         message:
-            'Migración completada. $migratedRecords exitosos, $failedRecords fallidos',
+            'Migración completada. $migratedRecords exitosos, $skippedRecords omitidos, $failedRecords fallidos',
         errors: errors,
         totalRecords: totalRecords,
         migratedRecords: migratedRecords,
         failedRecords: failedRecords,
         duration: duration,
         metadata: {
+          'skippedRecords': skippedRecords,
           'successRate':
               migratedRecords > 0
                   ? (migratedRecords / totalRecords) * 100
@@ -570,7 +588,6 @@ class FrapMigrationService {
   /// Migración bidireccional completa
   Future<MigrationResult> migrateBidirectional() async {
     final startTime = DateTime.now();
-    //final startTime = DateTime.now().difference(startTime);
     final errors = <String>[];
     int totalRecords = 0;
     int migratedRecords = 0;
@@ -588,6 +605,20 @@ class FrapMigrationService {
       migratedRecords += cloudToLocalResult.migratedRecords;
       failedRecords += cloudToLocalResult.failedRecords;
       errors.addAll(cloudToLocalResult.errors);
+
+      // Verificar si la migración fue cancelada
+      if (_isCancelled) {
+        final duration = DateTime.now().difference(startTime);
+        return MigrationResult(
+          success: false,
+          message: 'Migración cancelada por el usuario',
+          errors: errors,
+          totalRecords: totalRecords,
+          migratedRecords: migratedRecords,
+          failedRecords: failedRecords,
+          duration: duration,
+        );
+      }
 
       // Migrar local a nube
       final localToCloudResult = await migrateLocalToCloud();

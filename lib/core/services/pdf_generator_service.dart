@@ -462,7 +462,10 @@ class PdfGeneratorService {
         _smallStyle = _smallStyle.copyWith(font: _robotoRegular);
       } catch (_) {
         _log('Fallback fonts also failed');
-        // Los estilos ya están inicializados, así que no hay problema
+        _robotoRegular = pw.Font.helvetica();
+        _robotoBold = pw.Font.helveticaBold();
+        _robotoItalic = pw.Font.helveticaOblique();
+        _robotoBoldItalic = pw.Font.helveticaBoldOblique();
       }
     }
 
@@ -582,8 +585,12 @@ class PdfGeneratorService {
                         _buildCompactMedicationsSection(displayData.management),
                         pw.SizedBox(height: 4),
                         // gineco obstetricia solo si es mujer
-                        if (displayData.patient.sex.toLowerCase() ==
-                            'femenino') ...[
+                        if (displayData.patient.sex.toLowerCase().contains(
+                              'f',
+                            ) ||
+                            displayData.patient.sex.toLowerCase().contains(
+                              'femenino',
+                            )) ...[
                           _buildCompactGynecoObstetricSection(
                             displayData.gynecoObstetric,
                           ),
@@ -1262,7 +1269,7 @@ class PdfGeneratorService {
 
   pw.Widget _buildCompactClinicalHistory(ClinicalDisplayData clinical) {
     final traumasList = <String>[];
-    
+
     if (clinical.traumaCraneo) traumasList.add('Cráneo');
     if (clinical.traumaTorax) traumasList.add('Tórax');
     if (clinical.traumaAbdomen) traumasList.add('Abdomen');
@@ -2525,98 +2532,6 @@ class PdfGeneratorService {
     return Colors.grey;
   }
 
-  /*Future<pw.MemoryImage> _createCombinedSilhouetteImage(
-  String silhouettePath,
-  List<dynamic> drawnInjuries, {
-  Map<String, dynamic>? injuryLocationMap,
-}) async {
-  // Obtener el tamaño ORIGINAL de la imagen de silueta
-  final silhouetteBytes = await rootBundle.load(silhouettePath);
-  final codec = await ui.instantiateImageCodec(silhouetteBytes.buffer.asUint8List());
-  final frame = await codec.getNextFrame();
-  final silhouetteImage = frame.image;
-
-  final originalWidth = silhouetteImage.width.toDouble();
-  final originalHeight = silhouetteImage.height.toDouble();
-
-  // Usar el tamaño ORIGINAL de la imagen, no valores fijos
-  double width = originalWidth;
-  double height = originalHeight;
-  
-  // Si tenemos información del tamaño original usado en la app, usarla
-  if (injuryLocationMap != null && injuryLocationMap['originalImageSize'] != null) {
-    final size = injuryLocationMap['originalImageSize'];
-    final appWidth = (size['width']?.toDouble() ?? originalWidth);
-    final appHeight = (size['height']?.toDouble() ?? originalHeight);
-    
-    // Si el tamaño usado en la app es diferente al de la imagen original,
-    // necesitamos escalar las coordenadas
-    if (appWidth != originalWidth || appHeight != originalHeight) {
-      width = appWidth;
-      height = appHeight;
-    }
-  }
-
-  final recorder = ui.PictureRecorder();
-  final canvas = Canvas(recorder);
-
-  // Dibujar la imagen de silueta escalada al tamaño usado en la app
-  final dstRect = Rect.fromLTWH(0, 0, width, height);
-  canvas.drawImageRect(
-    silhouetteImage,
-    Rect.fromLTWH(0, 0, originalWidth, originalHeight),
-    dstRect,
-    Paint(),
-  );
-
-  // Calcular factores de escala si las dimensiones son diferentes
-  final scaleX = width / originalWidth;
-  final scaleY = height / originalHeight;
-
-  // Dibujar los puntos en las coordenadas CORRECTAS
-  for (final injury in drawnInjuries) {
-    final points = injury['points'] as List<dynamic>? ?? [];
-    final injuryType = injury['injuryType'] as int? ?? 0;
-    final color = _getInjuryTypeFlutterColor(injuryType);
-    
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    for (final point in points) {
-      final originalDx = (point['dx'] as num?)?.toDouble() ?? 0.0;
-      final originalDy = (point['dy'] as num?)?.toDouble() ?? 0.0;
-      
-      // Las coordenadas ya están en el espacio de la imagen mostrada en la app
-      // Solo necesitamos asegurarnos de que la imagen de fondo esté en el mismo espacio
-      canvas.drawCircle(Offset(originalDx, originalDy), 8, paint); // Radio reducido para PDF
-    }
-  }
-
-  final picture = recorder.endRecording();
-  final combinedImage = await picture.toImage(width.toInt(), height.toInt());
-  final byteData = await combinedImage.toByteData(format: ui.ImageByteFormat.png);
-
-  return pw.MemoryImage(byteData!.buffer.asUint8List());
-}
-
-  Color _getInjuryTypeFlutterColor(int injuryType) {
-    switch (injuryType) {
-      case 0: return Colors.red;
-      case 1: return Colors.orange;
-      case 2: return Colors.purple;
-      case 3: return Colors.brown;
-      case 4: return Colors.blue;
-      case 5: return Colors.yellow;
-      case 6: return Colors.green;
-      case 7: return Colors.pink;
-      case 8: return Colors.cyan;
-      case 9: return Colors.grey;
-      default: return Colors.red;
-    }
-  }
-
-  */
   String _getInjuryTypeName(int typeIndex) {
     const injuryTypes = [
       'Hemorragia',
