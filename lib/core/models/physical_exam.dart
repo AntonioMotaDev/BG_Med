@@ -83,6 +83,7 @@ class PhysicalExam extends Equatable {
 
     // Lista de signos vitales del diálogo
     const vitalSigns = [
+      'EVA',
       'T/A',
       'FC',
       'FR',

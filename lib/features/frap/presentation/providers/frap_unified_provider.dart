@@ -5,7 +5,7 @@ import 'package:bg_med/features/frap/presentation/providers/frap_local_provider.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bg_med/features/frap/presentation/providers/frap_data_provider.dart';
 import 'package:bg_med/core/services/folio_generator_service.dart';
-import 'dart:convert';
+import 'dart:developer' as developer;
 
 // Estados de sincronización
 enum SyncStatus { idle, syncing, success, error }
@@ -84,14 +84,14 @@ class UnifiedFrapNotifier extends StateNotifier<UnifiedFrapState> {
     await loadAllRecords();
   }
 
-  void verComoJSON(List<UnifiedFrapRecord> registros) {
-    for (int i = 0; i < registros.length; i++) {
-      var info = registros[i].getDetailedInfo();
-      var jsonString = JsonEncoder.withIndent('  ').convert(info);
-      print("\n📄 Registro $i (JSON):");
-      print(jsonString);
-    }
-  }
+  // void verComoJSON(List<UnifiedFrapRecord> registros) {
+  //   for (int i = 0; i < registros.length; i++) {
+  //     var info = registros[i].getDetailedInfo();
+  //     var jsonString = JsonEncoder.withIndent('  ').convert(info);
+  //     print("\n📄 Registro $i (JSON):");
+  //     print(jsonString);
+  //   }
+  // }
 
   // Cargar todos los registros
   Future<void> loadAllRecords() async {
@@ -101,13 +101,9 @@ class UnifiedFrapNotifier extends StateNotifier<UnifiedFrapState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      print('Cargando registros unificados...');
+      developer.log('Cargando registros unificados...');
       final records = await _unifiedService.getAllRecords();
-      verComoJSON(records);
-      print('Registros: $records');
-
       final stats = _calculateStats(records);
-      print('Estadísticas calculadas: $stats');
 
       state = state.copyWith(
         records: records,
@@ -116,10 +112,11 @@ class UnifiedFrapNotifier extends StateNotifier<UnifiedFrapState> {
         localRecords: stats['local'],
         cloudRecords: stats['cloud'],
         syncedRecords: stats['synced'],
+        duplicateCount: stats['duplicates'],
+        localDuplicatesCount: stats['localDuplicates'],
         error: null,
       );
     } catch (e) {
-      print('Error cargando registros: $e');
       state = state.copyWith(
         isLoading: false,
         error: 'Error cargando registros: $e',
@@ -134,14 +131,32 @@ class UnifiedFrapNotifier extends StateNotifier<UnifiedFrapState> {
     int localCount = 0;
     int cloudCount = 0;
     int syncedCount = 0;
+    int duplicateCount = 0;
+    int localDuplicatesCount = 0;
+
+    // Separar registros locales y de nube
+    final localRecords = <UnifiedFrapRecord>[];
+    final cloudRecords = <UnifiedFrapRecord>[];
 
     for (final record in records) {
       if (record.isLocal) {
         localCount++;
+        localRecords.add(record);
         if (record.isSynced) syncedCount++;
       } else {
         cloudCount++;
+        cloudRecords.add(record);
         syncedCount++;
+      }
+    }
+
+    // Detectar duplicados (mismo nombre de paciente y fecha cercana)
+    for (final localRecord in localRecords) {
+      for (final cloudRecord in cloudRecords) {
+        if (_areRecordsEquivalent(localRecord, cloudRecord)) {
+          duplicateCount++;
+          if (localRecord.isLocal) localDuplicatesCount++;
+        }
       }
     }
 
@@ -150,7 +165,24 @@ class UnifiedFrapNotifier extends StateNotifier<UnifiedFrapState> {
       'local': localCount,
       'cloud': cloudCount,
       'synced': syncedCount,
+      'duplicates': duplicateCount,
+      'localDuplicates': localDuplicatesCount,
     };
+  }
+
+  // Verificar si dos registros son equivalentes (duplicados)
+  bool _areRecordsEquivalent(UnifiedFrapRecord local, UnifiedFrapRecord cloud) {
+    final localFolio = local.folio.trim().toUpperCase();
+    final cloudFolio = cloud.folio.trim().toUpperCase();
+
+    // 1) Si ambos tienen folio, compararlo
+    if (localFolio.isNotEmpty && cloudFolio.isNotEmpty) {
+      return localFolio == cloudFolio;
+    }
+
+    // 2) Fallback: nombre + ventana de tiempo
+    return local.patientName.toLowerCase() == cloud.patientName.toLowerCase() &&
+        local.createdAt.difference(cloud.createdAt).abs().inMinutes < 5;
   }
 
   // Guardar registro
@@ -330,6 +362,8 @@ class UnifiedFrapNotifier extends StateNotifier<UnifiedFrapState> {
         localRecords: stats['local'],
         cloudRecords: stats['cloud'],
         syncedRecords: stats['synced'],
+        duplicateCount: stats['duplicates'],
+        localDuplicatesCount: stats['localDuplicates'],
       );
     } catch (e) {
       state = state.copyWith(
@@ -367,6 +401,8 @@ class UnifiedFrapNotifier extends StateNotifier<UnifiedFrapState> {
         localRecords: stats['local'],
         cloudRecords: stats['cloud'],
         syncedRecords: stats['synced'],
+        duplicateCount: stats['duplicates'],
+        localDuplicatesCount: stats['localDuplicates'],
       );
     } catch (e) {
       state = state.copyWith(
@@ -406,18 +442,14 @@ class UnifiedFrapNotifier extends StateNotifier<UnifiedFrapState> {
   // Sincronizar y limpiar duplicados
   Future<Map<String, dynamic>> syncAndCleanup() async {
     try {
-      print('Iniciando syncAndCleanup...');
+      developer.log('Iniciando syncAndCleanup', name: 'UnifiedFrapProvider');
       state = state.copyWith(syncStatus: SyncStatus.syncing);
 
       // 1. Sincronizar registros
-      print('Sincronizando registros pendientes...');
       final syncResult = await _unifiedService.syncPendingRecords();
-
-      print('Resultado de sincronización: $syncResult');
 
       if (syncResult.success) {
         // 2. Recargar registros después de la sincronización
-        print('Recargando registros después de sincronización...');
         await loadAllRecords();
 
         state = state.copyWith(
@@ -435,7 +467,6 @@ class UnifiedFrapNotifier extends StateNotifier<UnifiedFrapState> {
           },
         };
       } else {
-        print('Error en sincronización: ${syncResult.message}');
         state = state.copyWith(
           syncStatus: SyncStatus.error,
           error: syncResult.message,
@@ -448,7 +479,11 @@ class UnifiedFrapNotifier extends StateNotifier<UnifiedFrapState> {
         };
       }
     } catch (e) {
-      print('Excepción en syncAndCleanup: $e');
+      developer.log(
+        'Error en syncAndCleanup: $e',
+        name: 'UnifiedFrapProvider',
+        error: e,
+      );
       state = state.copyWith(
         syncStatus: SyncStatus.error,
         error: 'Error durante sincronización: $e',
@@ -535,14 +570,22 @@ final unifiedFrapStatisticsProvider = Provider<Map<String, dynamic>>((ref) {
     'synced': state.syncedRecords,
     'duplicates': state.duplicateCount,
     'localDuplicates': state.localDuplicatesCount,
+    'today':
+        state.records.where((r) {
+          final now = DateTime.now();
+          final today = DateTime(now.year, now.month, now.day);
+          return r.createdAt.isAfter(today);
+        }).length,
+    'syncedCount': state.syncedRecords,
+    'localOnlyCount': state.localRecords - state.syncedRecords,
+    'duplicateCount': state.duplicateCount,
+    'averageCompletion':
+        state.records.isEmpty
+            ? 0.0
+            : state.records.fold<double>(
+                  0,
+                  (sum, r) => sum + r.completionPercentage,
+                ) /
+                state.records.length,
   };
 });
-
-// Provider para el notificador de registros unificados (para compatibilidad)
-final unifiedRecordsNotifierProvider =
-    StateNotifierProvider<UnifiedFrapNotifier, UnifiedFrapState>((ref) {
-      final unifiedService = ref.watch(frapUnifiedServiceProvider);
-      final localNotifier = ref.watch(frapLocalProvider.notifier);
-
-      return UnifiedFrapNotifier(unifiedService, localNotifier);
-    });

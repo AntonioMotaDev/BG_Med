@@ -16,6 +16,7 @@ import 'package:bg_med/core/services/frap_data_validator.dart';
 import 'package:bg_med/core/services/frap_conversion_logger.dart';
 import 'package:bg_med/core/services/frap_migration_service.dart';
 import 'package:bg_med/features/frap/presentation/providers/frap_data_provider.dart';
+import 'package:collection/collection.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 // Helper para construir dirección completa desde un paciente local
@@ -313,10 +314,9 @@ class FrapUnifiedService {
       // Procesar registros de la nube
       for (final cloudRecord in cloudRecords) {
         // Verificar si ya existe en local
-        final existingLocal =
-            localRecords
-                .where((r) => _areRecordsEquivalent(r, cloudRecord))
-                .firstOrNull;
+        final existingLocal = localRecords.firstWhereOrNull(
+          (r) => _areRecordsEquivalent(r, cloudRecord),
+        );
 
         if (existingLocal == null) {
           // Es un registro solo de la nube
@@ -384,12 +384,23 @@ class FrapUnifiedService {
 
   // Verificar si dos registros son equivalentes
   bool _areRecordsEquivalent(Frap local, FrapFirestore cloud) {
-    // Comparar por datos del paciente y fecha de creación
+    // 1) Si ambos tienen folio, usar folio como match fuerte
+    final localFolio = _normalizeFolio(local.registryInfo['folio']);
+    final cloudFolio = _normalizeFolio(cloud.registryInfo['folio']);
+    if (localFolio.isNotEmpty && cloudFolio.isNotEmpty) {
+      return localFolio == cloudFolio;
+    }
+
+    // 2) Fallback: nombre + ventana de tiempo
     final localPatientName = local.patient.fullName.toLowerCase();
     final cloudPatientName = cloud.patientName.toLowerCase();
 
     return localPatientName == cloudPatientName &&
         local.createdAt.difference(cloud.createdAt).abs().inMinutes < 5;
+  }
+
+  String _normalizeFolio(dynamic folio) {
+    return folio?.toString().trim().toUpperCase() ?? '';
   }
 
   // Convertir registro de la nube a formato local con validación completa
@@ -892,7 +903,7 @@ class FrapUnifiedService {
         );
       }
 
-      // 4. Permitir edición normal (tiene copia local o puede descargar)
+      // 5. Permitir edición normal (tiene copia local o puede descargar)
       return EditPermission.allowed();
     } catch (e) {
       debugPrint('Error al verificar permisos de edición: $e');
@@ -921,6 +932,7 @@ class UnifiedFrapRecord {
   final String patientResponsiblePerson;
   final double completionPercentage;
   final bool isSynced;
+  final String folio;
 
   UnifiedFrapRecord({
     this.localRecord,
@@ -936,6 +948,7 @@ class UnifiedFrapRecord {
     required this.patientResponsiblePerson,
     required this.completionPercentage,
     required this.isSynced,
+    this.folio = '',
   });
 
   factory UnifiedFrapRecord.fromLocal(Frap local) {
@@ -952,6 +965,7 @@ class UnifiedFrapRecord {
       patientResponsiblePerson: local.patient.responsiblePerson ?? '',
       completionPercentage: local.completionPercentage,
       isSynced: local.isSynced,
+      folio: local.registryInfo['folio']?.toString() ?? '',
     );
   }
 
@@ -970,6 +984,7 @@ class UnifiedFrapRecord {
           cloud.patientInfo['responsiblePerson']?.toString() ?? '',
       completionPercentage: cloud.completionPercentage,
       isSynced: true,
+      folio: cloud.registryInfo['folio']?.toString() ?? '',
     );
   }
 

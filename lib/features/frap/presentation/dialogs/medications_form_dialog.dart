@@ -43,7 +43,6 @@ class _MedicationsFormDialogState extends State<MedicationsFormDialog> {
                 viaAdministracion: med['viaAdministracion'] ?? '',
                 hora: med['hora'] ?? '',
                 medicoIndico: med['medicoIndico'] ?? '',
-                medicoOtro: med['medicoOtro'] ?? '',
               );
             }).toList();
       } else if (data['medications'] != null &&
@@ -134,9 +133,9 @@ class _MedicationsFormDialogState extends State<MedicationsFormDialog> {
             // Header
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppTheme.primaryBlue,
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
                 ),
@@ -253,10 +252,11 @@ class _MedicationsFormDialogState extends State<MedicationsFormDialog> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              '• Complete todos los campos obligatorios\n'
-                              '• La hora debe estar en formato HH:MM (ej: 14:30, 9:30)\n'
+                              '• Todos los campos son obligatorios para cada medicamento\n'
+                              '• Use el selector de hora (reloj) para elegir la hora de administración\n'
                               '• Escriba el nombre completo del médico que indicó el medicamento\n'
-                              '• Puede agregar o eliminar medicamentos según sea necesario',
+                              '• Puede agregar o eliminar medicamentos según sea necesario\n'
+                              '• Debe completar al menos un medicamento con todos sus datos',
                               style: TextStyle(
                                 fontSize: 13,
                                 color: Colors.blue[800],
@@ -547,10 +547,7 @@ class _MedicationsFormDialogState extends State<MedicationsFormDialog> {
                 onChanged: (value) {
                   _updateMedicationRow(
                     index,
-                    medication.copyWith(
-                      medicoIndico: value,
-                      medicoOtro: '', // Limpiar campo otro ya que no se usa
-                    ),
+                    medication.copyWith(medicoIndico: value),
                   );
                 },
               ),
@@ -574,45 +571,134 @@ class _MedicationsFormDialogState extends State<MedicationsFormDialog> {
   }
 
   Widget _buildTimeField(int index, MedicationRow medication) {
-    return TextFormField(
-      initialValue: medication.hora,
-      decoration: const InputDecoration(
-        hintText: 'HH:MM',
-        border: OutlineInputBorder(),
-        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+    return InkWell(
+      onTap: () => _selectTime(context, index, medication),
+      child: InputDecorator(
+        decoration: InputDecoration(
+          hintText: 'HH:MM',
+          border: const OutlineInputBorder(),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 8,
+            vertical: 8,
+          ),
+          suffixIcon: const Icon(Icons.access_time, size: 16),
+          errorText: medication.hora.isEmpty ? 'Requerido' : null,
+          errorStyle: const TextStyle(fontSize: 10),
+        ),
+        child: Text(
+          medication.hora.isEmpty ? '' : medication.hora,
+          style: TextStyle(
+            fontSize: 12,
+            color: medication.hora.isEmpty ? Colors.grey : Colors.black87,
+          ),
+        ),
       ),
-      style: const TextStyle(fontSize: 12),
-      keyboardType: TextInputType.text,
     );
+  }
+
+  Future<void> _selectTime(
+    BuildContext context,
+    int index,
+    MedicationRow medication,
+  ) async {
+    // Parsear hora actual si existe
+    TimeOfDay initialTime = TimeOfDay.now();
+    if (medication.hora.isNotEmpty) {
+      final parts = medication.hora.split(':');
+      if (parts.length == 2) {
+        final hour = int.tryParse(parts[0]);
+        final minute = int.tryParse(parts[1]);
+        if (hour != null && minute != null) {
+          initialTime = TimeOfDay(hour: hour, minute: minute);
+        }
+      }
+    }
+
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: initialTime,
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      final formattedTime = _formatTimeOfDay(picked);
+      _updateMedicationRow(index, medication.copyWith(hora: formattedTime));
+    }
+  }
+
+  String _formatTimeOfDay(TimeOfDay time) {
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
   }
 
   // Método para normalizar formato de hora
   String _normalizeTimeFormat(String time) {
-    if (time.isEmpty) return time;
+    if (time.isEmpty) return '';
 
-    final parts = time.split(':');
-    if (parts.length != 2) return time;
+    try {
+      final parts = time.split(':');
+      if (parts.length != 2) return time;
 
-    final hour = int.tryParse(parts[0]);
-    final minute = int.tryParse(parts[1]);
+      final hour = int.tryParse(parts[0]);
+      final minute = int.tryParse(parts[1]);
 
-    if (hour == null || minute == null) return time;
+      if (hour == null || minute == null) return time;
+      if (hour < 0 || hour > 23) return time;
+      if (minute < 0 || minute > 59) return time;
 
-    // Normalizar a formato HH:MM
-    return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+      // Normalizar a formato HH:MM
+      return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return time;
+    }
   }
 
   Future<void> _saveForm() async {
     if (!_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor complete todos los campos obligatorios'),
+          backgroundColor: Colors.orange,
+        ),
+      );
       return;
     }
 
-    // Validar que al menos un medicamento tenga datos
+    // Validar que todos los medicamentos tengan hora
+    List<String> medicationsWithoutTime = [];
+    for (int i = 0; i < _medications.length; i++) {
+      final med = _medications[i];
+      if (med.medicamento.isNotEmpty && med.hora.isEmpty) {
+        medicationsWithoutTime.add('Medicamento ${i + 1}');
+      }
+    }
+
+    if (medicationsWithoutTime.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Complete la hora para: ${medicationsWithoutTime.join(", ")}',
+          ),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Validar que al menos un medicamento tenga datos completos
     bool hasValidMedication = false;
     for (final medication in _medications) {
-      if (medication.medicamento.isNotEmpty ||
-          medication.dosis.isNotEmpty ||
-          medication.viaAdministracion.isNotEmpty) {
+      if (medication.medicamento.isNotEmpty &&
+          medication.dosis.isNotEmpty &&
+          medication.viaAdministracion.isNotEmpty &&
+          medication.hora.isNotEmpty &&
+          medication.medicoIndico.isNotEmpty) {
         hasValidMedication = true;
         break;
       }
@@ -621,7 +707,9 @@ class _MedicationsFormDialogState extends State<MedicationsFormDialog> {
     if (!hasValidMedication) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Debe registrar al menos un medicamento'),
+          content: Text(
+            'Debe completar al menos un medicamento con todos sus datos',
+          ),
           backgroundColor: Colors.orange,
         ),
       );
@@ -633,38 +721,45 @@ class _MedicationsFormDialogState extends State<MedicationsFormDialog> {
     });
 
     try {
-      // Filtrar medicamentos con datos
+      // Filtrar y validar medicamentos con datos completos
       final validMedications =
-          _medications
-              .where(
-                (med) =>
-                    med.medicamento.isNotEmpty ||
-                    med.dosis.isNotEmpty ||
-                    med.viaAdministracion.isNotEmpty,
-              )
-              .toList();
+          _medications.where((med) {
+            return med.medicamento.isNotEmpty &&
+                med.dosis.isNotEmpty &&
+                med.viaAdministracion.isNotEmpty &&
+                med.hora.isNotEmpty &&
+                med.medicoIndico.isNotEmpty;
+          }).toList();
+
+      // Normalizar y validar formato de hora
+      final normalizedMedications =
+          validMedications.map((med) {
+            final normalizedTime = _normalizeTimeFormat(med.hora);
+            if (normalizedTime.isEmpty || normalizedTime == med.hora) {
+              return med;
+            }
+            return med.copyWith(hora: normalizedTime);
+          }).toList();
 
       final formData = {
         'medicationsList':
-            validMedications
-                .map(
-                  (med) => {
-                    'medicamento': med.medicamento,
-                    'dosis': med.dosis,
-                    'viaAdministracion': med.viaAdministracion,
-                    'hora': _normalizeTimeFormat(med.hora),
-                    'medicoIndico': med.medicoIndico,
-                    'medicoOtro': med.medicoOtro,
-                  },
-                )
-                .toList(),
-        'medications': validMedications
-            .map(
-              (med) =>
-                  '${med.medicamento} - ${med.dosis} - ${med.viaAdministracion} - ${_normalizeTimeFormat(med.hora)} - ${med.medicoIndico == 'Otro' ? med.medicoOtro : med.medicoIndico}',
-            )
+            normalizedMedications.map((med) {
+              return {
+                'medicamento': med.medicamento.trim(),
+                'dosis': med.dosis.trim(),
+                'viaAdministracion': med.viaAdministracion.trim(),
+                'hora': med.hora,
+                'medicoIndico': med.medicoIndico.trim(),
+                'medicoOtro':
+                    '', // Campo obsoleto, se mantiene para compatibilidad
+              };
+            }).toList(),
+        'medications': normalizedMedications
+            .map((med) {
+              return '${med.medicamento.trim()} - ${med.dosis.trim()} - ${med.viaAdministracion.trim()} - ${med.hora} - ${med.medicoIndico.trim()}';
+            })
             .join('\n'),
-        'totalMedications': validMedications.length,
+        'totalMedications': normalizedMedications.length,
         'timestamp': DateTime.now().toIso8601String(),
       };
 
@@ -674,8 +769,14 @@ class _MedicationsFormDialogState extends State<MedicationsFormDialog> {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              '${validMedications.length} medicamento(s) guardado(s) correctamente',
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 12),
+                Text(
+                  '${normalizedMedications.length} medicamento(s) guardado(s) correctamente',
+                ),
+              ],
             ),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
@@ -693,7 +794,7 @@ class _MedicationsFormDialogState extends State<MedicationsFormDialog> {
               children: [
                 const Icon(Icons.error, color: Colors.white),
                 const SizedBox(width: 12),
-                Text('Error al guardar: $e'),
+                Expanded(child: Text('Error al guardar: ${e.toString()}')),
               ],
             ),
             backgroundColor: Colors.red,
@@ -701,6 +802,7 @@ class _MedicationsFormDialogState extends State<MedicationsFormDialog> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
+            duration: const Duration(seconds: 5),
           ),
         );
       }
@@ -721,7 +823,6 @@ class MedicationRow {
   final String viaAdministracion;
   final String hora;
   final String medicoIndico;
-  final String medicoOtro;
 
   const MedicationRow({
     this.medicamento = '',
@@ -729,7 +830,6 @@ class MedicationRow {
     this.viaAdministracion = '',
     this.hora = '',
     this.medicoIndico = '',
-    this.medicoOtro = '',
   });
 
   MedicationRow copyWith({
@@ -738,7 +838,6 @@ class MedicationRow {
     String? viaAdministracion,
     String? hora,
     String? medicoIndico,
-    String? medicoOtro,
   }) {
     return MedicationRow(
       medicamento: medicamento ?? this.medicamento,
@@ -746,7 +845,6 @@ class MedicationRow {
       viaAdministracion: viaAdministracion ?? this.viaAdministracion,
       hora: hora ?? this.hora,
       medicoIndico: medicoIndico ?? this.medicoIndico,
-      medicoOtro: medicoOtro ?? this.medicoOtro,
     );
   }
 }

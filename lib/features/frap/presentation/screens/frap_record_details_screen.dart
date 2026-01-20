@@ -65,7 +65,7 @@ class _FrapRecordDetailsScreenState
   void _initializeSectionConfigs() {
     _sectionConfigs = [
       // Información del servicio
-      SectionConfig(
+      const SectionConfig(
         key: 'serviceInfo',
         title: 'Información del Servicio',
         icon: Icons.local_hospital,
@@ -74,7 +74,7 @@ class _FrapRecordDetailsScreenState
           'horaLlamada': 'Hora de llamada',
           'horaArribo': 'Hora de arribo',
           'tiempoEsperaArribo': 'Tiempo de espera arribo',
-          'horaLlegada': 'Hora de llegada',
+          'horaLlegada': 'Hora de llegada al lugar',
           'horaTermino': 'Hora de terminación',
           'tiempoEsperaLlegada': 'Tiempo de espera llegada',
           'ubicacion': 'Ubicación',
@@ -94,7 +94,7 @@ class _FrapRecordDetailsScreenState
         },
       ),
       // Información del registro
-      SectionConfig(
+      const SectionConfig(
         key: 'registryInfo',
         title: 'Información del Registro',
         icon: Icons.assignment,
@@ -320,7 +320,7 @@ class _FrapRecordDetailsScreenState
         },
       ),
       // Negativa de atención
-      SectionConfig(
+      const SectionConfig(
         key: 'attentionNegative',
         title: 'Negativa de atención',
         icon: Icons.cancel,
@@ -525,7 +525,7 @@ class _FrapRecordDetailsScreenState
         fieldMappings: {
           'priority': 'Prioridad',
           'pupils': 'Pupilas',
-          'skinColor': 'Color piel',
+          'skinColor': 'Color de piel',
           'skin': 'Piel',
           'temperature': 'Temperatura',
         },
@@ -534,12 +534,12 @@ class _FrapRecordDetailsScreenState
             'label': 'Influenciado por',
             'condition': (data) => data['influence'] == 'Otro',
             'dependentField': 'especifique',
-            'dependentLabel': 'Especifique',
+            'dependentLabel': 'Influenciado por',
           },
         },
       ),
       // Unidad Médica que Recibe
-      SectionConfig(
+      const SectionConfig(
         key: 'receivingUnit',
         title: 'Unidad Medica que Recibe',
         icon: Icons.local_hospital,
@@ -557,7 +557,7 @@ class _FrapRecordDetailsScreenState
         },
       ),
       // Recepción del Paciente
-      SectionConfig(
+      const SectionConfig(
         key: 'patientReception',
         title: 'Recepción del Paciente',
         icon: Icons.how_to_reg,
@@ -576,7 +576,7 @@ class _FrapRecordDetailsScreenState
         },
       ),
       // Consentimiento de Servicio
-      SectionConfig(
+      const SectionConfig(
         key: 'consentimientoServicio',
         title: 'Consentimiento de Servicio',
         icon: Icons.assignment_turned_in,
@@ -613,27 +613,7 @@ class _FrapRecordDetailsScreenState
       _isLoading = true;
     });
 
-    // Cargar información detallada del registro
     _detailedInfo = widget.record.getDetailedInfo();
-
-    // Imprimir _detailedInfo completo en consola
-    print('========== DETAILED INFO START ==========');
-    _detailedInfo.forEach((key, value) {
-      print('\n--- $key ---');
-      if (value is Map) {
-        value.forEach((k, v) {
-          print('  $k: $v');
-        });
-      } else if (value is List) {
-        print('  Lista con ${value.length} elementos');
-        for (var i = 0; i < value.length; i++) {
-          print('  [$i]: $value[i]');
-        }
-      } else {
-        print('  $value');
-      }
-    });
-    print('========== DETAILED INFO END ==========\n');
 
     setState(() {
       _isLoading = false;
@@ -749,9 +729,9 @@ class _FrapRecordDetailsScreenState
                       // Header
                       Container(
                         padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           color: Colors.white,
-                          borderRadius: const BorderRadius.only(
+                          borderRadius: BorderRadius.only(
                             topLeft: Radius.circular(16),
                             topRight: Radius.circular(16),
                           ),
@@ -763,7 +743,7 @@ class _FrapRecordDetailsScreenState
                             Expanded(
                               child: Text(
                                 title,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   color: Colors.black,
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -856,9 +836,9 @@ class _FrapRecordDetailsScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           'Registro de Atencion Prehospitalaria',
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
         elevation: 0,
         actions: [
@@ -2088,12 +2068,14 @@ class _FrapRecordDetailsScreenState
   }
 
   Future<void> _editRecord() async {
-    final context = this.context;
     final notifier = ref.read(unifiedFrapProvider.notifier);
-    final messenger = ScaffoldMessenger.of(context);
 
     // Verificar permisos de edición
     final permission = await notifier.canEditRecord(widget.record);
+    if (!mounted) return;
+
+    // Re-obtener messenger con contexto válido tras el await
+    final messenger = ScaffoldMessenger.of(context);
 
     if (!permission.canEdit) {
       // Mostrar error si no se puede editar
@@ -2129,12 +2111,14 @@ class _FrapRecordDetailsScreenState
               ],
             ),
       );
-
+      if (!mounted) return;
       if (confirmed != true) return;
+
+      final downloadMessenger = ScaffoldMessenger.of(context);
 
       // Descargar el registro (sincronizar desde la nube)
       if (mounted) {
-        messenger.showSnackBar(
+        downloadMessenger.showSnackBar(
           const SnackBar(
             content: Row(
               children: [
@@ -2160,8 +2144,8 @@ class _FrapRecordDetailsScreenState
         await notifier.syncRecords();
 
         if (mounted) {
-          messenger.hideCurrentSnackBar();
-          messenger.showSnackBar(
+          downloadMessenger.hideCurrentSnackBar();
+          downloadMessenger.showSnackBar(
             const SnackBar(
               content: Text('Registro descargado correctamente'),
               backgroundColor: Colors.green,
@@ -2171,8 +2155,8 @@ class _FrapRecordDetailsScreenState
         }
       } catch (e) {
         if (mounted) {
-          messenger.hideCurrentSnackBar();
-          messenger.showSnackBar(
+          downloadMessenger.hideCurrentSnackBar();
+          downloadMessenger.showSnackBar(
             SnackBar(
               content: Text('Error al descargar: $e'),
               backgroundColor: Colors.red,
@@ -2205,7 +2189,6 @@ class _FrapRecordDetailsScreenState
   }
 
   Future<void> _deleteRecord() async {
-    final context = this.context;
     final confirmed = await showDialog<bool>(
       context: context,
       builder:
@@ -2228,51 +2211,52 @@ class _FrapRecordDetailsScreenState
           ),
     );
 
+    if (!mounted) return;
     if (confirmed == true) {
       final notifier = ref.read(unifiedFrapProvider.notifier);
-      final messenger = ScaffoldMessenger.of(context);
-      final navigator = Navigator.of(context);
 
       try {
         final result = await notifier.deleteRecord(widget.record);
 
-        if (mounted) {
-          // Determinar el color y mensaje según el resultado
-          Color snackBarColor;
-          String message;
+        if (!mounted) return;
+        final messenger = ScaffoldMessenger.of(context);
+        final navigator = Navigator.of(context);
 
-          if (result.success) {
-            snackBarColor = Colors.green;
-            message = result.message;
-          } else if (result.deletedFromLocal && result.cloudError != null) {
-            snackBarColor = Colors.orange;
-            message = result.message;
-          } else {
-            snackBarColor = Colors.red;
-            message = result.message;
-          }
+        // Determinar el color y mensaje según el resultado
+        Color snackBarColor;
+        String message;
 
-          messenger.showSnackBar(
-            SnackBar(
-              content: Text(message),
-              backgroundColor: snackBarColor,
-              duration: const Duration(seconds: 4),
-            ),
-          );
+        if (result.success) {
+          snackBarColor = Colors.green;
+          message = result.message;
+        } else if (result.deletedFromLocal && result.cloudError != null) {
+          snackBarColor = Colors.orange;
+          message = result.message;
+        } else {
+          snackBarColor = Colors.red;
+          message = result.message;
+        }
 
-          if (result.success || result.deletedFromLocal) {
-            navigator.pop(); // Regresar a la lista si se eliminó localmente
-          }
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: snackBarColor,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+
+        if (result.success || result.deletedFromLocal) {
+          navigator.pop(); // Regresar a la lista si se eliminó localmente
         }
       } catch (e) {
-        if (mounted) {
-          messenger.showSnackBar(
-            SnackBar(
-              content: Text('Error al eliminar el registro: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+        if (!mounted) return;
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text('Error al eliminar el registro: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -2378,37 +2362,83 @@ class _FrapRecordDetailsScreenState
     final sectionData = _extractSectionData(config.key);
     final details = <Map<String, dynamic>>[];
 
-    // Procesar campos normales (excluyendo los que están en specialFields)
+    final otroFieldsMapping = {
+      'tipoServicio': 'tipoServicioEspecifique',
+      'lugarOcurrencia': 'lugarOcurrenciaEspecifique',
+      'tipoUrgencia': 'urgenciaEspecifique',
+      'tipoEntrega': 'tipoEntregaOtro',
+    };
+
+    final fieldsToSkip = <String>{};
+
     config.fieldMappings.forEach((fieldKey, label) {
-      // Saltar campos que están en specialFields para evitar duplicados
       if (config.specialFields.containsKey(fieldKey)) {
+        return;
+      }
+
+      if (fieldsToSkip.contains(fieldKey)) {
         return;
       }
 
       final value = _getSafeStringValue(sectionData, fieldKey);
       final fallbackValue = config.fallbacks[fieldKey];
+      var finalValue = value ?? (fallbackValue?.toString());
 
-      final finalValue = value ?? (fallbackValue?.toString());
-      // Mostrar el campo entreCalles incluso si está vacío para debugging
+      if (finalValue != null &&
+          finalValue.trim().toLowerCase() == 'otro' &&
+          otroFieldsMapping.containsKey(fieldKey)) {
+        final especifiqueField = otroFieldsMapping[fieldKey]!;
+        final especifiqueValue = _getSafeStringValue(
+          sectionData,
+          especifiqueField,
+        );
+
+        if (especifiqueValue != null && especifiqueValue.trim().isNotEmpty) {
+          finalValue = especifiqueValue;
+          fieldsToSkip.add(especifiqueField);
+        }
+      }
+
       if (fieldKey == 'entreCalles' ||
           (finalValue != null && finalValue.trim().isNotEmpty)) {
         details.add({'label': label, 'value': finalValue ?? 'No especificado'});
       }
     });
 
-    // Procesar campos booleanos
+    final processedBooleanFields = <String>{};
+
     config.booleanFields.forEach((fieldKey, label) {
       if (sectionData[fieldKey] == true) {
-        details.add({'label': label, 'value': 'Sí'});
+        String displayValue = 'Sí';
+
+        if (config.conditionalFields.containsKey(fieldKey)) {
+          final conditionalConfig = config.conditionalFields[fieldKey]!;
+          final dependentField = conditionalConfig['dependentField'] as String;
+          final especifiqueValue = _getSafeStringValue(
+            sectionData,
+            dependentField,
+          );
+
+          if (especifiqueValue != null && especifiqueValue.trim().isNotEmpty) {
+            displayValue = especifiqueValue;
+            processedBooleanFields.add(dependentField);
+          }
+        }
+
+        details.add({'label': label, 'value': displayValue});
       }
     });
 
-    // Procesar campos condicionales
     config.conditionalFields.forEach((fieldKey, fieldConfig) {
       final condition =
           fieldConfig['condition'] as Function(Map<String, dynamic>);
       if (condition(sectionData)) {
         final dependentField = fieldConfig['dependentField'] as String;
+
+        if (processedBooleanFields.contains(dependentField)) {
+          return;
+        }
+
         final dependentLabel = fieldConfig['dependentLabel'] as String;
         final value = _getSafeStringValue(sectionData, dependentField);
         if (value != null && value.toString().trim().isNotEmpty) {

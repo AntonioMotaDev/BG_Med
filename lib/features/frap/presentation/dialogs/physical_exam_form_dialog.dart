@@ -21,6 +21,7 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
 
   // Lista de signos vitales
   final List<String> _vitalSigns = [
+    'EVA',
     'T/A',
     'FC',
     'FR',
@@ -33,12 +34,11 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
 
   // Lista de horas/columnas dinámicas
   List<String> _timeColumns = ['Hora 1', 'Hora 2', 'Hora 3'];
-  
+
   // Mapa para almacenar los valores de cada signo vital por hora
   Map<String, Map<String, TextEditingController>> _controllers = {};
 
   // Controladores de texto adicionales
-  final _evaController = TextEditingController();
   final _llcController = TextEditingController();
   final _glucosaController = TextEditingController();
   final _taController = TextEditingController();
@@ -67,27 +67,27 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
   void _initializeForm() {
     if (widget.initialData != null) {
       final data = widget.initialData!;
-      
+
       // Cargar columnas de tiempo si existen
       if (data['timeColumns'] != null) {
         _timeColumns = List<String>.from(data['timeColumns']);
         _initializeControllers(); // Re-inicializar controladores con las nuevas columnas
       }
-      
+
       // Cargar valores de los signos vitales
       for (String vitalSign in _vitalSigns) {
         if (data[vitalSign] != null) {
           Map<String, dynamic> vitalData = data[vitalSign];
           for (String timeColumn in _timeColumns) {
             if (vitalData[timeColumn] != null) {
-              _controllers[vitalSign]![timeColumn]?.text = vitalData[timeColumn];
+              _controllers[vitalSign]![timeColumn]?.text =
+                  vitalData[timeColumn];
             }
           }
         }
       }
 
       // Campos existentes
-      _evaController.text = data['eva'] ?? '';
       _llcController.text = data['llc'] ?? '';
       _glucosaController.text = data['glucosa'] ?? '';
       _taController.text = data['ta'] ?? '';
@@ -104,7 +104,7 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
       int newColumnNumber = _timeColumns.length + 1;
       String newColumn = 'Hora $newColumnNumber';
       _timeColumns.add(newColumn);
-      
+
       // Agregar controladores para la nueva columna
       for (String vitalSign in _vitalSigns) {
         _controllers[vitalSign]![newColumn] = TextEditingController();
@@ -116,13 +116,13 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
     if (_timeColumns.length > 1) {
       setState(() {
         _timeColumns.remove(columnToRemove);
-        
+
         // Remover controladores de la columna eliminada
         for (String vitalSign in _vitalSigns) {
           _controllers[vitalSign]![columnToRemove]?.dispose();
           _controllers[vitalSign]!.remove(columnToRemove);
         }
-        
+
         // Renumerar las columnas para mantener la secuencia correcta
         _renumberTimeColumns();
       });
@@ -135,22 +135,23 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
     for (int i = 0; i < _timeColumns.length; i++) {
       newTimeColumns.add('Hora ${i + 1}');
     }
-    
+
     // Si los nombres han cambiado, actualizar controladores
     if (!_areListsEqual(_timeColumns, newTimeColumns)) {
       Map<String, Map<String, TextEditingController>> newControllers = {};
-      
+
       for (String vitalSign in _vitalSigns) {
         newControllers[vitalSign] = {};
         for (int i = 0; i < _timeColumns.length; i++) {
           String oldColumn = _timeColumns[i];
           String newColumn = newTimeColumns[i];
-          
+
           // Transferir el controlador existente al nuevo nombre
-          newControllers[vitalSign]![newColumn] = _controllers[vitalSign]![oldColumn]!;
+          newControllers[vitalSign]![newColumn] =
+              _controllers[vitalSign]![oldColumn]!;
         }
       }
-      
+
       _controllers = newControllers;
       _timeColumns = newTimeColumns;
     }
@@ -172,7 +173,6 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
         _controllers[vitalSign]![timeColumn]?.dispose();
       }
     }
-    _evaController.dispose();
     _llcController.dispose();
     _glucosaController.dispose();
     _taController.dispose();
@@ -206,7 +206,7 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
           children: [
             // Header mejorado
             _buildHeader(),
-            
+
             // Form content
             Expanded(
               child: Form(
@@ -223,30 +223,10 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
                         'Complete los datos básicos de evaluación',
                       ),
                       const SizedBox(height: 24),
-                      
-                      // EVA y LLC
+
+                      // LLC, Glucosa y TA
                       Row(
                         children: [
-                          Expanded(
-                            child: _buildInputField(
-                              controller: _evaController,
-                              label: 'EVA',
-                              hint: 'Escala 0-10',
-                              suffix: '0-10',
-                              icon: Icons.sentiment_satisfied,
-                              keyboardType: TextInputType.number,
-                              validator: (value) {
-                                if (value != null && value.isNotEmpty) {
-                                  final eva = int.tryParse(value);
-                                  if (eva == null || eva < 0 || eva > 10) {
-                                    return '0-10';
-                                  }
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 16),
                           Expanded(
                             child: _buildInputField(
                               controller: _llcController,
@@ -257,14 +237,7 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
                               keyboardType: TextInputType.number,
                             ),
                           ),
-                        ],
-                      ),
-                      
-                      const SizedBox(height: 16),
-                      
-                      // Glucosa y TA
-                      Row(
-                        children: [
+                          const SizedBox(width: 16),
                           Expanded(
                             child: _buildInputField(
                               controller: _glucosaController,
@@ -275,22 +248,22 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
                               keyboardType: TextInputType.number,
                             ),
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _buildInputField(
-                              controller: _taController,
-                              label: 'TA',
-                              hint: 'Presión',
-                              suffix: 'mm/Hg',
-                              icon: Icons.favorite,
-                              keyboardType: TextInputType.text,
-                            ),
-                          ),
                         ],
                       ),
-                      
+
+                      const SizedBox(height: 16),
+
+                      // TA
+                      _buildInputField(
+                        controller: _taController,
+                        label: 'TA',
+                        hint: 'Presión',
+                        suffix: 'mm/Hg',
+                        icon: Icons.favorite,
+                        keyboardType: TextInputType.text,
+                      ),
                       const SizedBox(height: 32),
-                      
+
                       // Sección 2: SAMPLE
                       _buildSectionHeader(
                         'SAMPLE (Nemotecnia)',
@@ -298,7 +271,7 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
                         'Complete la evaluación SAMPLE del paciente',
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Info card
                       Container(
                         padding: const EdgeInsets.all(16),
@@ -316,7 +289,11 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
                           children: [
                             Row(
                               children: [
-                                Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
+                                Icon(
+                                  Icons.info_outline,
+                                  color: Colors.blue[700],
+                                  size: 20,
+                                ),
                                 const SizedBox(width: 8),
                                 Text(
                                   'SAMPLE - Evaluación Prehospitalaria',
@@ -346,9 +323,9 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
                           ],
                         ),
                       ),
-                      
+
                       const SizedBox(height: 24),
-                      
+
                       // Campos SAMPLE
                       _buildInputField(
                         controller: _sampleAlergiasController,
@@ -357,9 +334,9 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
                         icon: Icons.warning,
                         maxLines: 2,
                       ),
-                      
+
                       const SizedBox(height: 16),
-                      
+
                       _buildInputField(
                         controller: _sampleMedicamentosController,
                         label: 'M: Medicamentos',
@@ -367,9 +344,9 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
                         icon: Icons.medication,
                         maxLines: 2,
                       ),
-                      
+
                       const SizedBox(height: 16),
-                      
+
                       _buildInputField(
                         controller: _sampleEnfermedadesController,
                         label: 'P: Enfermedades patológicas',
@@ -377,18 +354,18 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
                         icon: Icons.medical_information,
                         maxLines: 2,
                       ),
-                      
+
                       const SizedBox(height: 16),
-                      
+
                       _buildInputField(
                         controller: _sampleHoraAlimentoController,
                         label: 'L: Hora de último alimento',
                         hint: 'Ej: 14:30',
                         icon: Icons.access_time,
                       ),
-                      
+
                       const SizedBox(height: 16),
-                      
+
                       _buildInputField(
                         controller: _sampleEventosPreviosController,
                         label: 'E: Eventos previos',
@@ -396,9 +373,9 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
                         icon: Icons.event_note,
                         maxLines: 3,
                       ),
-                      
+
                       const SizedBox(height: 32),
-                      
+
                       // Sección 3: Signos Vitales
                       _buildSectionHeader(
                         'SIGNOS VITALES',
@@ -406,7 +383,7 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
                         'Registre los signos vitales en diferentes momentos',
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Controls bar para la tabla
                       Container(
                         padding: const EdgeInsets.all(16),
@@ -423,7 +400,7 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
                                 color: AppTheme.primaryBlue.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: Icon(
+                              child: const Icon(
                                 Icons.schedule,
                                 color: AppTheme.primaryBlue,
                                 size: 20,
@@ -470,9 +447,9 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
                           ],
                         ),
                       ),
-                      
+
                       const SizedBox(height: 16),
-                      
+
                       // Tabla de signos vitales
                       Container(
                         decoration: BoxDecoration(
@@ -491,7 +468,7 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
                           child: _buildVitalSignsTable(),
                         ),
                       ),
-                      
+
                       const SizedBox(height: 24),
                     ],
                   ),
@@ -587,11 +564,7 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
                 color: AppTheme.primaryBlue.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(
-                icon,
-                color: AppTheme.primaryBlue,
-                size: 20,
-              ),
+              child: Icon(icon, color: AppTheme.primaryBlue, size: 20),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -607,10 +580,7 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
                   ),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
                   ),
                 ],
               ),
@@ -667,7 +637,10 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [AppTheme.primaryBlue, AppTheme.primaryBlue.withOpacity(0.8)],
+                colors: [
+                  AppTheme.primaryBlue,
+                  AppTheme.primaryBlue.withOpacity(0.8),
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -694,16 +667,24 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
                   ),
                 ),
                 // Time column headers
-                ..._timeColumns.map((timeColumn) => _buildTimeColumnHeader(timeColumn, columnWidth)),
+                ..._timeColumns.map(
+                  (timeColumn) =>
+                      _buildTimeColumnHeader(timeColumn, columnWidth),
+                ),
               ],
             ),
           ),
-          
+
           // Data rows
           ..._vitalSigns.asMap().entries.map((entry) {
             int index = entry.key;
             String vitalSign = entry.value;
-            return _buildVitalSignRow(vitalSign, index, labelWidth, columnWidth);
+            return _buildVitalSignRow(
+              vitalSign,
+              index,
+              labelWidth,
+              columnWidth,
+            );
           }),
         ],
       ),
@@ -715,9 +696,7 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
       width: width,
       height: 60,
       decoration: BoxDecoration(
-        border: Border(
-          left: BorderSide(color: Colors.white.withOpacity(0.3)),
-        ),
+        border: Border(left: BorderSide(color: Colors.white.withOpacity(0.3))),
       ),
       child: Stack(
         children: [
@@ -744,11 +723,7 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
                     color: Colors.red.withOpacity(0.8),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(
-                    Icons.close,
-                    color: Colors.white,
-                    size: 12,
-                  ),
+                  child: const Icon(Icons.close, color: Colors.white, size: 12),
                 ),
               ),
             ),
@@ -757,16 +732,19 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
     );
   }
 
-  Widget _buildVitalSignRow(String vitalSign, int index, double labelWidth, double columnWidth) {
+  Widget _buildVitalSignRow(
+    String vitalSign,
+    int index,
+    double labelWidth,
+    double columnWidth,
+  ) {
     final isEvenRow = index % 2 == 0;
     final backgroundColor = isEvenRow ? Colors.white : Colors.grey[50];
 
     return Container(
       decoration: BoxDecoration(
         color: backgroundColor,
-        border: Border(
-          top: BorderSide(color: Colors.grey[200]!),
-        ),
+        border: Border(top: BorderSide(color: Colors.grey[200]!)),
       ),
       child: Row(
         children: [
@@ -776,22 +754,19 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
             height: 60,
             decoration: BoxDecoration(
               color: Colors.grey[100],
-              border: Border(
-                right: BorderSide(color: Colors.grey[200]!),
-              ),
+              border: Border(right: BorderSide(color: Colors.grey[200]!)),
             ),
             alignment: Alignment.center,
             child: Text(
               vitalSign,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
             ),
           ),
-          
+
           // Input fields for each time column
-          ..._timeColumns.map((timeColumn) => _buildInputCell(vitalSign, timeColumn, columnWidth)),
+          ..._timeColumns.map(
+            (timeColumn) => _buildInputCell(vitalSign, timeColumn, columnWidth),
+          ),
         ],
       ),
     );
@@ -802,9 +777,7 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
       width: width,
       height: 60,
       decoration: BoxDecoration(
-        border: Border(
-          left: BorderSide(color: Colors.grey[200]!),
-        ),
+        border: Border(left: BorderSide(color: Colors.grey[200]!)),
       ),
       padding: const EdgeInsets.all(8),
       child: TextFormField(
@@ -850,16 +823,19 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
             flex: 2,
             child: ElevatedButton.icon(
               onPressed: _isLoading ? null : _saveForm,
-              icon: _isLoading
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : const Icon(Icons.save),
+              icon:
+                  _isLoading
+                      ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      )
+                      : const Icon(Icons.save),
               label: Text(_isLoading ? 'Guardando...' : 'Guardar Exploración'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryBlue,
@@ -884,7 +860,6 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
     try {
       final formData = {
         'timeColumns': _timeColumns,
-        'eva': _evaController.text.trim(),
         'llc': _llcController.text.trim(),
         'glucosa': _glucosaController.text.trim(),
         'ta': _taController.text.trim(),
@@ -900,7 +875,8 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
       for (String vitalSign in _vitalSigns) {
         Map<String, String> vitalData = {};
         for (String timeColumn in _timeColumns) {
-          String value = _controllers[vitalSign]![timeColumn]?.text.trim() ?? '';
+          String value =
+              _controllers[vitalSign]![timeColumn]?.text.trim() ?? '';
           if (value.isNotEmpty) {
             vitalData[timeColumn] = value;
           }
@@ -911,7 +887,7 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
       }
 
       widget.onSave(formData);
-      
+
       if (mounted) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -960,4 +936,4 @@ class _PhysicalExamFormDialogState extends State<PhysicalExamFormDialog> {
       }
     }
   }
-} 
+}

@@ -144,7 +144,7 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
                       try {
                         final result =
                             await ref
-                                .read(unifiedRecordsNotifierProvider.notifier)
+                                .read(unifiedFrapProvider.notifier)
                                 .syncRecordsWithResult();
 
                         if (mounted) {
@@ -1014,7 +1014,7 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
       } else {
         // Modo creación: guardar nuevo registro
         final result = await ref
-            .read(unifiedRecordsNotifierProvider.notifier)
+            .read(unifiedFrapProvider.notifier)
             .saveRecord(frapData);
 
         if (!mounted) return;

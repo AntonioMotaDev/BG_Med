@@ -19,6 +19,8 @@ import 'package:bg_med/core/models/appointment.dart';
 import 'package:bg_med/core/services/frap_local_service.dart';
 import 'package:bg_med/core/services/frap_firestore_service.dart';
 import 'package:bg_med/core/services/frap_unified_service.dart';
+import 'core/navigation/route_observer.dart';
+import 'dart:developer' as developer;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -52,7 +54,8 @@ void main() async {
     // Abrir cajas de Hive con mejor manejo de errores
     await _initializeHiveBoxes();
   } catch (e) {
-    print('Error durante inicialización: $e');
+    developer.log('error: $e', name: 'main_initialization');
+    // Continuar sin la base de datos local si hay un error crítico
   }
 
   runApp(
@@ -63,7 +66,7 @@ void main() async {
         frapFirestoreServiceProvider,
         frapUnifiedServiceProvider,
       ],
-      child: MyApp(),
+      child: const MyApp(),
     ),
   );
 }
@@ -74,21 +77,39 @@ Future<void> _initializeHiveBoxes() async {
     // Verificar si la caja ya está abierta
     if (!Hive.isBoxOpen('fraps')) {
       await Hive.openBox<Frap>('fraps');
-      print('Caja de FRAPs abierta correctamente');
+      developer.log(
+        'Caja de FRAPs abierta correctamente',
+        name: 'hive_initialization',
+      );
     } else {
-      print('Caja de FRAPs ya estaba abierta');
+      developer.log(
+        'Caja de FRAPs ya estaba abierta',
+        name: 'hive_initialization',
+      );
     }
   } catch (e) {
-    print('Error abriendo caja de FRAPs: $e');
+    developer.log(
+      'Error abriendo caja de FRAPs: $e',
+      name: 'hive_initialization',
+    );
     try {
       // Si hay error, intentar limpiar y reabrir
-      print('Intentando limpiar y reabrir la caja...');
+      developer.log(
+        'Intentando limpiar y reabrir la caja...',
+        name: 'hive_initialization',
+      );
       await Hive.deleteBoxFromDisk('fraps');
-      await Future.delayed(Duration(milliseconds: 500)); // Pequeña pausa
+      await Future.delayed(const Duration(milliseconds: 500)); // Pequeña pausa
       await Hive.openBox<Frap>('fraps');
-      print('Caja de FRAPs reabierta correctamente después de limpiar');
+      developer.log(
+        'Caja de FRAPs reabierta correctamente después de limpiar',
+        name: 'hive_initialization',
+      );
     } catch (e2) {
-      print('Error crítico inicializando base de datos: $e2');
+      developer.log(
+        'Error crítico inicializando base de datos: $e2',
+        name: 'hive_initialization',
+      );
       // Continuar sin la base de datos local
     }
   }
@@ -124,7 +145,8 @@ class MyApp extends StatelessWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
       home: const AuthWrapper(),
-      routes: {'/dashboard': (context) => DashboardScreen()},
+      navigatorObservers: [routeObserver],
+      routes: {'/dashboard': (context) => const DashboardScreen()},
     );
   }
 }

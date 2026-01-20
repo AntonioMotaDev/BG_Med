@@ -317,7 +317,7 @@ class _ServiceInfoFormDialogState extends State<ServiceInfoFormDialog> {
             const SizedBox(width: 16),
             Expanded(
               child: _buildTimeField(
-                label: 'Hora de Arribo',
+                label: 'Hora de Llegada al Lugar',
                 value: _horaArribo,
                 onChanged: (time) => setState(() => _horaArribo = time),
               ),
@@ -331,7 +331,7 @@ class _ServiceInfoFormDialogState extends State<ServiceInfoFormDialog> {
           children: [
             Expanded(
               child: _buildTimeField(
-                label: 'Hora de Llegada',
+                label: 'Hora de Llegada al Hospital',
                 value: _horaLlegada,
                 onChanged: (time) => setState(() => _horaLlegada = time),
               ),
@@ -647,7 +647,7 @@ class _ServiceInfoFormDialogState extends State<ServiceInfoFormDialog> {
         ),
         const SizedBox(height: 16),
         _buildSignatureSection(
-          title: 'Firma del Paciente',
+          title: 'Firma del Paciente o familiar',
           controller: _consentimientoSignatureController,
           base64Data: _consentimientoSignatureData,
           onClear: () {

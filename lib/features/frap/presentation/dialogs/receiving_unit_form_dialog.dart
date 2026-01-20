@@ -12,25 +12,24 @@ class ReceivingUnitFormDialog extends StatefulWidget {
   });
 
   @override
-  State<ReceivingUnitFormDialog> createState() => _ReceivingUnitFormDialogState();
+  State<ReceivingUnitFormDialog> createState() =>
+      _ReceivingUnitFormDialogState();
 }
 
 class _ReceivingUnitFormDialogState extends State<ReceivingUnitFormDialog> {
   final _formKey = GlobalKey<FormState>();
   final _ambulanciaNumeroController = TextEditingController();
   final _ambulanciaPlacasController = TextEditingController();
-  final _doctorController = TextEditingController();
-  final _otroLugarController = TextEditingController();
-  
+  final _otroLugarOrigenController = TextEditingController();
+  final _otroLugarDestinoController = TextEditingController();
+  final _otroLugarConsultaController = TextEditingController();
+
   bool _isLoading = false;
 
   // Variables para dropdowns
   String? _selectedLugarOrigen;
   String? _selectedLugarDestino;
-  String? _selectedLugarConsulta;
-  String? _selectedPersonal;
-
-  // Lista de opciones para los dropdowns
+  String? _selectedLugarConsulta; // Lista de opciones para los dropdowns
   final List<String> _lugaresOptions = [
     'Domicilio',
     'Hospital Regional',
@@ -39,14 +38,6 @@ class _ReceivingUnitFormDialogState extends State<ReceivingUnitFormDialog> {
     'Hospital PEMEX Cd. México',
     'Hospital Angeles',
     'Hospital HEMS',
-    'Otro',
-  ];
-
-  final List<String> _personalOptions = [
-    'Médico',
-    'Enfermero/a',
-    'Paramédico',
-    'Técnico',
     'Otro',
   ];
 
@@ -65,15 +56,40 @@ class _ReceivingUnitFormDialogState extends State<ReceivingUnitFormDialog> {
       _selectedLugarOrigen = data['lugarOrigen'];
       _selectedLugarDestino = data['lugarDestino'];
       _selectedLugarConsulta = data['lugarConsulta'];
-      _selectedPersonal = data['personal'];
       _ambulanciaNumeroController.text = data['ambulanciaNumero'] ?? '';
       _ambulanciaPlacasController.text = data['ambulanciaPlacas'] ?? '';
-      _doctorController.text = data['doctor'] ?? '';
-      _otroLugarController.text = data['otroLugar'] ?? '';
-      
-      // Personal médico
-      if (data['personalMedico'] != null) {
-        _personalMedicoList = List<Map<String, String>>.from(data['personalMedico']);
+
+      // Si los lugares vienen como texto (no están en el dropdown), es "Otro"
+      if (_selectedLugarOrigen != null &&
+          !_lugaresOptions.contains(_selectedLugarOrigen)) {
+        _otroLugarOrigenController.text = _selectedLugarOrigen!;
+        _selectedLugarOrigen = 'Otro';
+      }
+      if (_selectedLugarDestino != null &&
+          !_lugaresOptions.contains(_selectedLugarDestino)) {
+        _otroLugarDestinoController.text = _selectedLugarDestino!;
+        _selectedLugarDestino = 'Otro';
+      }
+      if (_selectedLugarConsulta != null &&
+          !_lugaresOptions.contains(_selectedLugarConsulta)) {
+        _otroLugarConsultaController.text = _selectedLugarConsulta!;
+        _selectedLugarConsulta = 'Otro';
+      }
+
+      // Personal médico - Conversión segura
+      if (data['personalMedico'] != null && data['personalMedico'] is List) {
+        final List<dynamic> personalList = data['personalMedico'];
+        _personalMedicoList =
+            personalList.map((item) {
+              if (item is Map) {
+                return {
+                  'nombre': item['nombre']?.toString() ?? '',
+                  'especialidad': item['especialidad']?.toString() ?? '',
+                  'cedula': item['cedula']?.toString() ?? '',
+                };
+              }
+              return {'nombre': '', 'especialidad': '', 'cedula': ''};
+            }).toList();
       }
     }
   }
@@ -82,8 +98,9 @@ class _ReceivingUnitFormDialogState extends State<ReceivingUnitFormDialog> {
   void dispose() {
     _ambulanciaNumeroController.dispose();
     _ambulanciaPlacasController.dispose();
-    _doctorController.dispose();
-    _otroLugarController.dispose();
+    _otroLugarOrigenController.dispose();
+    _otroLugarDestinoController.dispose();
+    _otroLugarConsultaController.dispose();
     super.dispose();
   }
 
@@ -103,9 +120,9 @@ class _ReceivingUnitFormDialogState extends State<ReceivingUnitFormDialog> {
             // Header
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppTheme.primaryBlue,
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
                 ),
@@ -156,17 +173,17 @@ class _ReceivingUnitFormDialogState extends State<ReceivingUnitFormDialog> {
                           });
                         },
                       ),
-                      
+
                       // Campo "Otro" para lugar de origen
                       if (_selectedLugarOrigen == 'Otro')
                         Padding(
                           padding: const EdgeInsets.only(top: 8),
                           child: _buildTextField(
-                            controller: _otroLugarController,
+                            controller: _otroLugarOrigenController,
                             label: 'Especifique lugar de origen',
+                            isRequired: true,
                           ),
                         ),
-
                       const SizedBox(height: 16),
 
                       // Lugar de destino
@@ -177,26 +194,56 @@ class _ReceivingUnitFormDialogState extends State<ReceivingUnitFormDialog> {
                         onChanged: (value) {
                           setState(() {
                             _selectedLugarDestino = value;
+                            // Error #4: Limpiar lugarConsulta si cambia a Domicilio
+                            if (value == 'Domicilio') {
+                              _selectedLugarConsulta = null;
+                              _otroLugarConsultaController.clear();
+                            }
                           });
                         },
                       ),
 
+                      // Campo "Otro" para lugar de destino
+                      if (_selectedLugarDestino == 'Otro')
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: _buildTextField(
+                            controller: _otroLugarDestinoController,
+                            label: 'Especifique lugar de destino',
+                            isRequired: true,
+                          ),
+                        ),
+
                       const SizedBox(height: 16),
 
                       // Lugar de consulta (solo si no es domicilio)
-                      if (_selectedLugarDestino != null && _selectedLugarDestino != 'Domicilio')
+                      if (_selectedLugarDestino != null &&
+                          _selectedLugarDestino != 'Domicilio')
                         Column(
                           children: [
                             _buildDropdownField(
                               label: 'Lugar de Consulta',
                               value: _selectedLugarConsulta,
-                              items: _lugaresOptions.where((item) => item != 'Domicilio').toList(),
+                              items:
+                                  _lugaresOptions
+                                      .where((item) => item != 'Domicilio')
+                                      .toList(),
                               onChanged: (value) {
                                 setState(() {
                                   _selectedLugarConsulta = value;
                                 });
                               },
                             ),
+                            // Campo "Otro" para lugar de consulta
+                            if (_selectedLugarConsulta == 'Otro')
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: _buildTextField(
+                                  controller: _otroLugarConsultaController,
+                                  label: 'Especifique lugar de consulta',
+                                  isRequired: true,
+                                ),
+                              ),
                             const SizedBox(height: 16),
                           ],
                         ),
@@ -232,33 +279,6 @@ class _ReceivingUnitFormDialogState extends State<ReceivingUnitFormDialog> {
 
                       const SizedBox(height: 16),
 
-                      // Personal médico
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildDropdownField(
-                              label: 'Personal',
-                              value: _selectedPersonal,
-                              items: _personalOptions,
-                              onChanged: (value) {
-                                setState(() {
-                                  _selectedPersonal = value;
-                                });
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildTextField(
-                              controller: _doctorController,
-                              label: 'Doctor',
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 16),
-
                       // Personal médico dinámico
                       Row(
                         children: [
@@ -279,7 +299,10 @@ class _ReceivingUnitFormDialogState extends State<ReceivingUnitFormDialog> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppTheme.primaryGreen,
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
                             ),
                           ),
                         ],
@@ -327,17 +350,22 @@ class _ReceivingUnitFormDialogState extends State<ReceivingUnitFormDialog> {
                   const Spacer(),
                   ElevatedButton.icon(
                     onPressed: _isLoading ? null : _saveForm,
-                    icon: _isLoading
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                          )
-                        : const Icon(Icons.save),
-                    label: Text(_isLoading ? 'Guardando...' : 'Guardar Sección'),
+                    icon:
+                        _isLoading
+                            ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                            : const Icon(Icons.save),
+                    label: Text(
+                      _isLoading ? 'Guardando...' : 'Guardar Sección',
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryBlue,
                       foregroundColor: Colors.white,
@@ -398,12 +426,10 @@ class _ReceivingUnitFormDialogState extends State<ReceivingUnitFormDialog> {
           vertical: 16,
         ),
       ),
-      items: items.map((String item) {
-        return DropdownMenuItem<String>(
-          value: item,
-          child: Text(item),
-        );
-      }).toList(),
+      items:
+          items.map((String item) {
+            return DropdownMenuItem<String>(value: item, child: Text(item));
+          }).toList(),
       onChanged: onChanged,
       validator: (value) {
         if (isRequired && (value == null || value.isEmpty)) {
@@ -416,7 +442,7 @@ class _ReceivingUnitFormDialogState extends State<ReceivingUnitFormDialog> {
 
   Widget _buildPersonalMedicoItem(int index) {
     final personal = _personalMedicoList[index];
-    
+
     return Container(
       margin: const EdgeInsets.all(8),
       padding: const EdgeInsets.all(12),
@@ -433,13 +459,24 @@ class _ReceivingUnitFormDialogState extends State<ReceivingUnitFormDialog> {
                 child: TextFormField(
                   initialValue: personal['nombre'] ?? '',
                   decoration: const InputDecoration(
-                    labelText: 'Nombre',
+                    labelText: 'Nombre *',
                     border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
+                    ),
                   ),
                   style: const TextStyle(fontSize: 12),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Requerido';
+                    }
+                    return null;
+                  },
                   onChanged: (value) {
-                    _personalMedicoList[index]['nombre'] = value;
+                    setState(() {
+                      _personalMedicoList[index]['nombre'] = value;
+                    });
                   },
                 ),
               ),
@@ -448,13 +485,24 @@ class _ReceivingUnitFormDialogState extends State<ReceivingUnitFormDialog> {
                 child: TextFormField(
                   initialValue: personal['especialidad'] ?? '',
                   decoration: const InputDecoration(
-                    labelText: 'Especialidad',
+                    labelText: 'Especialidad *',
                     border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
+                    ),
                   ),
                   style: const TextStyle(fontSize: 12),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Requerido';
+                    }
+                    return null;
+                  },
                   onChanged: (value) {
-                    _personalMedicoList[index]['especialidad'] = value;
+                    setState(() {
+                      _personalMedicoList[index]['especialidad'] = value;
+                    });
                   },
                 ),
               ),
@@ -463,13 +511,24 @@ class _ReceivingUnitFormDialogState extends State<ReceivingUnitFormDialog> {
                 child: TextFormField(
                   initialValue: personal['cedula'] ?? '',
                   decoration: const InputDecoration(
-                    labelText: 'Cédula',
+                    labelText: 'Cédula *',
                     border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
+                    ),
                   ),
                   style: const TextStyle(fontSize: 12),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Requerido';
+                    }
+                    return null;
+                  },
                   onChanged: (value) {
-                    _personalMedicoList[index]['cedula'] = value;
+                    setState(() {
+                      _personalMedicoList[index]['cedula'] = value;
+                    });
                   },
                 ),
               ),
@@ -488,11 +547,7 @@ class _ReceivingUnitFormDialogState extends State<ReceivingUnitFormDialog> {
 
   void _addPersonalMedico() {
     setState(() {
-      _personalMedicoList.add({
-        'nombre': '',
-        'especialidad': '',
-        'cedula': '',
-      });
+      _personalMedicoList.add({'nombre': '', 'especialidad': '', 'cedula': ''});
     });
   }
 
@@ -504,6 +559,12 @@ class _ReceivingUnitFormDialogState extends State<ReceivingUnitFormDialog> {
 
   Future<void> _saveForm() async {
     if (!_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor complete todos los campos obligatorios'),
+          backgroundColor: Colors.orange,
+        ),
+      );
       return;
     }
 
@@ -512,26 +573,67 @@ class _ReceivingUnitFormDialogState extends State<ReceivingUnitFormDialog> {
     });
 
     try {
+      // Filtrar personal médico con datos completos
+      final validPersonalMedico =
+          _personalMedicoList
+              .where((personal) {
+                return personal['nombre']?.trim().isNotEmpty == true &&
+                    personal['especialidad']?.trim().isNotEmpty == true &&
+                    personal['cedula']?.trim().isNotEmpty == true;
+              })
+              .map(
+                (personal) => {
+                  'nombre': personal['nombre']!.trim(),
+                  'especialidad': personal['especialidad']!.trim(),
+                  'cedula': personal['cedula']!.trim(),
+                },
+              )
+              .toList();
+
       final formData = {
-        'lugarOrigen': _selectedLugarOrigen,
-        'lugarDestino': _selectedLugarDestino,
-        'lugarConsulta': _selectedLugarDestino == 'Domicilio' ? null : _selectedLugarConsulta,
+        'lugarOrigen':
+            _selectedLugarOrigen == 'Otro'
+                ? _otroLugarOrigenController.text.trim()
+                : _selectedLugarOrigen,
+        'lugarDestino':
+            _selectedLugarDestino == 'Otro'
+                ? _otroLugarDestinoController.text.trim()
+                : _selectedLugarDestino,
+        'lugarConsulta':
+            _selectedLugarDestino == 'Domicilio'
+                ? null
+                : (_selectedLugarConsulta == 'Otro'
+                    ? _otroLugarConsultaController.text.trim()
+                    : _selectedLugarConsulta),
         'ambulanciaNumero': _ambulanciaNumeroController.text.trim(),
         'ambulanciaPlacas': _ambulanciaPlacasController.text.trim(),
-        'personal': _selectedPersonal,
-        'doctor': _doctorController.text.trim(),
-        'otroLugar': _otroLugarController.text.trim(),
-        'personalMedico': _personalMedicoList,
+        'personalMedico': validPersonalMedico,
       };
 
       widget.onSave(formData);
-      
+
       if (mounted) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Información de unidad receptora guardada'),
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    validPersonalMedico.isEmpty
+                        ? 'Información de unidad receptora guardada'
+                        : 'Información guardada con ${validPersonalMedico.length} personal(es) médico(s)',
+                  ),
+                ),
+              ],
+            ),
             backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
         );
       }
@@ -539,8 +641,19 @@ class _ReceivingUnitFormDialogState extends State<ReceivingUnitFormDialog> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al guardar: $e'),
+            content: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(child: Text('Error al guardar: ${e.toString()}')),
+              ],
+            ),
             backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            duration: const Duration(seconds: 5),
           ),
         );
       }
@@ -552,4 +665,4 @@ class _ReceivingUnitFormDialogState extends State<ReceivingUnitFormDialog> {
       }
     }
   }
-} 
+}

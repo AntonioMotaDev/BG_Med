@@ -129,7 +129,7 @@ class _RegistryInfoFormDialogState
       // Si no hay nombre, usar valor por defecto
       return 'Sin Nombre';
     } catch (e) {
-      print('Error obteniendo nombre del paciente: $e');
+      // print('Error obteniendo nombre del paciente: $e');
       return 'Sin Nombre';
     }
   }
@@ -159,9 +159,9 @@ class _RegistryInfoFormDialogState
             // Header
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppTheme.primaryBlue,
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
                 ),
@@ -205,7 +205,7 @@ class _RegistryInfoFormDialogState
                       _buildTextField(
                         controller: _convenioController,
                         label: 'Convenio',
-                        isRequired: true,
+                        isRequired: false,
                       ),
                       const SizedBox(height: 20),
 
@@ -216,7 +216,7 @@ class _RegistryInfoFormDialogState
                             child: _buildTextField(
                               controller: _episodioController,
                               label: 'Episodio',
-                              isRequired: true,
+                              isRequired: false,
                             ),
                           ),
                           const SizedBox(width: 16),
@@ -479,7 +479,7 @@ class _RegistryInfoFormDialogState
             ),
             child: Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.calendar_today,
                   color: AppTheme.primaryBlue,
                   size: 20,

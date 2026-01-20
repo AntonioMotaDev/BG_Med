@@ -5,6 +5,7 @@ import 'package:bg_med/features/frap/presentation/providers/frap_unified_provide
 import 'package:bg_med/features/frap/presentation/screens/frap_record_details_screen.dart';
 import 'package:bg_med/features/frap/presentation/screens/frap_screen.dart';
 import 'package:bg_med/core/theme/app_theme.dart';
+import 'package:bg_med/core/navigation/route_observer.dart';
 import 'package:intl/intl.dart';
 
 class FrapRecordsListScreen extends ConsumerStatefulWidget {
@@ -15,7 +16,8 @@ class FrapRecordsListScreen extends ConsumerStatefulWidget {
       _FrapRecordsListScreenState();
 }
 
-class _FrapRecordsListScreenState extends ConsumerState<FrapRecordsListScreen> {
+class _FrapRecordsListScreenState extends ConsumerState<FrapRecordsListScreen>
+    with RouteAware {
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
 
@@ -33,16 +35,39 @@ class _FrapRecordsListScreenState extends ConsumerState<FrapRecordsListScreen> {
   // final List<int> _itemsPerPageOptions = [10, 25, 50, 100];
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshRecords();
+    });
   }
 
   @override
   void dispose() {
+    routeObserver.unsubscribe(this);
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    // Recargar datos al volver a esta pantalla
+    _refreshRecords();
+  }
+
+  @override
+  void didPush() {
+    // Cargar datos al entrar a esta pantalla
+    _refreshRecords();
   }
 
   void _onSearchChanged() {
@@ -895,30 +920,6 @@ class _FrapRecordsListScreenState extends ConsumerState<FrapRecordsListScreen> {
           ),
     );
   }
-
-  // Future<void> _debugDatabaseStatus() async {
-  //   try {
-  //     if (mounted) {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         SnackBar(
-  //           content: Text('Debug completado. Revisa la consola.'),
-  //           backgroundColor: Colors.blue,
-  //           duration: const Duration(seconds: 2),
-  //         ),
-  //       );
-  //     }
-  //   } catch (e) {
-  //     if (mounted) {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         SnackBar(
-  //           content: Text('Error en debug: $e'),
-  //           backgroundColor: Colors.red,
-  //           duration: const Duration(seconds: 3),
-  //         ),
-  //       );
-  //     }
-  //   }
-  // }
 
   @override
   Widget build(BuildContext context) {

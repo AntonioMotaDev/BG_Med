@@ -55,21 +55,21 @@ class _PatientInfoFormDialogState extends ConsumerState<PatientInfoFormDialog> {
   // Controladores de texto adicionales
   final _tipoEntregaOtroController = TextEditingController();
 
-  final List<String> _tiposEntrega = [
-    'Domicilio',
-    'Hospital',
-    'Clínica',
-    'Centro de Salud',
-    'Otro',
-  ];
+  // final List<String> _tiposEntrega = [
+  //   'Domicilio',
+  //   'Hospital',
+  //   'Clínica',
+  //   'Centro de Salud',
+  //   'Otro',
+  // ];
 
-  final List<String> _generos = [
-    'Masculino',
-    'Femenino',
-    'No binario',
-    'Prefiero no decir',
-    'Otro',
-  ];
+  // final List<String> _generos = [
+  //   'Masculino',
+  //   'Femenino',
+  //   'No binario',
+  //   'Prefiero no decir',
+  //   'Otro',
+  // ];
 
   @override
   void initState() {
@@ -878,62 +878,61 @@ class _PatientInfoFormDialogState extends ConsumerState<PatientInfoFormDialog> {
         const SizedBox(height: 24),
 
         // Sección: Información Adicional
-        _buildFormSection(
-          'INFORMACIÓN ADICIONAL',
-          Icons.info_outline,
-          Colors.orange,
-          [
-            // Tipo de entrega
-            _buildSelectionGroup(
-              'TIPO DE ENTREGA',
-              Icons.delivery_dining,
-              _tiposEntrega,
-              _tipoEntregaSeleccionado,
-              (value) {
-                setState(() {
-                  _tipoEntregaSeleccionado = value;
-                  if (value != 'Otro') {
-                    _tipoEntregaOtroController.clear();
-                  }
-                });
-              },
-            ),
+        // _buildFormSection(
+        //   'INFORMACIÓN ADICIONAL',
+        //   Icons.info_outline,
+        //   Colors.orange,
+        //   [
+        //     // Tipo de entrega
+        //     _buildSelectionGroup(
+        //       'TIPO DE ENTREGA',
+        //       Icons.delivery_dining,
+        //       _tiposEntrega,
+        //       _tipoEntregaSeleccionado,
+        //       (value) {
+        //         setState(() {
+        //           _tipoEntregaSeleccionado = value;
+        //           if (value != 'Otro') {
+        //             _tipoEntregaOtroController.clear();
+        //           }
+        //         });
+        //       },
+        //     ),
 
-            if (_tipoEntregaSeleccionado == 'Otro') ...[
-              const SizedBox(height: 12),
-              _buildTextField(
-                controller: _tipoEntregaOtroController,
-                label: 'Especifique tipo de entrega:',
-                icon: Icons.edit,
-                validator: (value) {
-                  if (_tipoEntregaSeleccionado == 'Otro' &&
-                      (value == null || value.trim().isEmpty)) {
-                    return 'Especifique el tipo de entrega';
-                  }
-                  return null;
-                },
-              ),
-            ],
+        //     if (_tipoEntregaSeleccionado == 'Otro') ...[
+        //       const SizedBox(height: 12),
+        //       _buildTextField(
+        //         controller: _tipoEntregaOtroController,
+        //         label: 'Especifique tipo de entrega:',
+        //         icon: Icons.edit,
+        //         validator: (value) {
+        //           if (_tipoEntregaSeleccionado == 'Otro' &&
+        //               (value == null || value.trim().isEmpty)) {
+        //             return 'Especifique el tipo de entrega';
+        //           }
+        //           return null;
+        //         },
+        //       ),
+        //     ],
 
-            const SizedBox(height: 16),
+        //     const SizedBox(height: 16),
 
-            // Género
-            _buildSelectionGroup(
-              'GÉNERO',
-              Icons.person_outline,
-              _generos,
-              _generoSeleccionado,
-              (value) {
-                setState(() {
-                  _generoSeleccionado = value;
-                });
-              },
-            ),
+        //     // Género
+        //     _buildSelectionGroup(
+        //       'GÉNERO',
+        //       Icons.person_outline,
+        //       _generos,
+        //       _generoSeleccionado,
+        //       (value) {
+        //         setState(() {
+        //           _generoSeleccionado = value;
+        //         });
+        //       },
+        //     ),
 
-            const SizedBox(height: 16),
-          ],
-        ),
-
+        //     const SizedBox(height: 16),
+        //   ],
+        // ),
         const SizedBox(height: 24),
 
         // Sección: Información Médica
@@ -1110,7 +1109,7 @@ class _PatientInfoFormDialogState extends ConsumerState<PatientInfoFormDialog> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: AppTheme.primaryBlue, width: 2),
+          borderSide: const BorderSide(color: AppTheme.primaryBlue, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -1118,7 +1117,7 @@ class _PatientInfoFormDialogState extends ConsumerState<PatientInfoFormDialog> {
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.red, width: 2),
+          borderSide: const BorderSide(color: Colors.red, width: 2),
         ),
         filled: true,
         fillColor: enabled ? Colors.white : Colors.grey[100],
@@ -1140,71 +1139,71 @@ class _PatientInfoFormDialogState extends ConsumerState<PatientInfoFormDialog> {
     );
   }
 
-  Widget _buildSelectionGroup(
-    String title,
-    IconData icon,
-    List<String> options,
-    String selectedValue,
-    Function(String) onChanged,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, color: Colors.grey[600], size: 18),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[700],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children:
-              options.map((option) {
-                final isSelected = selectedValue == option;
-                return GestureDetector(
-                  onTap: () => onChanged(isSelected ? '' : option),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSelected ? AppTheme.primaryBlue : Colors.white,
-                      border: Border.all(
-                        color:
-                            isSelected
-                                ? AppTheme.primaryBlue
-                                : Colors.grey[300]!,
-                        width: isSelected ? 2 : 1,
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      option,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.normal,
-                        color: isSelected ? Colors.white : Colors.grey[700],
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-        ),
-      ],
-    );
-  }
+  // Widget _buildSelectionGroup(
+  //   String title,
+  //   IconData icon,
+  //   List<String> options,
+  //   String selectedValue,
+  //   Function(String) onChanged,
+  // ) {
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       Row(
+  //         children: [
+  //           Icon(icon, color: Colors.grey[600], size: 18),
+  //           const SizedBox(width: 8),
+  //           Text(
+  //             title,
+  //             style: TextStyle(
+  //               fontSize: 14,
+  //               fontWeight: FontWeight.w600,
+  //               color: Colors.grey[700],
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //       const SizedBox(height: 8),
+  //       Wrap(
+  //         spacing: 8,
+  //         runSpacing: 8,
+  //         children:
+  //             options.map((option) {
+  //               final isSelected = selectedValue == option;
+  //               return GestureDetector(
+  //                 onTap: () => onChanged(isSelected ? '' : option),
+  //                 child: Container(
+  //                   padding: const EdgeInsets.symmetric(
+  //                     horizontal: 12,
+  //                     vertical: 8,
+  //                   ),
+  //                   decoration: BoxDecoration(
+  //                     color: isSelected ? AppTheme.primaryBlue : Colors.white,
+  //                     border: Border.all(
+  //                       color:
+  //                           isSelected
+  //                               ? AppTheme.primaryBlue
+  //                               : Colors.grey[300]!,
+  //                       width: isSelected ? 2 : 1,
+  //                     ),
+  //                     borderRadius: BorderRadius.circular(20),
+  //                   ),
+  //                   child: Text(
+  //                     option,
+  //                     style: TextStyle(
+  //                       fontSize: 12,
+  //                       fontWeight:
+  //                           isSelected ? FontWeight.w600 : FontWeight.normal,
+  //                       color: isSelected ? Colors.white : Colors.grey[700],
+  //                     ),
+  //                   ),
+  //                 ),
+  //               );
+  //             }).toList(),
+  //       ),
+  //     ],
+  //   );
+  // }
 
   List<PatientFirestore> _getFilteredPatients(List<PatientFirestore> patients) {
     if (_searchController.text.isEmpty) return [];

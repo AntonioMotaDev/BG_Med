@@ -305,6 +305,7 @@ class ReceptionDisplayData {
   final String doctorName;
   final String doctorCedula;
   final String? doctorSignature;
+  final String? patientSignature;
   final String lugarOrigen;
   final String lugarDestino;
   final String lugarConsulta;
@@ -320,6 +321,7 @@ class ReceptionDisplayData {
     this.doctorName = '',
     this.doctorCedula = '',
     this.doctorSignature,
+    this.patientSignature,
     this.lugarOrigen = '',
     this.lugarDestino = '',
     this.lugarConsulta = '',
@@ -676,7 +678,7 @@ class PdfGeneratorService {
         },
         children: [
           pw.TableRow(
-            decoration: pw.BoxDecoration(color: PdfColors.grey100),
+            decoration: const pw.BoxDecoration(color: PdfColors.grey100),
             children: [
               _buildCompactTableCell('Convenio', isHeader: true),
               _buildCompactTableCell('Episodio', isHeader: true),
@@ -719,10 +721,10 @@ class PdfGeneratorService {
             },
             children: [
               pw.TableRow(
-                decoration: pw.BoxDecoration(color: PdfColors.grey100),
+                decoration: const pw.BoxDecoration(color: PdfColors.grey100),
                 children: [
                   _buildCompactTableCell('Hora llamada', isHeader: true),
-                  _buildCompactTableCell('Hora arribo', isHeader: true),
+                  _buildCompactTableCell('Llegada al lugar', isHeader: true),
                   _buildCompactTableCell('Tiempo espera', isHeader: true),
                   _buildCompactTableCell('Hora llegada', isHeader: true),
                   _buildCompactTableCell('Hora termino', isHeader: true),
@@ -744,7 +746,7 @@ class PdfGeneratorService {
           // Información adicional debajo de la tabla
           pw.Container(
             padding: const pw.EdgeInsets.all(4),
-            decoration: pw.BoxDecoration(
+            decoration: const pw.BoxDecoration(
               border: pw.Border(
                 top: pw.BorderSide(color: PdfColors.grey900, width: 1.2),
               ),
@@ -755,7 +757,13 @@ class PdfGeneratorService {
                 pw.Row(
                   children: [
                     pw.Text('Tipo: ', style: _labelStyle),
-                    pw.Text(service.tipoServicio, style: _valueStyle),
+                    pw.Text(
+                      (service.tipoServicio == 'Otro' ||
+                              service.tipoServicio.isEmpty)
+                          ? service.tipoServicioEspecifique
+                          : service.tipoServicio,
+                      style: _valueStyle,
+                    ),
                     pw.SizedBox(width: 4),
                     pw.Text('Lugar de ocurrencia: ', style: _labelStyle),
                     pw.Text(
@@ -837,7 +845,7 @@ class PdfGeneratorService {
                         flex: 3,
                         child: pw.Row(
                           children: [
-                            pw.Text('Seguro: ', style: _labelStyle),
+                            pw.Text('SS: ', style: _labelStyle),
                             pw.Expanded(
                               child: pw.Text(
                                 patient.insurance,
@@ -898,7 +906,7 @@ class PdfGeneratorService {
                 ),
                 // Quinta fila: Padecimiento actual (dato largo)
                 pw.Container(
-                  decoration: pw.BoxDecoration(
+                  decoration: const pw.BoxDecoration(
                     border: pw.Border(
                       top: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
                     ),
@@ -929,6 +937,7 @@ class PdfGeneratorService {
     final injuryLocation =
         record.getDetailedInfo()['injuryLocation'] as Map<String, dynamic>?;
     final drawnInjuries = injuryLocation?['drawnInjuries'] as List<dynamic>?;
+    final notes = injuryLocation?['notes']?.toString() ?? '';
 
     return pw.Container(
       decoration: pw.BoxDecoration(
@@ -939,47 +948,79 @@ class PdfGeneratorService {
           _buildCompactSectionHeader('LOCALIZACIÓN DE LESIONES'),
           pw.Padding(
             padding: const pw.EdgeInsets.all(4),
-            child: pw.Row(
+            child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                // Imagen de lesiones
-                pw.Container(
-                  width: 160,
-                  height: 240,
-                  decoration: pw.BoxDecoration(
-                    border: pw.Border.all(color: PdfColors.grey400),
-                  ),
-                  child:
-                      combinedImage != null
-                          ? pw.Image(combinedImage, fit: pw.BoxFit.contain)
-                          : pw.Center(
-                            child: pw.Text('No hay imagen', style: _smallStyle),
-                          ),
-                ),
-                pw.SizedBox(width: 8),
-                // Información de lesiones
-                pw.Expanded(
-                  child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(
-                        'Lesiones registradas: ${drawnInjuries?.length ?? 0}',
-                        style: _labelStyle,
+                pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    // Imagen de lesiones
+                    pw.Container(
+                      width: 160,
+                      height: 240,
+                      decoration: pw.BoxDecoration(
+                        border: pw.Border.all(color: PdfColors.grey400),
                       ),
-                      if (drawnInjuries != null &&
-                          drawnInjuries.isNotEmpty) ...[
-                        pw.SizedBox(height: 4),
-                        pw.Text('Tipos:', style: _labelStyle),
-                        pw.SizedBox(height: 4),
-                        pw.Wrap(
-                          spacing: 2,
-                          runSpacing: 1,
-                          children: _getInjuryTypesSummary(drawnInjuries),
-                        ),
-                      ],
-                    ],
-                  ),
+                      child:
+                          combinedImage != null
+                              ? pw.Image(combinedImage, fit: pw.BoxFit.contain)
+                              : pw.Center(
+                                child: pw.Text(
+                                  'No hay imagen',
+                                  style: _smallStyle,
+                                ),
+                              ),
+                    ),
+                    pw.SizedBox(width: 8),
+                    // Información de lesiones
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text(
+                            'Lesiones registradas: ${drawnInjuries?.length ?? 0}',
+                            style: _labelStyle,
+                          ),
+                          if (drawnInjuries != null &&
+                              drawnInjuries.isNotEmpty) ...[
+                            pw.SizedBox(height: 4),
+                            pw.Text('Tipos:', style: _labelStyle),
+                            pw.SizedBox(height: 4),
+                            pw.Wrap(
+                              spacing: 2,
+                              runSpacing: 1,
+                              children: _getInjuryTypesSummary(drawnInjuries),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
+                // Notas adicionales
+                if (notes.trim().isNotEmpty) ...[
+                  pw.SizedBox(height: 4),
+                  pw.Container(
+                    width: double.infinity,
+                    padding: const pw.EdgeInsets.all(3),
+                    decoration: pw.BoxDecoration(
+                      color: PdfColors.grey100,
+                      borderRadius: pw.BorderRadius.circular(2),
+                      border: pw.Border.all(
+                        color: PdfColors.grey400,
+                        width: 0.3,
+                      ),
+                    ),
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text('Notas adicionales:', style: _labelStyle),
+                        pw.SizedBox(height: 2),
+                        pw.Text(notes, style: _valueStyle),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -1127,7 +1168,8 @@ class PdfGeneratorService {
                 0: const pw.FlexColumnWidth(2.5),
                 1: const pw.FlexColumnWidth(1.5),
                 2: const pw.FlexColumnWidth(1.5),
-                3: const pw.FlexColumnWidth(2),
+                3: const pw.FlexColumnWidth(1),
+                4: const pw.FlexColumnWidth(2),
               },
               children: [
                 // Header
@@ -1137,6 +1179,7 @@ class PdfGeneratorService {
                     _buildCompactTableCell('Medicamento', isHeader: true),
                     _buildCompactTableCell('Dosis', isHeader: true),
                     _buildCompactTableCell('Vía', isHeader: true),
+                    _buildCompactTableCell('Hora', isHeader: true),
                     _buildCompactTableCell('Médico', isHeader: true),
                   ],
                 ),
@@ -1145,16 +1188,15 @@ class PdfGeneratorService {
                   final medicamento = med['medicamento']?.toString() ?? '';
                   final dosis = med['dosis']?.toString() ?? '';
                   final via = med['viaAdministracion']?.toString() ?? '';
-                  final medico =
-                      med['medicoIndico']?.toString() ??
-                      med['medicoOtro']?.toString() ??
-                      '';
+                  final hora = med['hora']?.toString() ?? 'N/A';
+                  final medico = med['medicoIndico']?.toString() ?? 'N/A';
 
                   return pw.TableRow(
                     children: [
                       _buildCompactTableCell(medicamento, alignLeft: true),
                       _buildCompactTableCell(dosis, alignLeft: true),
                       _buildCompactTableCell(via, alignLeft: true),
+                      _buildCompactTableCell(hora),
                       _buildCompactTableCell(medico, alignLeft: true),
                     ],
                   );
@@ -1291,13 +1333,55 @@ class PdfGeneratorService {
   pw.Widget _buildCompactClinicalHistory(ClinicalDisplayData clinical) {
     final traumasList = <String>[];
 
-    if (clinical.traumaCraneo) traumasList.add('Cráneo');
-    if (clinical.traumaTorax) traumasList.add('Tórax');
-    if (clinical.traumaAbdomen) traumasList.add('Abdomen');
-    if (clinical.traumaColumna) traumasList.add('Columna');
-    if (clinical.traumaExtremidades) traumasList.add('Extremidades');
-    if (clinical.traumaPelvis) traumasList.add('Pelvis');
-    if (clinical.traumaOtros) traumasList.add('Otros');
+    if (clinical.traumaCraneo) {
+      traumasList.add(
+        clinical.traumaCraneoEspecifique.trim().isEmpty
+            ? 'Cráneo'
+            : clinical.traumaCraneoEspecifique,
+      );
+    }
+    if (clinical.traumaTorax) {
+      traumasList.add(
+        clinical.traumaToraxEspecifique.trim().isEmpty
+            ? 'Tórax'
+            : clinical.traumaToraxEspecifique,
+      );
+    }
+    if (clinical.traumaAbdomen) {
+      traumasList.add(
+        clinical.traumaAbdomenEspecifique.trim().isEmpty
+            ? 'Abdomen'
+            : clinical.traumaAbdomenEspecifique,
+      );
+    }
+    if (clinical.traumaColumna) {
+      traumasList.add(
+        clinical.traumaColumnaEspecifique.trim().isEmpty
+            ? 'Columna'
+            : clinical.traumaColumnaEspecifique,
+      );
+    }
+    if (clinical.traumaExtremidades) {
+      traumasList.add(
+        clinical.traumaExtremidadesEspecifique.trim().isEmpty
+            ? 'Extremidades'
+            : clinical.traumaExtremidadesEspecifique,
+      );
+    }
+    if (clinical.traumaPelvis) {
+      traumasList.add(
+        clinical.traumaPelvisEspecifique.trim().isEmpty
+            ? 'Pelvis'
+            : clinical.traumaPelvisEspecifique,
+      );
+    }
+    if (clinical.traumaOtros) {
+      traumasList.add(
+        clinical.traumaOtrosEspecifique.trim().isEmpty
+            ? 'Otros'
+            : clinical.traumaOtrosEspecifique,
+      );
+    }
 
     // Verificar si hay algún dato para mostrar
     final hasData =
@@ -1401,18 +1485,13 @@ class PdfGeneratorService {
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                _buildCompactDetailRow('Alergias (S):', sample.alergias),
+                _buildCompactDetailRow('Alergias:', sample.alergias),
+                _buildCompactDetailRow('Medicamentos:', sample.medicamentos),
+                _buildCompactDetailRow('Antecedentes:', sample.enfermedades),
+                _buildCompactDetailRow('Última ingesta:', sample.horaAlimento),
                 _buildCompactDetailRow(
-                  'Medicamentos (M):',
-                  sample.medicamentos,
-                ),
-                _buildCompactDetailRow(
-                  'Antecedentes (A):',
-                  sample.enfermedades,
-                ),
-                _buildCompactDetailRow(
-                  'Última ingesta (L):',
-                  sample.horaAlimento,
+                  'Eventos previos:',
+                  sample.eventosPrevios,
                 ),
               ],
             ),
@@ -1423,7 +1502,15 @@ class PdfGeneratorService {
   }
 
   pw.Widget _buildCompactVitalSignsTable(VitalSignsDisplayData vitalSigns) {
-    final vitalSignsList = ['T/A', 'FC', 'FR', 'Temp.', 'Sat. O2', 'Glasgow'];
+    final vitalSignsList = [
+      'EVA',
+      'T/A',
+      'FC',
+      'FR',
+      'Temp.',
+      'Sat. O2',
+      'Glasgow',
+    ];
 
     return pw.Container(
       width: double.infinity,
@@ -1451,7 +1538,7 @@ class PdfGeneratorService {
               children: [
                 // Header
                 pw.TableRow(
-                  decoration: pw.BoxDecoration(color: PdfColors.grey100),
+                  decoration: const pw.BoxDecoration(color: PdfColors.grey100),
                   children: [
                     pw.Padding(
                       padding: const pw.EdgeInsets.all(2),
@@ -1505,10 +1592,10 @@ class PdfGeneratorService {
               ],
             ),
           ),
-          // Valores adicionales compactos
+          // Valores adicionales compactos (sin EVA ya que está en la tabla)
           pw.Container(
             padding: const pw.EdgeInsets.all(4),
-            decoration: pw.BoxDecoration(
+            decoration: const pw.BoxDecoration(
               border: pw.Border(
                 top: pw.BorderSide(color: PdfColors.grey400, width: 0.3),
               ),
@@ -1516,9 +1603,9 @@ class PdfGeneratorService {
             child: pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
               children: [
-                _buildCompactVitalItem('EVA', '${vitalSigns.eva}/10'),
                 _buildCompactVitalItem('LLC', '${vitalSigns.llc}s'),
                 _buildCompactVitalItem('Glucosa', '${vitalSigns.glucosa}'),
+                _buildCompactVitalItem('TA', vitalSigns.ta),
               ],
             ),
           ),
@@ -1594,12 +1681,10 @@ class PdfGeneratorService {
                           if (priority.influence.isNotEmpty)
                             _buildCompactDetailRow(
                               'Influencia:',
-                              priority.influence,
-                            ),
-                          if (priority.especifique.isNotEmpty)
-                            _buildCompactDetailRow(
-                              'Especifique:',
-                              priority.especifique,
+                              (priority.influence.toLowerCase() == 'otro' &&
+                                      priority.especifique.trim().isNotEmpty)
+                                  ? priority.especifique
+                                  : priority.influence,
                             ),
                         ],
                       ),
@@ -1831,19 +1916,49 @@ class PdfGeneratorService {
       ),
       child: pw.Column(
         children: [
-          _buildCompactSectionHeader('PERSONAL MÉDICO'),
+          _buildCompactSectionHeader('PERSONAL'),
           pw.Padding(
             padding: const pw.EdgeInsets.all(4),
             child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
               children:
-                  management.personalMedico
-                      .map(
-                        (personal) => pw.Text(
-                          '${personal['nombre']} - ${personal['especialidad']}',
-                          style: _valueStyle,
-                        ),
-                      )
-                      .toList(),
+                  management.personalMedico.map((personal) {
+                    final cedula = personal['cedula']?.toString() ?? '';
+                    final nombre = personal['nombre']?.toString() ?? '';
+                    final especialidad =
+                        personal['especialidad']?.toString() ?? '';
+
+                    return pw.Padding(
+                      padding: const pw.EdgeInsets.only(bottom: 2),
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text(nombre, style: _labelStyle),
+                          pw.Row(
+                            children: [
+                              pw.Text(
+                                '',
+                                style: _valueStyle.copyWith(
+                                  fontWeight: pw.FontWeight.bold,
+                                ),
+                              ),
+                              pw.Text(especialidad, style: _valueStyle),
+                              if (cedula.isNotEmpty) ...[
+                                pw.SizedBox(width: 8),
+                                pw.Text(
+                                  'Cédula: ',
+                                  style: _valueStyle.copyWith(
+                                    fontWeight: pw.FontWeight.bold,
+                                  ),
+                                ),
+                                pw.Text(cedula, style: _valueStyle),
+                              ],
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
             ),
           ),
         ],
@@ -1954,6 +2069,9 @@ class PdfGeneratorService {
     final hasDoctorSignature =
         displayData.reception.doctorSignature != null &&
         displayData.reception.doctorSignature!.isNotEmpty;
+    final hasPatientReceptionSignature =
+        displayData.reception.patientSignature != null &&
+        displayData.reception.patientSignature!.isNotEmpty;
 
     final attentionNegative =
         record.getDetailedInfo()['attentionNegative'] as Map<String, dynamic>?;
@@ -1963,7 +2081,8 @@ class PdfGeneratorService {
     if (!hasConsentimiento &&
         !hasDoctorSignature &&
         !hasPatientSignature &&
-        !hasWitnessSignature) {
+        !hasWitnessSignature &&
+        !hasPatientReceptionSignature) {
       return pw.SizedBox();
     }
 
@@ -1990,7 +2109,7 @@ class PdfGeneratorService {
                 vertical: 6,
                 horizontal: 8,
               ),
-              decoration: pw.BoxDecoration(
+              decoration: const pw.BoxDecoration(
                 border: pw.Border(
                   bottom: pw.BorderSide(color: PdfColors.grey400, width: 0.5),
                 ),
@@ -2015,6 +2134,11 @@ class PdfGeneratorService {
                   _buildCompactSignature(
                     'Consentimiento del Servicio',
                     displayData.consentimientoServicio!,
+                  ),
+                if (hasPatientReceptionSignature)
+                  _buildCompactSignature(
+                    'Paciente',
+                    displayData.reception.patientSignature!,
                   ),
                 if (hasPatientSignature)
                   _buildCompactSignature(
@@ -2231,7 +2355,7 @@ class PdfGeneratorService {
       Paint()..color = Colors.white,
     );
 
-    // Dibujar silueta humana en el rectángulo calculado
+    // Dibujar silueta en el rectángulo calculado
     canvas.drawImageRect(
       silhouetteImage,
       Rect.fromLTWH(
@@ -2699,6 +2823,7 @@ class PdfGeneratorService {
       }
 
       const vitalSignKeys = [
+        'EVA',
         'T/A',
         'FC',
         'FR',
@@ -3075,12 +3200,15 @@ class PdfGeneratorService {
         detailedInfo['patientReception'] as Map<String, dynamic>? ?? {};
     final receivingUnit =
         detailedInfo['receivingUnit'] as Map<String, dynamic>? ?? {};
+    final serviceInfo =
+        detailedInfo['serviceInfo'] as Map<String, dynamic>? ?? {};
 
     return ReceptionDisplayData(
       receivingDoctor: reception['receivingDoctor']?.toString() ?? '',
       doctorName: reception['doctorName']?.toString() ?? '',
       doctorCedula: reception['doctorCedula']?.toString() ?? '',
       doctorSignature: reception['doctorSignature']?.toString(),
+      patientSignature: serviceInfo['consentimientoSignature']?.toString(),
       lugarOrigen: receivingUnit['lugarOrigen']?.toString() ?? '',
       lugarDestino: receivingUnit['lugarDestino']?.toString() ?? '',
       lugarConsulta: receivingUnit['lugarConsulta']?.toString() ?? '',
