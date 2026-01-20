@@ -393,13 +393,13 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
+                color: Colors.blue.withAlpha(25),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                border: Border.all(color: Colors.blue.withAlpha(77)),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.wifi, color: Colors.blue, size: 16),
+                  const Icon(Icons.wifi, color: Colors.blue, size: 16),
                   const SizedBox(width: 8),
                   Text(
                     'Conectado - Se guardará en la nube',
@@ -507,7 +507,7 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withAlpha(13),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -530,7 +530,7 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
                             ? Colors.grey[200]!
                             : isComplete
                             ? Colors.green[100]!
-                            : AppTheme.primaryBlue.withOpacity(0.1),
+                            : AppTheme.primaryBlue.withAlpha(25),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(

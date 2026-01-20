@@ -501,7 +501,6 @@ class FrapUnifiedService {
         injuryLocation: _convertSectionData(cloud.injuryLocation),
         receivingUnit: _convertSectionData(cloud.receivingUnit),
         patientReception: _convertSectionData(cloud.patientReception),
-        consentimientoServicio: '', // Campo específico del modelo local
         insumos: _convertInsumosFromCloud(
           cloud,
         ), // Convertir insumos si existen

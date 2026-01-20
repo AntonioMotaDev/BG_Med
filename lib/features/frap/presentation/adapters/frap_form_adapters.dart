@@ -451,7 +451,7 @@ class FrapFormAdapters {
         isFromCloud: false,
       );
       adaptedData['consentimientoServicio'] = adaptConsentimientoServicio(
-        record.consentimientoServicio,
+        record.serviceInfo['consentimientoSignature'],
         isFromCloud: false,
       );
       adaptedData['clinicalHistory'] = adaptClinicalHistory(
@@ -592,10 +592,6 @@ class FrapFormAdapters {
 
     if (targetOrigin == DataOrigin.local) {
       // Verificar campos específicos del modelo local
-      if (!source.containsKey('consentimientoServicio') ||
-          source['consentimientoServicio'] == null) {
-        missingFields.add('consentimientoServicio');
-      }
       if (!source.containsKey('insumos') ||
           (source['insumos'] is List && (source['insumos'] as List).isEmpty)) {
         missingFields.add('insumos');
@@ -706,7 +702,8 @@ class FrapFormAdapters {
   /// Obtener campos específicos del modelo Frap
   static Map<String, dynamic> getFrapSpecificFields(Frap record) {
     return {
-      'consentimientoServicio': record.consentimientoServicio,
+      'consentimientoServicio':
+          record.serviceInfo['consentimientoSignature'] ?? '',
       'insumos': adaptInsumos(record.insumos, isFromCloud: false),
       'personalMedico': adaptPersonalMedico(
         record.personalMedico,

@@ -166,9 +166,9 @@ class _ServiceInfoFormDialogState extends State<ServiceInfoFormDialog> {
             // Header
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppTheme.primaryBlue,
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
                 ),
@@ -672,9 +672,10 @@ class _ServiceInfoFormDialogState extends State<ServiceInfoFormDialog> {
           context: context,
           initialTime: value ?? TimeOfDay.now(),
         );
+        if (!mounted) return;
         if (time != null) {
           onChanged(time);
-          setState(() {}); // Forzar actualización de la UI
+          setState(() {});
         }
       },
       child: Container(
@@ -829,6 +830,13 @@ class _ServiceInfoFormDialogState extends State<ServiceInfoFormDialog> {
     }
   }
 
+  String _formatTime(TimeOfDay? time) {
+    if (time == null) return '';
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+
   Future<void> _saveForm() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -868,6 +876,8 @@ class _ServiceInfoFormDialogState extends State<ServiceInfoFormDialog> {
           _consentimientoSignatureController.isNotEmpty) {
         final signatureBytes =
             await _consentimientoSignatureController.toPngBytes();
+        if (!mounted) return;
+
         if (signatureBytes != null) {
           signatureData =
               'data:image/png;base64,${base64Encode(signatureBytes)}';
@@ -877,10 +887,10 @@ class _ServiceInfoFormDialogState extends State<ServiceInfoFormDialog> {
       if (signatureData != null) {
         // Convertir TimeOfDay a string para guardar
         final formData = {
-          'horaLlamada': _horaLlamada?.format(context),
-          'horaArribo': _horaArribo?.format(context),
-          'horaLlegada': _horaLlegada?.format(context),
-          'horaTermino': _horaTermino?.format(context),
+          'horaLlamada': _formatTime(_horaLlamada),
+          'horaArribo': _formatTime(_horaArribo),
+          'horaLlegada': _formatTime(_horaLlegada),
+          'horaTermino': _formatTime(_horaTermino),
           'tiempoEsperaArribo': _tiempoEsperaArriboController.text.trim(),
           'tiempoEsperaLlegada': _tiempoEsperaLlegadaController.text.trim(),
           'tipoServicio': _tipoServicioSeleccionado,
@@ -895,15 +905,6 @@ class _ServiceInfoFormDialogState extends State<ServiceInfoFormDialog> {
           'consentimientoSignature': signatureData,
           'timestamp': DateTime.now().toIso8601String(),
         };
-
-        // Debug logging para ver qué datos se están guardando
-        print('=== DEBUG: ServiceInfoFormDialog _saveForm ===');
-        print('formData: $formData');
-        print('horaLlamada: ${formData['horaLlamada']}');
-        print('horaArribo: ${formData['horaArribo']}');
-        print('horaLlegada: ${formData['horaLlegada']}');
-        print('horaTermino: ${formData['horaTermino']}');
-        print('================================');
 
         widget.onSave(formData);
 

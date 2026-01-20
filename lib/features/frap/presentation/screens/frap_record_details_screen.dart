@@ -74,7 +74,7 @@ class _FrapRecordDetailsScreenState
           'horaLlamada': 'Hora de llamada',
           'horaArribo': 'Hora de arribo',
           'tiempoEsperaArribo': 'Tiempo de espera arribo',
-          'horaLlegada': 'Hora de llegada al lugar',
+          'horaLlegada': 'Hora de llegada',
           'horaTermino': 'Hora de terminación',
           'tiempoEsperaLlegada': 'Tiempo de espera llegada',
           'ubicacion': 'Ubicación',
@@ -320,7 +320,7 @@ class _FrapRecordDetailsScreenState
         },
       ),
       // Negativa de atención
-      const SectionConfig(
+      SectionConfig(
         key: 'attentionNegative',
         title: 'Negativa de atención',
         icon: Icons.cancel,
@@ -2074,25 +2074,21 @@ class _FrapRecordDetailsScreenState
     final permission = await notifier.canEditRecord(widget.record);
     if (!mounted) return;
 
-    // Re-obtener messenger con contexto válido tras el await
-    final messenger = ScaffoldMessenger.of(context);
-
     if (!permission.canEdit) {
       // Mostrar error si no se puede editar
-      if (mounted) {
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(permission.message!),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(permission.message!),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
       return;
     }
 
     if (permission.needsDownload) {
       // Mostrar advertencia si necesita descarga
+      if (!mounted) return;
       final confirmed = await showDialog<bool>(
         context: context,
         builder:
@@ -2114,69 +2110,63 @@ class _FrapRecordDetailsScreenState
       if (!mounted) return;
       if (confirmed != true) return;
 
-      final downloadMessenger = ScaffoldMessenger.of(context);
-
       // Descargar el registro (sincronizar desde la nube)
-      if (mounted) {
-        downloadMessenger.showSnackBar(
-          const SnackBar(
-            content: Row(
-              children: [
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
-                SizedBox(width: 16),
-                Text('Descargando registro...'),
-              ],
-            ),
-            duration: Duration(seconds: 30),
+              ),
+              SizedBox(width: 16),
+              Text('Descargando registro...'),
+            ],
           ),
-        );
-      }
+          duration: Duration(seconds: 30),
+        ),
+      );
 
       try {
         // Sincronizar registros (esto descargará el registro de la nube)
         await notifier.syncRecords();
+        if (!mounted) return;
 
-        if (mounted) {
-          downloadMessenger.hideCurrentSnackBar();
-          downloadMessenger.showSnackBar(
-            const SnackBar(
-              content: Text('Registro descargado correctamente'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
-            ),
-          );
-        }
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Registro descargado correctamente'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
       } catch (e) {
-        if (mounted) {
-          downloadMessenger.hideCurrentSnackBar();
-          downloadMessenger.showSnackBar(
-            SnackBar(
-              content: Text('Error al descargar: $e'),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 3),
-            ),
-          );
-        }
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al descargar: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
         return;
       }
     }
 
     // Navegar a pantalla de edición
-    if (mounted) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => FrapScreen(editingRecord: widget.record),
-        ),
-      );
-    }
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FrapScreen(editingRecord: widget.record),
+      ),
+    );
   }
 
   void _generatePDF() {
@@ -2210,17 +2200,14 @@ class _FrapRecordDetailsScreenState
             ],
           ),
     );
-
     if (!mounted) return;
+
     if (confirmed == true) {
       final notifier = ref.read(unifiedFrapProvider.notifier);
 
       try {
         final result = await notifier.deleteRecord(widget.record);
-
         if (!mounted) return;
-        final messenger = ScaffoldMessenger.of(context);
-        final navigator = Navigator.of(context);
 
         // Determinar el color y mensaje según el resultado
         Color snackBarColor;
@@ -2237,7 +2224,7 @@ class _FrapRecordDetailsScreenState
           message = result.message;
         }
 
-        messenger.showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(message),
             backgroundColor: snackBarColor,
@@ -2246,12 +2233,14 @@ class _FrapRecordDetailsScreenState
         );
 
         if (result.success || result.deletedFromLocal) {
-          navigator.pop(); // Regresar a la lista si se eliminó localmente
+          Navigator.of(
+            context,
+          ).pop(); // Regresar a la lista si se eliminó localmente
         }
       } catch (e) {
         if (!mounted) return;
-        final messenger = ScaffoldMessenger.of(context);
-        messenger.showSnackBar(
+
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error al eliminar el registro: $e'),
             backgroundColor: Colors.red,

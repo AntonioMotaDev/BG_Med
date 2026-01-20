@@ -227,7 +227,6 @@ class FrapTransitionModel {
           injuryLocation: _convertSectionData(cloudModel!.injuryLocation),
           receivingUnit: _convertSectionData(cloudModel!.receivingUnit),
           patientReception: _convertSectionData(cloudModel!.patientReception),
-          consentimientoServicio: '',
           insumos: _convertInsumosFromCloud(cloudModel!),
           personalMedico: _convertPersonalMedicoFromCloud(cloudModel!),
           escalasObstetricas: _convertEscalasObstetricasFromCloud(cloudModel!),

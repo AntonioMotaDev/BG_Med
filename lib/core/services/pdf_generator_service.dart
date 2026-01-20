@@ -3271,14 +3271,10 @@ class PdfGeneratorService {
   }
 
   String _getConsentimientoServicio(UnifiedFrapRecord record) {
-    if (record.localRecord != null) {
-      return record.localRecord!.consentimientoServicio;
-    }
+    // Solo leer de serviceInfo
     final serviceInfo =
         record.getDetailedInfo()['serviceInfo'] as Map<String, dynamic>?;
-    final sig = serviceInfo?['consentimientoSignature']?.toString();
-    if (sig != null && sig.trim().isNotEmpty) return sig;
-    return serviceInfo?['consentimientoServicio']?.toString() ?? '';
+    return serviceInfo?['consentimientoSignature']?.toString() ?? '';
   }
 
   List<Map<String, dynamic>> _getInsumos(UnifiedFrapRecord record) {

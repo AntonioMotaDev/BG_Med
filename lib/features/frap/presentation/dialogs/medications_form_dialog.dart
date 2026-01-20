@@ -97,7 +97,7 @@ class _MedicationsFormDialogState extends State<MedicationsFormDialog> {
 
   void _addMedicationRow() {
     setState(() {
-      _medications.add(MedicationRow());
+      _medications.add(const MedicationRow());
     });
   }
 
@@ -336,14 +336,14 @@ class _MedicationsFormDialogState extends State<MedicationsFormDialog> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppTheme.primaryBlue.withOpacity(0.1),
+            color: AppTheme.primaryBlue.withAlpha(25),
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(8),
               topRight: Radius.circular(8),
             ),
-            border: Border.all(color: AppTheme.primaryBlue.withOpacity(0.3)),
+            border: Border.all(color: AppTheme.primaryBlue.withAlpha(77)),
           ),
-          child: Row(
+          child: const Row(
             children: [
               Expanded(
                 flex: 2,
@@ -377,6 +377,7 @@ class _MedicationsFormDialogState extends State<MedicationsFormDialog> {
                 ),
               ),
               Expanded(
+                flex: 2,
                 child: Text(
                   'Hora',
                   style: TextStyle(
@@ -521,7 +522,7 @@ class _MedicationsFormDialogState extends State<MedicationsFormDialog> {
             const SizedBox(width: 8),
 
             // Hora mejorada
-            Expanded(child: _buildTimeField(index, medication)),
+            Expanded(flex: 2, child: _buildTimeField(index, medication)),
             const SizedBox(width: 8),
 
             // Médico que indicó

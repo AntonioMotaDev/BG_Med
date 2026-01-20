@@ -486,7 +486,6 @@ class FrapLocalService {
       patientReception: frapData.patientReception,
       insumos: insumos,
       personalMedico: personalMedico,
-      consentimientoSignature: frapData.serviceInfo['consentimientoSignature'],
       tipoUrgencia: frapData.serviceInfo['tipoUrgencia'],
       urgenciaEspecifique: frapData.serviceInfo['urgenciaEspecifique'],
       ubicacion: frapData.serviceInfo['ubicacion'],
@@ -625,7 +624,6 @@ class FrapLocalService {
     return FrapData(
       serviceInfo: {
         ...frap.serviceInfo,
-        'consentimientoSignature': frap.consentimientoSignature,
         'tipoUrgencia': frap.tipoUrgencia,
         'urgenciaEspecifique': frap.urgenciaEspecifique,
         'ubicacion': frap.ubicacion,

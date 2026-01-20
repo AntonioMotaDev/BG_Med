@@ -114,7 +114,7 @@ class FrapConversionMapping {
 
   /// Campos que existen en ambos pero con estructura diferente
   static Map<String, String> crossModelFieldMapping = {
-    'consentimientoServicio': 'serviceInfo.consentimientoServicio',
+    'consentimientoSignature': 'serviceInfo.consentimientoSignature',
     'insumos': 'management.insumos',
     'personalMedico': 'management.personalMedico',
     'escalasObstetricas': 'gynecoObstetric.escalasObstetricas',

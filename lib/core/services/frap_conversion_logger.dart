@@ -6,7 +6,7 @@ import 'package:bg_med/core/services/frap_data_validator.dart';
 /// Servicio de logging para conversiones FRAP
 class FrapConversionLogger {
   static const String _tag = 'FrapConversion';
-  
+
   /// Log de inicio de conversión
   static void logConversionStart(String direction, String recordId) {
     developer.log(
@@ -17,7 +17,11 @@ class FrapConversionLogger {
   }
 
   /// Log de conversión exitosa
-  static void logConversionSuccess(String direction, String recordId, Map<String, dynamic> stats) {
+  static void logConversionSuccess(
+    String direction,
+    String recordId,
+    Map<String, dynamic> stats,
+  ) {
     developer.log(
       'Conversión $direction exitosa para registro: $recordId\n'
       'Estadísticas: $stats',
@@ -27,7 +31,12 @@ class FrapConversionLogger {
   }
 
   /// Log de error en conversión
-  static void logConversionError(String direction, String recordId, String error, StackTrace? stackTrace) {
+  static void logConversionError(
+    String direction,
+    String recordId,
+    String error,
+    StackTrace? stackTrace,
+  ) {
     developer.log(
       'Error en conversión $direction para registro: $recordId\n'
       'Error: $error',
@@ -48,7 +57,7 @@ class FrapConversionLogger {
         level: 900,
       );
     }
-    
+
     if (result.warnings.isNotEmpty) {
       developer.log(
         'Advertencias de validación en $section:\n'
@@ -72,7 +81,10 @@ class FrapConversionLogger {
   }
 
   /// Log de campos convertidos
-  static void logConvertedFields(String direction, Map<String, dynamic> convertedFields) {
+  static void logConvertedFields(
+    String direction,
+    Map<String, dynamic> convertedFields,
+  ) {
     developer.log(
       'Campos convertidos en $direction:\n'
       '${convertedFields.keys.join(', ')}',
@@ -92,7 +104,12 @@ class FrapConversionLogger {
   }
 
   /// Log de sincronización
-  static void logSyncOperation(String operation, int successCount, int failedCount, List<String> errors) {
+  static void logSyncOperation(
+    String operation,
+    int successCount,
+    int failedCount,
+    List<String> errors,
+  ) {
     developer.log(
       'Operación de sincronización: $operation\n'
       'Exitosos: $successCount\n'
@@ -106,7 +123,7 @@ class FrapConversionLogger {
   /// Log de comparación de registros
   static void logRecordComparison(Frap local, FrapFirestore cloud) {
     final comparison = _compareRecords(local, cloud);
-    
+
     developer.log(
       'Comparación de registros:\n'
       '${comparison.entries.map((e) => '${e.key}: ${e.value}').join('\n')}',
@@ -118,26 +135,38 @@ class FrapConversionLogger {
   /// Comparar registros local y nube
   static Map<String, String> _compareRecords(Frap local, FrapFirestore cloud) {
     final comparison = <String, String>{};
-    
+
     // Comparar datos del paciente
-    comparison['patientName'] = 'Local: ${local.patient.fullName} | Cloud: ${cloud.patientName}';
-    comparison['patientAge'] = 'Local: ${local.patient.age} | Cloud: ${cloud.patientAge}';
-    comparison['patientGender'] = 'Local: ${local.patient.sex} | Cloud: ${cloud.patientGender}';
-    
+    comparison['patientName'] =
+        'Local: ${local.patient.fullName} | Cloud: ${cloud.patientName}';
+    comparison['patientAge'] =
+        'Local: ${local.patient.age} | Cloud: ${cloud.patientAge}';
+    comparison['patientGender'] =
+        'Local: ${local.patient.sex} | Cloud: ${cloud.patientGender}';
+
     // Comparar fechas
-    comparison['createdAt'] = 'Local: ${local.createdAt} | Cloud: ${cloud.createdAt}';
-    comparison['updatedAt'] = 'Local: ${local.updatedAt} | Cloud: ${cloud.updatedAt}';
-    
+    comparison['createdAt'] =
+        'Local: ${local.createdAt} | Cloud: ${cloud.createdAt}';
+    comparison['updatedAt'] =
+        'Local: ${local.updatedAt} | Cloud: ${cloud.updatedAt}';
+
     // Comparar secciones
-    comparison['serviceInfo'] = 'Local: ${local.serviceInfo.length} campos | Cloud: ${cloud.serviceInfo.length} campos';
-    comparison['management'] = 'Local: ${local.management.length} campos | Cloud: ${cloud.management.length} campos';
-    comparison['medications'] = 'Local: ${local.medications.length} campos | Cloud: ${cloud.medications.length} campos';
-    
+    comparison['serviceInfo'] =
+        'Local: ${local.serviceInfo.length} campos | Cloud: ${cloud.serviceInfo.length} campos';
+    comparison['management'] =
+        'Local: ${local.management.length} campos | Cloud: ${cloud.management.length} campos';
+    comparison['medications'] =
+        'Local: ${local.medications.length} campos | Cloud: ${cloud.medications.length} campos';
+
     return comparison;
   }
 
   /// Log de métricas de performance
-  static void logPerformanceMetrics(String operation, Duration duration, Map<String, dynamic> metrics) {
+  static void logPerformanceMetrics(
+    String operation,
+    Duration duration,
+    Map<String, dynamic> metrics,
+  ) {
     developer.log(
       'Métricas de performance para $operation:\n'
       'Duración: ${duration.inMilliseconds}ms\n'
@@ -148,9 +177,16 @@ class FrapConversionLogger {
   }
 
   /// Log de resumen de conversión
-  static void logConversionSummary(String direction, int totalRecords, int successCount, int failedCount, List<String> errors) {
-    final successRate = totalRecords > 0 ? (successCount / totalRecords) * 100 : 0.0;
-    
+  static void logConversionSummary(
+    String direction,
+    int totalRecords,
+    int successCount,
+    int failedCount,
+    List<String> errors,
+  ) {
+    final successRate =
+        totalRecords > 0 ? (successCount / totalRecords) * 100 : 0.0;
+
     developer.log(
       'Resumen de conversión $direction:\n'
       'Total de registros: $totalRecords\n'
@@ -165,14 +201,17 @@ class FrapConversionLogger {
 
   /// Log de campos específicos del modelo local
   static void logLocalSpecificFields(Frap local) {
+    final signature = local.serviceInfo['consentimientoSignature'] as String?;
     final localFields = <String, dynamic>{
-      'consentimientoServicio': local.consentimientoServicio.isNotEmpty ? 'Presente' : 'Vacío',
+      'consentimientoSignature (serviceInfo)':
+          signature != null && signature.isNotEmpty ? 'Presente' : 'Vacío',
       'insumos': '${local.insumos.length} elementos',
       'personalMedico': '${local.personalMedico.length} elementos',
-      'escalasObstetricas': local.escalasObstetricas != null ? 'Presente' : 'Nulo',
+      'escalasObstetricas':
+          local.escalasObstetricas != null ? 'Presente' : 'Nulo',
       'isSynced': local.isSynced,
     };
-    
+
     developer.log(
       'Campos específicos del modelo local:\n'
       '${localFields.entries.map((e) => '${e.key}: ${e.value}').join('\n')}',
@@ -189,7 +228,7 @@ class FrapConversionLogger {
       'clinicalHistory': '${cloud.clinicalHistory.length} campos',
       'physicalExam': '${cloud.physicalExam.length} campos',
     };
-    
+
     developer.log(
       'Campos específicos del modelo nube:\n'
       '${cloudFields.entries.map((e) => '${e.key}: ${e.value}').join('\n')}',
@@ -199,7 +238,11 @@ class FrapConversionLogger {
   }
 
   /// Log de detección de conflictos
-  static void logConflictDetection(String recordId, String conflictType, Map<String, dynamic> details) {
+  static void logConflictDetection(
+    String recordId,
+    String conflictType,
+    Map<String, dynamic> details,
+  ) {
     developer.log(
       'Conflicto detectado en registro: $recordId\n'
       'Tipo: $conflictType\n'
@@ -210,7 +253,11 @@ class FrapConversionLogger {
   }
 
   /// Log de resolución de conflictos
-  static void logConflictResolution(String recordId, String resolution, Map<String, dynamic> details) {
+  static void logConflictResolution(
+    String recordId,
+    String resolution,
+    Map<String, dynamic> details,
+  ) {
     developer.log(
       'Conflicto resuelto en registro: $recordId\n'
       'Resolución: $resolution\n'
@@ -221,7 +268,12 @@ class FrapConversionLogger {
   }
 
   /// Log de limpieza de datos
-  static void logDataCleaning(String section, int originalCount, int cleanedCount, List<String> removedFields) {
+  static void logDataCleaning(
+    String section,
+    int originalCount,
+    int cleanedCount,
+    List<String> removedFields,
+  ) {
     developer.log(
       'Limpieza de datos en $section:\n'
       'Campos originales: $originalCount\n'
@@ -233,7 +285,11 @@ class FrapConversionLogger {
   }
 
   /// Log de validación de integridad
-  static void logIntegrityCheck(String recordId, bool isIntegrityValid, List<String> integrityIssues) {
+  static void logIntegrityCheck(
+    String recordId,
+    bool isIntegrityValid,
+    List<String> integrityIssues,
+  ) {
     if (!isIntegrityValid) {
       developer.log(
         'Problemas de integridad en registro: $recordId\n'
@@ -249,4 +305,4 @@ class FrapConversionLogger {
       );
     }
   }
-} 
+}

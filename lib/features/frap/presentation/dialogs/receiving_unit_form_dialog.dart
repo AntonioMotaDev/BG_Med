@@ -417,7 +417,7 @@ class _ReceivingUnitFormDialogState extends State<ReceivingUnitFormDialog> {
     bool isRequired = false,
   }) {
     return DropdownButtonFormField<String>(
-      value: value,
+      initialValue: value,
       decoration: InputDecoration(
         labelText: isRequired ? '$label *' : label,
         border: const OutlineInputBorder(),
@@ -511,7 +511,7 @@ class _ReceivingUnitFormDialogState extends State<ReceivingUnitFormDialog> {
                 child: TextFormField(
                   initialValue: personal['cedula'] ?? '',
                   decoration: const InputDecoration(
-                    labelText: 'Cédula *',
+                    labelText: 'Cédula',
                     border: OutlineInputBorder(),
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 8,
@@ -519,12 +519,6 @@ class _ReceivingUnitFormDialogState extends State<ReceivingUnitFormDialog> {
                     ),
                   ),
                   style: const TextStyle(fontSize: 12),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Requerido';
-                    }
-                    return null;
-                  },
                   onChanged: (value) {
                     setState(() {
                       _personalMedicoList[index]['cedula'] = value;
@@ -573,19 +567,18 @@ class _ReceivingUnitFormDialogState extends State<ReceivingUnitFormDialog> {
     });
 
     try {
-      // Filtrar personal médico con datos completos
+      // Filtrar personal médico con datos completos (nombre y especialidad son obligatorios)
       final validPersonalMedico =
           _personalMedicoList
               .where((personal) {
                 return personal['nombre']?.trim().isNotEmpty == true &&
-                    personal['especialidad']?.trim().isNotEmpty == true &&
-                    personal['cedula']?.trim().isNotEmpty == true;
+                    personal['especialidad']?.trim().isNotEmpty == true;
               })
               .map(
                 (personal) => {
                   'nombre': personal['nombre']!.trim(),
                   'especialidad': personal['especialidad']!.trim(),
-                  'cedula': personal['cedula']!.trim(),
+                  'cedula': personal['cedula']?.trim() ?? '',
                 },
               )
               .toList();

@@ -34,12 +34,10 @@ class FrapAdapter extends TypeAdapter<Frap> {
       injuryLocation: (fields[14] as Map).cast<String, dynamic>(),
       receivingUnit: (fields[15] as Map).cast<String, dynamic>(),
       patientReception: (fields[16] as Map).cast<String, dynamic>(),
-      consentimientoServicio: fields[17] as String,
       insumos: (fields[18] as List).cast<Insumo>(),
       personalMedico: (fields[19] as List).cast<PersonalMedico>(),
       escalasObstetricas: fields[20] as EscalasObstetricas?,
       isSynced: fields[21] as bool,
-      consentimientoSignature: fields[22] as String?,
       tipoUrgencia: fields[23] as String?,
       urgenciaEspecifique: fields[24] as String?,
       ubicacion: fields[25] as String?,
@@ -51,7 +49,7 @@ class FrapAdapter extends TypeAdapter<Frap> {
   @override
   void write(BinaryWriter writer, Frap obj) {
     writer
-      ..writeByte(28)
+      ..writeByte(26)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -86,8 +84,6 @@ class FrapAdapter extends TypeAdapter<Frap> {
       ..write(obj.receivingUnit)
       ..writeByte(16)
       ..write(obj.patientReception)
-      ..writeByte(17)
-      ..write(obj.consentimientoServicio)
       ..writeByte(18)
       ..write(obj.insumos)
       ..writeByte(19)
@@ -96,8 +92,6 @@ class FrapAdapter extends TypeAdapter<Frap> {
       ..write(obj.escalasObstetricas)
       ..writeByte(21)
       ..write(obj.isSynced)
-      ..writeByte(22)
-      ..write(obj.consentimientoSignature)
       ..writeByte(23)
       ..write(obj.tipoUrgencia)
       ..writeByte(24)

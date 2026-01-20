@@ -25,12 +25,21 @@ class _GynecoObstetricFormDialogState extends State<GynecoObstetricFormDialog> {
   final _observacionesController = TextEditingController();
   final _frecuenciaCardiacaFetalController = TextEditingController();
   final _contraccionesController = TextEditingController();
+  final _horaController = TextEditingController();
+  final _gestaController = TextEditingController();
+  final _partosController = TextEditingController();
+  final _cesareasController = TextEditingController();
+  final _abortosController = TextEditingController();
+  final _metodosAnticonceptivosController = TextEditingController();
+  final _urgenciaEspecifiqueController = TextEditingController();
 
-  // Variables para checkboxes
+  // Variables para dropdowns y checkboxes
+  String? _urgencia;
   bool _isParto = false;
   bool _isAborto = false;
   bool _isHxVaginal = false;
   bool _ruidosFetalesPerceptibles = false;
+  bool _expulsionPlacenta = false;
 
   // Variables para escalas
   Map<String, int> _silvermanAnderson = {
@@ -59,12 +68,22 @@ class _GynecoObstetricFormDialogState extends State<GynecoObstetricFormDialog> {
       _frecuenciaCardiacaFetalController.text =
           data['frecuenciaCardiacaFetal'] ?? '';
       _contraccionesController.text = data['contracciones'] ?? '';
+      _horaController.text = data['hora'] ?? '';
+      _gestaController.text = data['gesta']?.toString() ?? '';
+      _partosController.text = data['partos']?.toString() ?? '';
+      _cesareasController.text = data['cesareas']?.toString() ?? '';
+      _abortosController.text = data['abortos']?.toString() ?? '';
+      _metodosAnticonceptivosController.text =
+          data['metodosAnticonceptivos'] ?? '';
+      _urgenciaEspecifiqueController.text = data['urgenciaEspecifique'] ?? '';
 
-      // Checkboxes
+      // Dropdown y checkboxes
+      _urgencia = data['urgencia'];
       _isParto = data['isParto'] ?? false;
       _isAborto = data['isAborto'] ?? false;
       _isHxVaginal = data['isHxVaginal'] ?? false;
       _ruidosFetalesPerceptibles = data['ruidosFetalesPerceptibles'] ?? false;
+      _expulsionPlacenta = data['expulsionPlacenta'] ?? false;
 
       // Escalas
       if (data['silvermanAnderson'] != null) {
@@ -98,6 +117,13 @@ class _GynecoObstetricFormDialogState extends State<GynecoObstetricFormDialog> {
     _observacionesController.dispose();
     _frecuenciaCardiacaFetalController.dispose();
     _contraccionesController.dispose();
+    _horaController.dispose();
+    _gestaController.dispose();
+    _partosController.dispose();
+    _cesareasController.dispose();
+    _abortosController.dispose();
+    _metodosAnticonceptivosController.dispose();
+    _urgenciaEspecifiqueController.dispose();
     super.dispose();
   }
 
@@ -159,38 +185,169 @@ class _GynecoObstetricFormDialogState extends State<GynecoObstetricFormDialog> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Tipo de Urgencia
-                      _buildSectionTitle('TIPO DE URGENCIA'),
+                      // Clasificación de Urgencia
+                      _buildSectionTitle('CLASIFICACIÓN DE URGENCIA'),
                       const SizedBox(height: 16),
 
-                      _buildCheckboxOption(
-                        title: 'Parto',
-                        value: _isParto,
+                      DropdownButtonFormField<String>(
+                        initialValue: _urgencia,
+                        decoration: const InputDecoration(
+                          labelText: 'Tipo de Urgencia',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.medical_services),
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'Parto',
+                            child: Text('Parto'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Aborto',
+                            child: Text('Aborto'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Hemorragia',
+                            child: Text('Hemorragia'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Preeclampsia',
+                            child: Text('Preeclampsia'),
+                          ),
+                          DropdownMenuItem(value: 'Otro', child: Text('Otro')),
+                        ],
                         onChanged: (value) {
                           setState(() {
-                            _isParto = value ?? false;
+                            _urgencia = value;
                           });
                         },
                       ),
 
-                      _buildCheckboxOption(
-                        title: 'Aborto',
-                        value: _isAborto,
-                        onChanged: (value) {
-                          setState(() {
-                            _isAborto = value ?? false;
-                          });
-                        },
+                      // Campo condicional para especificar tipo de urgencia
+                      if (_urgencia == 'Otro') ...[
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _urgenciaEspecifiqueController,
+                          decoration: const InputDecoration(
+                            labelText: 'Especifique tipo de urgencia',
+                            border: OutlineInputBorder(),
+                            hintText: 'Ingrese el tipo de urgencia',
+                            prefixIcon: Icon(Icons.edit),
+                          ),
+                          validator: (value) {
+                            if (_urgencia == 'Otro' &&
+                                (value == null || value.trim().isEmpty)) {
+                              return 'Debe especificar el tipo de urgencia';
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
+
+                      const SizedBox(height: 16),
+
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _horaController,
+                              readOnly: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Hora',
+                                border: OutlineInputBorder(),
+                                hintText: 'Seleccionar hora',
+                                prefixIcon: Icon(Icons.access_time),
+                                suffixIcon: Icon(Icons.arrow_drop_down),
+                              ),
+                              onTap: () async {
+                                final TimeOfDay? pickedTime =
+                                    await showTimePicker(
+                                      context: context,
+                                      initialTime: TimeOfDay.now(),
+                                      builder: (context, child) {
+                                        return Theme(
+                                          data: Theme.of(context).copyWith(
+                                            colorScheme: ColorScheme.light(
+                                              primary: Colors.pink[600]!,
+                                              onPrimary: Colors.white,
+                                              onSurface: Colors.black,
+                                            ),
+                                          ),
+                                          child: child!,
+                                        );
+                                      },
+                                    );
+
+                                if (pickedTime != null) {
+                                  final formattedTime =
+                                      '${pickedTime.hour.toString().padLeft(2, '0')}:${pickedTime.minute.toString().padLeft(2, '0')}';
+                                  setState(() {
+                                    _horaController.text = formattedTime;
+                                  });
+                                }
+                              },
+                            ),
+                          ),
+                        ],
                       ),
 
-                      _buildCheckboxOption(
-                        title: 'Hx Vaginal',
-                        value: _isHxVaginal,
-                        onChanged: (value) {
-                          setState(() {
-                            _isHxVaginal = value ?? false;
-                          });
-                        },
+                      const SizedBox(height: 24),
+
+                      // Estado Actual
+                      _buildSectionTitle('ESTADO ACTUAL'),
+                      const SizedBox(height: 16),
+
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildCheckboxOption(
+                              title: 'Parto',
+                              value: _isParto,
+                              onChanged: (value) {
+                                setState(() {
+                                  _isParto = value ?? false;
+                                });
+                              },
+                            ),
+                          ),
+                          Expanded(
+                            child: _buildCheckboxOption(
+                              title: 'Aborto',
+                              value: _isAborto,
+                              onChanged: (value) {
+                                setState(() {
+                                  _isAborto = value ?? false;
+                                });
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildCheckboxOption(
+                              title: 'Hx Vaginal',
+                              value: _isHxVaginal,
+                              onChanged: (value) {
+                                setState(() {
+                                  _isHxVaginal = value ?? false;
+                                });
+                              },
+                            ),
+                          ),
+                          Expanded(
+                            child: _buildCheckboxOption(
+                              title: 'Expulsión Placenta',
+                              value: _expulsionPlacenta,
+                              onChanged: (value) {
+                                setState(() {
+                                  _expulsionPlacenta = value ?? false;
+                                });
+                              },
+                            ),
+                          ),
+                        ],
                       ),
 
                       const SizedBox(height: 24),
@@ -205,11 +362,43 @@ class _GynecoObstetricFormDialogState extends State<GynecoObstetricFormDialog> {
                           Expanded(
                             child: TextFormField(
                               controller: _fumController,
+                              readOnly: true,
                               decoration: const InputDecoration(
                                 labelText: 'F.U.M.',
                                 border: OutlineInputBorder(),
-                                hintText: 'dd/mm/yyyy',
+                                hintText: 'Seleccionar fecha',
+                                prefixIcon: Icon(Icons.calendar_today),
+                                suffixIcon: Icon(Icons.arrow_drop_down),
                               ),
+                              onTap: () async {
+                                final DateTime? pickedDate =
+                                    await showDatePicker(
+                                      context: context,
+                                      initialDate: DateTime.now(),
+                                      firstDate: DateTime(2000),
+                                      lastDate: DateTime.now(),
+                                      builder: (context, child) {
+                                        return Theme(
+                                          data: Theme.of(context).copyWith(
+                                            colorScheme: ColorScheme.light(
+                                              primary: Colors.pink[600]!,
+                                              onPrimary: Colors.white,
+                                              onSurface: Colors.black,
+                                            ),
+                                          ),
+                                          child: child!,
+                                        );
+                                      },
+                                    );
+
+                                if (pickedDate != null) {
+                                  final formattedDate =
+                                      '${pickedDate.day.toString().padLeft(2, '0')}/${pickedDate.month.toString().padLeft(2, '0')}/${pickedDate.year}';
+                                  setState(() {
+                                    _fumController.text = formattedDate;
+                                  });
+                                }
+                              },
                             ),
                           ),
                           const SizedBox(width: 16),
@@ -219,12 +408,84 @@ class _GynecoObstetricFormDialogState extends State<GynecoObstetricFormDialog> {
                               decoration: const InputDecoration(
                                 labelText: 'Semanas de Gestación',
                                 border: OutlineInputBorder(),
-                                suffixText: 'semanas',
+                                suffixText: 'sem',
+                                prefixIcon: Icon(Icons.schedule),
                               ),
                               keyboardType: TextInputType.number,
                             ),
                           ),
                         ],
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Antecedentes Obstétricos
+                      _buildSectionTitle('ANTECEDENTES OBSTÉTRICOS (G-P-C-A)'),
+                      const SizedBox(height: 16),
+
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _gestaController,
+                              decoration: const InputDecoration(
+                                labelText: 'Gesta',
+                                border: OutlineInputBorder(),
+                                hintText: '0',
+                              ),
+                              keyboardType: TextInputType.number,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _partosController,
+                              decoration: const InputDecoration(
+                                labelText: 'Partos',
+                                border: OutlineInputBorder(),
+                                hintText: '0',
+                              ),
+                              keyboardType: TextInputType.number,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _cesareasController,
+                              decoration: const InputDecoration(
+                                labelText: 'Cesáreas',
+                                border: OutlineInputBorder(),
+                                hintText: '0',
+                              ),
+                              keyboardType: TextInputType.number,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _abortosController,
+                              decoration: const InputDecoration(
+                                labelText: 'Abortos',
+                                border: OutlineInputBorder(),
+                                hintText: '0',
+                              ),
+                              keyboardType: TextInputType.number,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      TextFormField(
+                        controller: _metodosAnticonceptivosController,
+                        decoration: const InputDecoration(
+                          labelText: 'Métodos Anticonceptivos',
+                          border: OutlineInputBorder(),
+                          hintText: 'Especificar método utilizado',
+                          prefixIcon: Icon(Icons.medication),
+                        ),
+                        maxLines: 2,
                       ),
 
                       const SizedBox(height: 24),
@@ -544,17 +805,38 @@ class _GynecoObstetricFormDialogState extends State<GynecoObstetricFormDialog> {
 
     try {
       final formData = {
+        // Clasificación
+        'urgencia': _urgencia ?? '',
+        'urgenciaEspecifique':
+            _urgencia == 'Otro'
+                ? _urgenciaEspecifiqueController.text.trim()
+                : '',
+        'hora': _horaController.text.trim(),
+        // Estado actual
         'isParto': _isParto,
         'isAborto': _isAborto,
         'isHxVaginal': _isHxVaginal,
+        'expulsionPlacenta': _expulsionPlacenta,
+        // Información general
         'fum': _fumController.text.trim(),
         'semanasGestacion': _semanasGestacionController.text.trim(),
+        // Antecedentes obstétricos
+        'gesta': _gestaController.text.trim(),
+        'partos': _partosController.text.trim(),
+        'cesareas': _cesareasController.text.trim(),
+        'abortos': _abortosController.text.trim(),
+        'metodosAnticonceptivos': _metodosAnticonceptivosController.text.trim(),
+        // Monitoreo fetal
         'ruidosFetalesPerceptibles': _ruidosFetalesPerceptibles,
+        'ruidosCardiacosFetales':
+            _ruidosFetalesPerceptibles, // Mismo valor para compatibilidad
         'frecuenciaCardiacaFetal':
             _frecuenciaCardiacaFetalController.text.trim(),
         'contracciones': _contraccionesController.text.trim(),
+        // Escalas
         'silvermanAnderson': _silvermanAnderson,
         'apgar': _apgar,
+        // Observaciones
         'observaciones': _observacionesController.text.trim(),
         'timestamp': DateTime.now().toIso8601String(),
       };
