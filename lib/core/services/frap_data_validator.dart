@@ -220,7 +220,7 @@ class FrapDataValidator {
         if (insumo['cantidad'] == null) {
           insumoErrors.add('Cantidad es requerida');
         } else {
-          final cantidad = int.tryParse(insumo['cantidad'].toString());
+          final cantidad = double.tryParse(insumo['cantidad'].toString());
           if (cantidad == null || cantidad < 0) {
             insumoErrors.add('Cantidad debe ser un número positivo');
           } else {

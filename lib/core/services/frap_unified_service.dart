@@ -8,13 +8,13 @@ import 'package:bg_med/core/models/frap.dart';
 import 'package:bg_med/core/models/frap_firestore.dart';
 import 'package:bg_med/core/models/patient.dart';
 import 'package:bg_med/core/models/clinical_history.dart';
-import 'package:bg_med/core/models/physical_exam.dart';
 import 'package:bg_med/core/models/insumo.dart';
 import 'package:bg_med/core/models/personal_medico.dart';
 import 'package:bg_med/core/models/escalas_obstetricas.dart';
 import 'package:bg_med/core/services/frap_data_validator.dart';
 import 'package:bg_med/core/services/frap_conversion_logger.dart';
 import 'package:bg_med/core/services/frap_migration_service.dart';
+import 'package:bg_med/core/exceptions/frap_exceptions.dart';
 import 'package:bg_med/features/frap/presentation/providers/frap_data_provider.dart';
 import 'package:collection/collection.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -111,69 +111,125 @@ class FrapUnifiedService {
       // Generar folio automáticamente si no está presente
       final frapDataWithFolio = await _ensureFolioExists(frapData);
 
-      // Siempre guardar localmente primero
-      final localRecordId = await _localService.createFrapRecord(
-        frapData: frapDataWithFolio,
-      );
+      // 1. SIEMPRE guardar localmente primero
+      try {
+        final localRecordId = await _localService.createFrapRecord(
+          frapData: frapDataWithFolio,
+        );
 
-      if (localRecordId != null) {
+        if (localRecordId == null) {
+          throw Exception('El guardado local retornó ID nulo');
+        }
+
         result.localRecordId = localRecordId;
         result.savedLocally = true;
+        debugPrint('✅ Registro guardado localmente: $localRecordId');
 
-        // Intentar guardar en la nube si hay conexión
+        // 2. Intentar guardar en la nube si hay conexión
         final hasInternet = await hasInternetConnection();
         if (hasInternet) {
           try {
             final cloudRecordId = await _cloudService.createFrapRecord(
               frapData: frapDataWithFolio,
             );
+
             if (cloudRecordId != null) {
               result.cloudRecordId = cloudRecordId;
               result.savedToCloud = true;
+              debugPrint('✅ Registro guardado en cloud: $cloudRecordId');
 
-              // Marcar como sincronizado en local (si el método existe)
+              // 3. CRÍTICO: Marcar como sincronizado (operación atómica)
               try {
-                await _localService.markAsSynced(localRecordId);
-              } catch (e) {
-                // Si el método no existe, registrar la advertencia
+                await _localService.markAsSynced(
+                  localRecordId,
+                  'firestore',
+                  cloudRecordId,
+                );
+
+                // ✅ ÉXITO COMPLETO: Local + Cloud + Sincronizado
+                result.success = true;
+                result.message = 'Registro guardado exitosamente en la nube';
+
+                FrapConversionLogger.logConversionSuccess(
+                  'save_unified',
+                  localRecordId,
+                  {
+                    'savedLocally': true,
+                    'savedToCloud': true,
+                    'markedAsSynced': true,
+                    'cloudId': cloudRecordId,
+                  },
+                );
+              } catch (syncError) {
+                // ❌ FALLO CRÍTICO: markAsSynced falló
+                debugPrint(
+                  '❌ CRÍTICO: markAsSynced falló para $localRecordId: $syncError',
+                );
+
+                result.success = false;
+                result.message =
+                    'Registro guardado pero sincronización falló. '
+                    'Se reintentará automáticamente.';
+                result.syncError = syncError.toString();
+                result.errors.add('Error de sincronización: $syncError');
+
+                // Intentar rollback del estado de sincronización
+                await _rollbackSyncStatus(localRecordId);
+
                 FrapConversionLogger.logConversionError(
                   'mark_as_synced',
                   localRecordId,
-                  'Method not available: $e',
+                  'Sync marking failed: $syncError',
                   null,
                 );
               }
+            } else {
+              // Cloud retornó ID nulo
+              result.success = false;
+              result.message = 'Guardado localmente. Cloud retornó ID nulo.';
+              result.cloudError = 'Cloud service returned null ID';
             }
-          } catch (e) {
-            result.cloudError = e.toString();
-            // El registro se mantiene local y se sincronizará después
+          } catch (cloudError) {
+            // ❌ Guardado en cloud falló
+            debugPrint('⚠️ Guardado en cloud falló: $cloudError');
+            result.cloudError = cloudError.toString();
+            result.success = true; // Local exitoso
+            result.message =
+                'Guardado localmente. Se sincronizará cuando haya conexión.';
+
+            FrapConversionLogger.logConversionError(
+              'cloud_save',
+              localRecordId,
+              'Cloud save failed: $cloudError',
+              null,
+            );
           }
         } else {
+          // Sin conexión a internet
+          result.success = true;
           result.message =
               'Guardado localmente. Se sincronizará cuando haya conexión.';
+          debugPrint('ℹ️ Sin conexión. Registro guardado solo localmente.');
         }
+      } catch (localError) {
+        // ❌ Guardado local falló
+        debugPrint('❌ Error guardando localmente: $localError');
+        result.success = false;
+        result.message = 'Error al guardar localmente: $localError';
+        result.errors.add(localError.toString());
 
-        result.success = true;
-        result.message =
-            result.message.isNotEmpty
-                ? result.message
-                : 'Registro guardado exitosamente';
-
-        FrapConversionLogger.logConversionSuccess(
-          'save_unified',
-          localRecordId,
-          {
-            'savedLocally': result.savedLocally,
-            'savedToCloud': result.savedToCloud,
-            'hasInternet': hasInternet,
-          },
+        FrapConversionLogger.logConversionError(
+          'local_save',
+          'new_record',
+          localError.toString(),
+          null,
         );
-      } else {
-        throw Exception('No se pudo guardar localmente');
       }
     } catch (e) {
+      // ❌ Error general/inesperado
+      debugPrint('❌ Error inesperado en saveFrapRecord: $e');
       result.success = false;
-      result.message = 'Error al guardar: $e';
+      result.message = 'Error inesperado: $e';
       result.errors.add(e.toString());
 
       FrapConversionLogger.logConversionError(
@@ -187,53 +243,122 @@ class FrapUnifiedService {
     return result;
   }
 
-  // Asegurar que el folio existe en los datos
-  Future<FrapData> _ensureFolioExists(FrapData frapData) async {
-    // Verificar si ya existe un folio en registryInfo
+  // T2.3: Estrategia de rollback para estado de sincronización
+  Future<void> _rollbackSyncStatus(String localId) async {
+    try {
+      debugPrint(
+        '🔄 Iniciando rollback de estado de sincronización para $localId',
+      );
+
+      // Marcar como NO sincronizado para permitir reintento
+      await _localService.markAsNotSynced(localId);
+
+      debugPrint(
+        '✅ Rollback completado. Registro $localId marcado para re-sincronización',
+      );
+    } catch (rollbackError) {
+      // Error en rollback - registrar pero no propagar
+      debugPrint('❌ Rollback falló para $localId: $rollbackError');
+
+      FrapConversionLogger.logConversionError(
+        'rollback_sync_status',
+        localId,
+        'Rollback failed: $rollbackError',
+        null,
+      );
+      // No re-lanzar - ya hay un error principal
+    }
+  }
+
+  // T3.1: Asegurar que el folio existe con reintentos y validación
+  Future<FrapData> _ensureFolioExists(
+    FrapData frapData, {
+    int maxRetries = 3,
+    Duration initialDelay = const Duration(milliseconds: 100),
+  }) async {
+    // Verificar si ya existe un folio válido en registryInfo
     final currentRegistryInfo = Map<String, dynamic>.from(
       frapData.registryInfo,
     );
     final currentFolio = currentRegistryInfo['folio'];
 
-    // Si no hay folio o está vacío, generar uno nuevo
-    if (currentFolio == null || currentFolio.toString().trim().isEmpty) {
+    // Si ya tiene un folio válido, retornar sin cambios
+    if (currentFolio != null && currentFolio.toString().trim().isNotEmpty) {
+      debugPrint('✅ Folio existente: $currentFolio');
+      return frapData;
+    }
+
+    // Necesita generar folio - intentar con reintentos
+    Duration delay = initialDelay;
+    String? generatedFolio;
+
+    for (int attempt = 0; attempt < maxRetries; attempt++) {
       try {
+        debugPrint('🔄 Intento ${attempt + 1}/$maxRetries de generar folio');
+
         // Obtener nombre del paciente para generar folio con iniciales
         final patientName = _getPatientNameFromData(frapData);
-        final newFolio = await _folioGenerator.generateUniquePatientFolio(
+        generatedFolio = await _folioGenerator.generateUniquePatientFolio(
           patientName,
         );
-        currentRegistryInfo['folio'] = newFolio;
+
+        // Validar que el folio generado no esté vacío
+        if (generatedFolio.trim().isEmpty) {
+          throw FolioGenerationException(
+            'La generación de folio retornó un valor vacío',
+          );
+        }
+
+        // ✅ Éxito - asignar folio y retornar
+        currentRegistryInfo['folio'] = generatedFolio;
+        debugPrint('✅ Folio generado exitosamente: $generatedFolio');
 
         FrapConversionLogger.logConversionSuccess('folio_generation', 'auto', {
-          'folio': newFolio,
+          'folio': generatedFolio,
+          'attempt': attempt + 1,
         });
 
         return frapData.copyWith(registryInfo: currentRegistryInfo);
       } catch (e) {
-        FrapConversionLogger.logConversionError(
-          'folio_generation',
-          'auto',
-          e.toString(),
-          null,
-        );
-        // Si falla la generación, usar un folio con timestamp
-        final fallbackFolio =
-            'SN-${DateTime.now().year}-${DateTime.now().millisecondsSinceEpoch}';
-        currentRegistryInfo['folio'] = fallbackFolio;
+        debugPrint('⚠️ Intento ${attempt + 1} falló: $e');
 
-        FrapConversionLogger.logConversionSuccess(
-          'folio_generation',
-          'fallback',
-          {'folio': fallbackFolio},
-        );
+        if (attempt == maxRetries - 1) {
+          // ❌ Último intento falló - usar folio de fallback
+          debugPrint(
+            '❌ Todos los intentos fallaron. Usando folio de fallback.',
+          );
 
-        return frapData.copyWith(registryInfo: currentRegistryInfo);
+          final fallbackFolio =
+              'SN-${DateTime.now().year}-${DateTime.now().millisecondsSinceEpoch}';
+          currentRegistryInfo['folio'] = fallbackFolio;
+
+          FrapConversionLogger.logConversionError(
+            'folio_generation',
+            'auto',
+            'Failed after $maxRetries attempts: $e',
+            null,
+          );
+
+          FrapConversionLogger.logConversionSuccess(
+            'folio_generation',
+            'fallback',
+            {'folio': fallbackFolio, 'reason': 'Max retries exceeded'},
+          );
+
+          return frapData.copyWith(registryInfo: currentRegistryInfo);
+        }
+
+        // Esperar antes de reintentar (exponential backoff)
+        debugPrint('⏳ Reintentando en ${delay.inMilliseconds}ms...');
+        await Future.delayed(delay);
+        delay *= 2; // Doblar el tiempo de espera
       }
     }
 
-    // Si ya existe un folio, devolver los datos sin cambios
-    return frapData;
+    // Este punto no debería alcanzarse, pero por seguridad
+    throw FolioGenerationException(
+      'No se pudo generar folio después de $maxRetries intentos',
+    );
   }
 
   // Obtener nombre del paciente desde los datos
@@ -430,13 +555,11 @@ class FrapUnifiedService {
         clinicalValidation,
       );
 
-      // Validar y convertir examen físico
-      final examValidation = FrapDataValidator.validatePhysicalExamData(
-        cloud.physicalExam,
-      );
-      final examData = examValidation.cleanedData ?? {};
-
-      FrapConversionLogger.logValidationResult('physical_exam', examValidation);
+      // Convertir examen físico sin validación para conservar campos completos
+      final examData =
+          cloud.physicalExam is Map
+              ? Map<String, dynamic>.from(cloud.physicalExam)
+              : <String, dynamic>{};
 
       // Crear un registro local basado en los datos de la nube
       final localFrap = Frap(
@@ -487,7 +610,7 @@ class FrapUnifiedService {
           medidaSeguridad: clinicalData['medidaSeguridad'] ?? '',
           observaciones: clinicalData['observaciones'] ?? '',
         ),
-        physicalExam: PhysicalExam.fromFormData(examData),
+        physicalExam: examData,
         createdAt: cloud.createdAt,
         updatedAt: cloud.updatedAt,
         serviceInfo: _convertSectionData(cloud.serviceInfo),
@@ -773,9 +896,22 @@ class FrapUnifiedService {
             frapData: updatedData,
           );
           result.updatedLocally = true;
+          debugPrint('✅ Registro local actualizado: $localId');
+
+          // T3.2: CRÍTICO - Resetear isSynced para marcar para re-sincronización
+          if (cloudId != null) {
+            try {
+              await _localService.markAsNotSynced(localId);
+              result.requiresSync = true;
+              debugPrint('🔄 Registro marcado para re-sincronización');
+            } catch (e) {
+              debugPrint('⚠️ No se pudo marcar como no sincronizado: $e');
+              // No es crítico - continuar
+            }
+          }
         } catch (e) {
           result.localError = 'Error al actualizar localmente: $e';
-          debugPrint(result.localError);
+          debugPrint('❌ ${result.localError}');
         }
       } else if (hasInternet) {
         // Si no existe localmente pero vamos a actualizar en nube, crear copia local
@@ -785,11 +921,11 @@ class FrapUnifiedService {
           );
           result.updatedLocally = newLocalId != null;
           if (result.updatedLocally) {
-            debugPrint('Copia local creada con ID: $newLocalId');
+            debugPrint('✅ Copia local creada con ID: $newLocalId');
           }
         } catch (e) {
           result.localError = 'Error al crear copia local: $e';
-          debugPrint(result.localError);
+          debugPrint('❌ ${result.localError}');
         }
       }
 
@@ -801,15 +937,32 @@ class FrapUnifiedService {
             frapData: updatedData,
           );
           result.updatedInCloud = true;
+          debugPrint('✅ Registro cloud actualizado: $cloudId');
+
+          // Si cloud se actualizó exitosamente, marcar como sincronizado
+          if (localId != null && result.updatedLocally) {
+            try {
+              await _localService.markAsSynced(localId, 'firestore', cloudId);
+              result.requiresSync = false; // Ya está sincronizado
+              debugPrint('✅ Registro marcado como sincronizado');
+            } catch (syncError) {
+              debugPrint('⚠️ Error marcando como sincronizado: $syncError');
+              result.requiresSync = true; // Mantener necesidad de re-sync
+            }
+          }
         } catch (e) {
           result.cloudError = 'Error al actualizar en la nube: $e';
-          debugPrint(result.cloudError);
+          debugPrint('❌ ${result.cloudError}');
+          result.requiresSync = true; // Requiere sincronización posterior
         }
       } else if (cloudId != null && !hasInternet) {
         // Marcar para sincronización posterior
         result.requiresSync = true;
         result.cloudError =
             'Sin conexión. Los cambios se sincronizarán cuando haya internet';
+        debugPrint(
+          'ℹ️ Sin conexión - actualización pendiente de sincronización',
+        );
       }
 
       // Determinar éxito general
@@ -845,10 +998,14 @@ class FrapUnifiedService {
         // Existe en ambos con internet
         result.success = result.updatedLocally && result.updatedInCloud;
         if (result.success) {
-          result.message = 'Registro actualizado completamente';
+          result.message =
+              result.requiresSync
+                  ? 'Registro actualizado. Pendiente de sincronización completa'
+                  : 'Registro actualizado completamente';
         } else if (result.updatedLocally && !result.updatedInCloud) {
           result.message =
               'Registro actualizado localmente pero falló en la nube';
+          result.requiresSync = true;
         } else if (!result.updatedLocally && result.updatedInCloud) {
           result.message =
               'Registro actualizado en la nube pero falló localmente';
@@ -856,10 +1013,17 @@ class FrapUnifiedService {
           result.message = 'Error al actualizar el registro';
         }
       }
+
+      // Log final del resultado
+      if (result.success) {
+        debugPrint('✅ Actualización completa: ${result.message}');
+      } else {
+        debugPrint('❌ Actualización con errores: ${result.message}');
+      }
     } catch (e) {
       result.success = false;
       result.message = 'Error inesperado al actualizar: $e';
-      debugPrint('Error en updateRecord: $e');
+      debugPrint('❌ Error en updateRecord: $e');
     }
 
     return result;
@@ -1002,6 +1166,14 @@ class UnifiedFrapRecord {
 
   // Método para obtener información detallada
   Map<String, dynamic> getDetailedInfo() {
+    print(
+      '📋 DEBUG getDetailedInfo - Fuente: ${localRecord != null
+          ? "LOCAL"
+          : cloudRecord != null
+          ? "CLOUD"
+          : "NINGUNA"}',
+    );
+
     if (localRecord != null) {
       return _getDetailedInfoFromLocal(localRecord!);
     } else if (cloudRecord != null) {
@@ -1011,8 +1183,23 @@ class UnifiedFrapRecord {
   }
 
   Map<String, dynamic> _getDetailedInfoFromLocal(Frap local) {
+    final localPhysicalExam = local.physicalExam;
+    final shouldFallbackToCloud =
+        cloudRecord != null && _shouldUseCloudPhysicalExam(localPhysicalExam);
+    final physicalExamToUse =
+        shouldFallbackToCloud ? cloudRecord!.physicalExam : localPhysicalExam;
+
     return {
-      'serviceInfo': local.serviceInfo,
+      'serviceInfo': {
+        ...local.serviceInfo,
+        'tipoServicioEspecifique': local.tipoServicioEspecifique,
+        'lugarOcurrenciaEspecifique': local.lugarOcurrenciaEspecifique,
+        'tipoUrgencia': local.tipoUrgencia,
+        'urgenciaEspecifique': local.urgenciaEspecifique,
+        'ubicacion': local.ubicacion,
+        'currentCondition': local.patient.currentCondition ?? '',
+        'emergencyContact': local.patient.emergencyContact ?? '',
+      },
       'registryInfo': local.registryInfo,
       'patientInfo': {
         'name': local.patient.fullName,
@@ -1033,6 +1220,8 @@ class UnifiedFrapRecord {
         'city': local.patient.city,
         'addressDetails': local.patient.addressDetails,
         'tipoEntrega': local.patient.tipoEntrega,
+        'currentCondition': local.patient.currentCondition ?? '',
+        'emergencyContact': local.patient.emergencyContact ?? '',
       },
       'management': local.management,
       'medications': local.medications,
@@ -1064,19 +1253,7 @@ class UnifiedFrapRecord {
         'medidaSeguridad': local.clinicalHistory.medidaSeguridad,
         'observaciones': local.clinicalHistory.observaciones,
       },
-      'physicalExam': {
-        'eva': local.physicalExam.eva,
-        'llc': local.physicalExam.llc,
-        'glucosa': local.physicalExam.glucosa,
-        'ta': local.physicalExam.ta,
-        'sampleAlergias': local.physicalExam.sampleAlergias,
-        'sampleMedicamentos': local.physicalExam.sampleMedicamentos,
-        'sampleEnfermedades': local.physicalExam.sampleEnfermedades,
-        'sampleHoraAlimento': local.physicalExam.sampleHoraAlimento,
-        'sampleEventosPrevios': local.physicalExam.sampleEventosPrevios,
-        'timeColumns': local.physicalExam.timeColumns,
-        ...local.physicalExam.vitalSignsData,
-      },
+      'physicalExam': physicalExamToUse,
       'priorityJustification': local.priorityJustification,
       'injuryLocation': local.injuryLocation,
       'receivingUnit': local.receivingUnit,
@@ -1087,9 +1264,48 @@ class UnifiedFrapRecord {
     };
   }
 
+  bool _shouldUseCloudPhysicalExam(Map<String, dynamic> localPhysicalExam) {
+    if (localPhysicalExam.isEmpty) {
+      return true;
+    }
+
+    final simpleFields = [
+      'eva',
+      'llc',
+      'glucosa',
+      'ta',
+      'sampleAlergias',
+      'sampleMedicamentos',
+      'sampleEnfermedades',
+      'sampleHoraAlimento',
+      'sampleEventosPrevios',
+    ];
+
+    final hasSimpleFields = simpleFields.any((key) {
+      final value = localPhysicalExam[key];
+      return value != null && value.toString().trim().isNotEmpty;
+    });
+
+    final vitalSignsData = localPhysicalExam['vitalSignsData'];
+    final hasVitalSignsData =
+        vitalSignsData is Map && vitalSignsData.isNotEmpty;
+
+    return !(hasSimpleFields || hasVitalSignsData);
+  }
+
   Map<String, dynamic> _getDetailedInfoFromCloud(FrapFirestore cloud) {
     return {
-      'serviceInfo': cloud.serviceInfo,
+      'serviceInfo': {
+        ...cloud.serviceInfo,
+        'currentCondition':
+            cloud.patientInfo['currentCondition'] ??
+            cloud.serviceInfo['currentCondition'] ??
+            '',
+        'emergencyContact':
+            cloud.patientInfo['emergencyContact'] ??
+            cloud.serviceInfo['emergencyContact'] ??
+            '',
+      },
       'registryInfo': cloud.registryInfo,
       'patientInfo': {
         'name':
@@ -1111,6 +1327,10 @@ class UnifiedFrapRecord {
         'neighborhood': cloud.patientInfo['neighborhood'],
         'city': cloud.patientInfo['city'],
         'tipoEntrega': cloud.patientInfo['tipoEntrega'],
+        'currentCondition':
+            cloud.patientInfo['currentCondition']?.toString() ?? '',
+        'emergencyContact':
+            cloud.patientInfo['emergencyContact']?.toString() ?? '',
       },
       'management': cloud.management,
       'medications': cloud.medications,
@@ -1123,8 +1343,7 @@ class UnifiedFrapRecord {
       'injuryLocation': cloud.injuryLocation,
       'receivingUnit': cloud.receivingUnit,
       'patientReception': cloud.patientReception,
-      'insumos':
-          cloud.management['insumos'] ?? cloud.serviceInfo['insumos'] ?? [],
+      'insumos': cloud.insumos,
       'personalMedico':
           cloud.management['personalMedico'] ??
           cloud.serviceInfo['personalMedico'] ??
@@ -1146,6 +1365,7 @@ class UnifiedSaveResult {
   bool savedLocally = false;
   bool savedToCloud = false;
   String? cloudError;
+  String? syncError; // Nuevo: error específico de sincronización
 }
 
 // Resultado de sincronización

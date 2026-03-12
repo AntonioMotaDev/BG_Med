@@ -104,7 +104,7 @@ class FrapData {
       case 'patient_reception':
         return patientReception;
       case 'insumos':
-        return {'insumos': insumos};
+        return {'insumosList': insumos};
       default:
         return {};
     }

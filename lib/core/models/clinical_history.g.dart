@@ -31,17 +31,13 @@ class ClinicalHistoryAdapter extends TypeAdapter<ClinicalHistory> {
       traumaPelvisEspecifique: fields[11] as String,
       traumaOtros: fields[12] as bool,
       traumaOtrosEspecifique: fields[13] as String,
-      agenteCausal: fields[14] as String,
-      cinematica: fields[15] as String,
-      medidaSeguridad: fields[16] as String,
-      observaciones: fields[17] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, ClinicalHistory obj) {
     writer
-      ..writeByte(18)
+      ..writeByte(14)
       ..writeByte(0)
       ..write(obj.traumaCraneo)
       ..writeByte(1)
@@ -69,15 +65,7 @@ class ClinicalHistoryAdapter extends TypeAdapter<ClinicalHistory> {
       ..writeByte(12)
       ..write(obj.traumaOtros)
       ..writeByte(13)
-      ..write(obj.traumaOtrosEspecifique)
-      ..writeByte(14)
-      ..write(obj.agenteCausal)
-      ..writeByte(15)
-      ..write(obj.cinematica)
-      ..writeByte(16)
-      ..write(obj.medidaSeguridad)
-      ..writeByte(17)
-      ..write(obj.observaciones);
+      ..write(obj.traumaOtrosEspecifique);
   }
 
   @override

@@ -98,7 +98,7 @@ class DuplicateDetectionService {
       record.clinicalHistory.traumaCraneo.toString(),
       record.clinicalHistory.traumaTorax.toString(),
       record.clinicalHistory.agenteCausal,
-      record.physicalExam.vitalSigns,
+      (record.physicalExam['vitalSigns']?.toString() ?? ''),
     ].join('|');
 
     return _hashString(content);
@@ -138,7 +138,8 @@ class DuplicateDetectionService {
     return f1.clinicalHistory.traumaCraneo == f2.clinicalHistory.traumaCraneo &&
         f1.clinicalHistory.traumaTorax == f2.clinicalHistory.traumaTorax &&
         f1.clinicalHistory.agenteCausal == f2.clinicalHistory.agenteCausal &&
-        f1.physicalExam.vitalSigns == f2.physicalExam.vitalSigns;
+        (f1.physicalExam['vitalSigns']?.toString() ?? '') ==
+            (f2.physicalExam['vitalSigns']?.toString() ?? '');
   }
 
   DuplicateType _determineDuplicateType(List<Frap> records) {

@@ -38,7 +38,7 @@ class _InsumosFormDialogState extends State<InsumosFormDialog> {
                 insumosListData.map((insumo) {
                   if (insumo is Map) {
                     return InsumoRow(
-                      cantidad: _parseIntSafely(insumo['cantidad']),
+                      cantidad: _parseDoubleSafely(insumo['cantidad']),
                       articulo: insumo['articulo']?.toString() ?? '',
                     );
                   }
@@ -65,11 +65,12 @@ class _InsumosFormDialogState extends State<InsumosFormDialog> {
     }
   }
 
-  int _parseIntSafely(dynamic value) {
-    if (value == null) return 0;
-    if (value is int) return value;
-    if (value is String) return int.tryParse(value) ?? 0;
-    return 0;
+  double _parseDoubleSafely(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
   }
 
   List<InsumoRow> _parseTextToInsumos(String text) {
@@ -81,11 +82,11 @@ class _InsumosFormDialogState extends State<InsumosFormDialog> {
         // Intentar parsear líneas con formato común
         final parts = line.split(' - ');
         if (parts.length >= 2) {
-          final cantidad = int.tryParse(parts[0].trim()) ?? 0;
+          final cantidad = double.tryParse(parts[0].trim()) ?? 0.0;
           insumos.add(InsumoRow(cantidad: cantidad, articulo: parts[1].trim()));
         } else {
           // Si no se puede parsear, agregar como artículo general
-          insumos.add(InsumoRow(cantidad: 1, articulo: line.trim()));
+          insumos.add(InsumoRow(cantidad: 1.0, articulo: line.trim()));
         }
       }
     }
@@ -220,10 +221,10 @@ class _InsumosFormDialogState extends State<InsumosFormDialog> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryBlue.withOpacity(0.1),
+                          color: AppTheme.primaryBlue.withAlpha(26),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: AppTheme.primaryBlue.withOpacity(0.3),
+                            color: AppTheme.primaryBlue.withAlpha(26),
                             width: 1,
                           ),
                         ),
@@ -256,7 +257,7 @@ class _InsumosFormDialogState extends State<InsumosFormDialog> {
                               '• Puede agregar o eliminar insumos según sea necesario',
                               style: TextStyle(
                                 fontSize: 13,
-                                color: AppTheme.primaryBlue.withOpacity(0.8),
+                                color: AppTheme.primaryBlue.withAlpha(204),
                                 height: 1.4,
                               ),
                             ),
@@ -333,12 +334,12 @@ class _InsumosFormDialogState extends State<InsumosFormDialog> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppTheme.primaryBlue.withOpacity(0.1),
+            color: AppTheme.primaryBlue.withAlpha(26),
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(8),
               topRight: Radius.circular(8),
             ),
-            border: Border.all(color: AppTheme.primaryBlue.withOpacity(0.3)),
+            border: Border.all(color: AppTheme.primaryBlue.withAlpha(77)),
           ),
           child: Row(
             children: [
@@ -388,7 +389,7 @@ class _InsumosFormDialogState extends State<InsumosFormDialog> {
         border: Border.all(color: Colors.grey[300]!),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withAlpha(13),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -402,7 +403,7 @@ class _InsumosFormDialogState extends State<InsumosFormDialog> {
             Expanded(
               child: TextFormField(
                 initialValue:
-                    insumo.cantidad > 0 ? insumo.cantidad.toString() : '',
+                    insumo.cantidad > 0.0 ? insumo.cantidad.toString() : '',
                 decoration: const InputDecoration(
                   hintText: '1',
                   border: OutlineInputBorder(),
@@ -412,19 +413,22 @@ class _InsumosFormDialogState extends State<InsumosFormDialog> {
                   ),
                 ),
                 style: const TextStyle(fontSize: 14),
-                keyboardType: TextInputType.number,
+                keyboardType: TextInputType.numberWithOptions(
+                  decimal: true,
+                  signed: false,
+                ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'Requerido';
                   }
-                  final cantidad = int.tryParse(value);
+                  final cantidad = double.tryParse(value);
                   if (cantidad == null || cantidad <= 0) {
                     return '> 0';
                   }
                   return null;
                 },
                 onChanged: (value) {
-                  final cantidad = int.tryParse(value) ?? 0;
+                  final cantidad = double.tryParse(value) ?? 0.0;
                   _updateInsumoRow(index, insumo.copyWith(cantidad: cantidad));
                 },
               ),
@@ -507,7 +511,7 @@ class _InsumosFormDialogState extends State<InsumosFormDialog> {
       final validInsumos =
           _insumos
               .where(
-                (insumo) => insumo.cantidad > 0 && insumo.articulo.isNotEmpty,
+                (insumo) => insumo.cantidad > 0.0 && insumo.articulo.isNotEmpty,
               )
               .toList();
 
@@ -521,18 +525,7 @@ class _InsumosFormDialogState extends State<InsumosFormDialog> {
               )
               .toList();
 
-      final formData = {
-        'insumosList': insumosList,
-        'insumos': validInsumos
-            .map((insumo) => '${insumo.cantidad} - ${insumo.articulo}')
-            .join('\n'),
-        'totalInsumos': validInsumos.length,
-        'totalCantidad': validInsumos.fold(
-          0,
-          (sum, insumo) => sum + insumo.cantidad,
-        ),
-        'timestamp': DateTime.now().toIso8601String(),
-      };
+      final formData = {'insumosList': insumosList};
 
       print('=== GUARDANDO INSUMOS ===');
       print('Insumos válidos: ${validInsumos.length}');
@@ -595,12 +588,12 @@ class _InsumosFormDialogState extends State<InsumosFormDialog> {
 
 // Clase para representar una fila de insumo
 class InsumoRow {
-  final int cantidad;
+  final double cantidad;
   final String articulo;
 
-  const InsumoRow({this.cantidad = 0, this.articulo = ''});
+  const InsumoRow({this.cantidad = 0.0, this.articulo = ''});
 
-  InsumoRow copyWith({int? cantidad, String? articulo}) {
+  InsumoRow copyWith({double? cantidad, String? articulo}) {
     return InsumoRow(
       cantidad: cantidad ?? this.cantidad,
       articulo: articulo ?? this.articulo,

@@ -17,12 +17,7 @@ class FrapFormAdapters {
     bool isFromCloud = false,
   }) {
     if (data == null) {
-      return {
-        'insumosList': <Map<String, dynamic>>[],
-        'insumos': '',
-        'totalInsumos': 0,
-        'totalCantidad': 0,
-      };
+      return {'insumosList': <Map<String, dynamic>>[]};
     }
 
     if (isFromCloud) {
@@ -46,8 +41,8 @@ class FrapFormAdapters {
                   .join('\n'),
               'totalInsumos': cleanedInsumos.length,
               'totalCantidad': cleanedInsumos.fold(
-                0,
-                (sum, i) => sum + (i['cantidad'] as int),
+                0.0,
+                (sum, i) => sum + (i['cantidad'] as double),
               ),
             };
           }
@@ -62,7 +57,7 @@ class FrapFormAdapters {
               .map((i) => '${i.cantidad} - ${i.articulo}')
               .join('\n'),
           'totalInsumos': data.length,
-          'totalCantidad': data.fold(0, (sum, i) => sum + i.cantidad),
+          'totalCantidad': data.fold(0.0, (sum, i) => sum + i.cantidad),
         };
       }
     }
@@ -71,7 +66,7 @@ class FrapFormAdapters {
       'insumosList': <Map<String, dynamic>>[],
       'insumos': '',
       'totalInsumos': 0,
-      'totalCantidad': 0,
+      'totalCantidad': 0.0,
     };
   }
 
@@ -326,12 +321,9 @@ class FrapFormAdapters {
     if (data == null) return defaultData;
 
     if (isFromCloud) {
-      // Datos vienen de la nube (Map<String, dynamic>)
-      if (data is Map<String, dynamic>) {
-        final validation = FrapDataValidator.validatePhysicalExamData(data);
-        if (validation.isValid && validation.cleanedData != null) {
-          return {...defaultData, ...validation.cleanedData!};
-        }
+      // Datos vienen de la nube (Map) - sin validación para conservar campos completos
+      if (data is Map) {
+        return {...defaultData, ...Map<String, dynamic>.from(data)};
       }
     } else {
       // Datos vienen del modelo local (PhysicalExam)
@@ -554,7 +546,7 @@ class FrapFormAdapters {
       'insumosList': insumosList,
       'insumos': data['insumos'] ?? '',
       'totalInsumos': data['totalInsumos'] ?? insumosList.length,
-      'totalCantidad': data['totalCantidad'] ?? 0,
+      'totalCantidad': data['totalCantidad'] ?? 0.0,
     };
   }
 

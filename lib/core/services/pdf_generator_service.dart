@@ -230,6 +230,7 @@ class AmbulanceDisplayData {
 
 class GynecoObstetricDisplayData {
   final String urgencia;
+  final String urgenciaEspecifique;
   final String fum;
   final String semanasGestacion;
   final String gesta;
@@ -240,6 +241,9 @@ class GynecoObstetricDisplayData {
   final String metodosAnticonceptivos;
   final bool ruidosCardiacosFetales;
   final bool expulsionPlacenta;
+  final bool isParto;
+  final bool isAborto;
+  final bool isHxVaginal;
   final String frecuenciaCardiacaFetal;
   final String contracciones;
   final String observaciones;
@@ -247,6 +251,7 @@ class GynecoObstetricDisplayData {
 
   GynecoObstetricDisplayData({
     required this.urgencia,
+    this.urgenciaEspecifique = '',
     required this.fum,
     required this.semanasGestacion,
     required this.gesta,
@@ -257,6 +262,9 @@ class GynecoObstetricDisplayData {
     required this.metodosAnticonceptivos,
     required this.ruidosCardiacosFetales,
     required this.expulsionPlacenta,
+    this.isParto = false,
+    this.isAborto = false,
+    this.isHxVaginal = false,
     this.frecuenciaCardiacaFetal = '',
     this.contracciones = '',
     this.observaciones = '',
@@ -380,8 +388,6 @@ class PdfGeneratorService {
   // Cached fonts
   pw.Font? _robotoRegular;
   pw.Font? _robotoBold;
-  // pw.Font? _robotoItalic;
-  // pw.Font? _robotoBoldItalic;
   bool _fontsLoaded = false;
 
   // Cached styles - INICIALIZADAS DIRECTAMENTE
@@ -523,6 +529,10 @@ class PdfGeneratorService {
       author: 'BG Med',
     );
 
+    // const double pageHeight = 842;
+    // const double margin = 24 * 2;
+    // const double usableHeight = pageHeight - margin; // ~794 pt
+
     // PAGINA ÚNICA CON TODOS LOS ELEMENTOS
     pdf.addPage(
       pw.Page(
@@ -562,7 +572,7 @@ class PdfGeneratorService {
                         child: pw.Column(
                           children: [
                             _buildCompactTimeTracking(displayData.service),
-                            pw.SizedBox(height: 4),
+                            pw.SizedBox(height: 2),
                             _buildCompactPatientInfo(
                               displayData.patient,
                               displayData.service.currentCondition,
@@ -611,6 +621,7 @@ class PdfGeneratorService {
                                 )) ...[
                               _buildCompactGynecoObstetricSection(
                                 displayData.gynecoObstetric,
+                                record,
                               ),
                             ],
                             pw.SizedBox(height: 4),
@@ -670,11 +681,11 @@ class PdfGeneratorService {
       child: pw.Table(
         border: pw.TableBorder.all(width: 0.3),
         columnWidths: {
-          0: const pw.FlexColumnWidth(1),
-          1: const pw.FlexColumnWidth(1),
+          0: const pw.FlexColumnWidth(0.9),
+          1: const pw.FlexColumnWidth(0.8),
           2: const pw.FlexColumnWidth(1.5),
-          3: const pw.FlexColumnWidth(1.5),
-          4: const pw.FlexColumnWidth(1.5),
+          3: const pw.FlexColumnWidth(2),
+          4: const pw.FlexColumnWidth(1.2),
         },
         children: [
           pw.TableRow(
@@ -773,12 +784,15 @@ class PdfGeneratorService {
                           : service.lugarOcurrencia,
                       style: _valueStyle,
                     ),
-                    pw.SizedBox(width: 4),
+                  ],
+                ),
+                pw.SizedBox(height: 2),
+                pw.Row(
+                  children: [
                     pw.Text('Ubicación: ', style: _labelStyle),
                     pw.Expanded(
                       child: pw.Text(service.ubicacion, style: _valueStyle),
                     ),
-                    pw.SizedBox(width: 4),
                   ],
                 ),
                 pw.SizedBox(height: 2),
@@ -806,7 +820,7 @@ class PdfGeneratorService {
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                // Primera fila: Nombre completo (dato largo)
+                // Primera fila: Nombre completo y Edad
                 pw.Container(
                   padding: const pw.EdgeInsets.only(bottom: 3),
                   child: pw.Row(
@@ -815,34 +829,32 @@ class PdfGeneratorService {
                       pw.Expanded(
                         child: pw.Text(patient.fullName, style: _valueStyle),
                       ),
+                      pw.SizedBox(width: 8),
+                      pw.Text('Edad: ', style: _labelStyle),
+                      pw.Text(patient.age, style: _valueStyle),
+                      pw.SizedBox(width: 8),
+                      pw.Text('Sexo: ', style: _labelStyle),
+                      pw.Text(patient.sex, style: _valueStyle),
+                      pw.SizedBox(width: 8),
                     ],
                   ),
                 ),
-                // Segunda fila: Datos cortos (edad, sexo, seguro)
+                // Segunda fila: Género y Detalles de dirección
                 pw.Container(
                   padding: const pw.EdgeInsets.only(bottom: 3),
                   child: pw.Row(
                     children: [
                       pw.Expanded(
-                        flex: 2,
+                        flex: 6,
                         child: pw.Row(
                           children: [
-                            pw.Text('Edad: ', style: _labelStyle),
-                            pw.Text(patient.age, style: _valueStyle),
+                            pw.Text('Dirección: ', style: _labelStyle),
+                            pw.Text(patient.address, style: _valueStyle),
                           ],
                         ),
                       ),
                       pw.Expanded(
                         flex: 2,
-                        child: pw.Row(
-                          children: [
-                            pw.Text('Sexo: ', style: _labelStyle),
-                            pw.Text(patient.sex, style: _valueStyle),
-                          ],
-                        ),
-                      ),
-                      pw.Expanded(
-                        flex: 3,
                         child: pw.Row(
                           children: [
                             pw.Text('SS: ', style: _labelStyle),
@@ -854,18 +866,6 @@ class PdfGeneratorService {
                             ),
                           ],
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Tercera fila: Dirección (dato largo)
-                pw.Container(
-                  padding: const pw.EdgeInsets.only(bottom: 3),
-                  child: pw.Row(
-                    children: [
-                      pw.Text('Dirección: ', style: _labelStyle),
-                      pw.Expanded(
-                        child: pw.Text(patient.address, style: _valueStyle),
                       ),
                     ],
                   ),
@@ -886,9 +886,9 @@ class PdfGeneratorService {
                           ],
                         ),
                       ),
-                      pw.SizedBox(width: 8),
+                      pw.SizedBox(width: 4),
                       pw.Expanded(
-                        flex: 4,
+                        flex: 3,
                         child: pw.Row(
                           children: [
                             pw.Text('Responsable: ', style: _labelStyle),
@@ -899,6 +899,25 @@ class PdfGeneratorService {
                               ),
                             ),
                           ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                pw.Container(
+                  decoration: const pw.BoxDecoration(
+                    border: pw.Border(
+                      top: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
+                    ),
+                  ),
+                  child: pw.Row(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text('Contacto de  emergencia: ', style: _labelStyle),
+                      pw.Expanded(
+                        child: pw.Text(
+                          patient.emergencyContact,
+                          style: _valueStyle,
                         ),
                       ),
                     ],
@@ -917,7 +936,10 @@ class PdfGeneratorService {
                     children: [
                       pw.Text('Padecimiento actual: ', style: _labelStyle),
                       pw.Expanded(
-                        child: pw.Text(currentCondition, style: _valueStyle),
+                        child: pw.Text(
+                          patient.currentCondition,
+                          style: _valueStyle,
+                        ),
                       ),
                     ],
                   ),
@@ -956,10 +978,11 @@ class PdfGeneratorService {
                   children: [
                     // Imagen de lesiones
                     pw.Container(
-                      width: 160,
-                      height: 240,
+                      width: 140,
+                      height: 220,
                       decoration: pw.BoxDecoration(
                         border: pw.Border.all(color: PdfColors.grey400),
+                        // border: pw.Border.all(color: PdfColors.red400),
                       ),
                       child:
                           combinedImage != null
@@ -971,7 +994,7 @@ class PdfGeneratorService {
                                 ),
                               ),
                     ),
-                    pw.SizedBox(width: 8),
+                    pw.SizedBox(width: 4),
                     // Información de lesiones
                     pw.Expanded(
                       child: pw.Column(
@@ -983,9 +1006,9 @@ class PdfGeneratorService {
                           ),
                           if (drawnInjuries != null &&
                               drawnInjuries.isNotEmpty) ...[
-                            pw.SizedBox(height: 4),
+                            pw.SizedBox(height: 2),
                             pw.Text('Tipos:', style: _labelStyle),
-                            pw.SizedBox(height: 4),
+                            pw.SizedBox(height: 2),
                             pw.Wrap(
                               spacing: 2,
                               runSpacing: 1,
@@ -999,10 +1022,10 @@ class PdfGeneratorService {
                 ),
                 // Notas adicionales
                 if (notes.trim().isNotEmpty) ...[
-                  pw.SizedBox(height: 4),
+                  pw.SizedBox(height: 2),
                   pw.Container(
                     width: double.infinity,
-                    padding: const pw.EdgeInsets.all(3),
+                    padding: const pw.EdgeInsets.all(2),
                     decoration: pw.BoxDecoration(
                       color: PdfColors.grey100,
                       borderRadius: pw.BorderRadius.circular(2),
@@ -1204,14 +1227,6 @@ class PdfGeneratorService {
               ],
             ),
           ),
-          if (management.observaciones.isNotEmpty)
-            pw.Padding(
-              padding: const pw.EdgeInsets.all(4),
-              child: pw.Text(
-                'Observaciones: ${management.observaciones}',
-                style: _valueStyle,
-              ),
-            ),
         ],
       ),
     );
@@ -1333,6 +1348,7 @@ class PdfGeneratorService {
   pw.Widget _buildCompactClinicalHistory(ClinicalDisplayData clinical) {
     final traumasList = <String>[];
 
+    // Agregar cada tipo de trauma si está presente
     if (clinical.traumaCraneo) {
       traumasList.add(
         clinical.traumaCraneoEspecifique.trim().isEmpty
@@ -1383,15 +1399,46 @@ class PdfGeneratorService {
       );
     }
 
-    // Verificar si hay algún dato para mostrar
-    final hasData =
-        traumasList.isNotEmpty ||
-        clinical.agenteCausal.isNotEmpty ||
-        clinical.cinematica.isNotEmpty ||
-        clinical.medidaSeguridad.isNotEmpty ||
-        clinical.observaciones.isNotEmpty;
+    // Si no hay traumas, no mostrar la sección
+    if (traumasList.isEmpty) return pw.SizedBox();
 
-    if (!hasData) return pw.SizedBox();
+    final traumasWidgets = <pw.Widget>[];
+
+    // Agregar traumas como tags
+    traumasWidgets.add(
+      pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text('Traumas: ', style: _labelStyle),
+          pw.Expanded(
+            child: pw.Wrap(
+              spacing: 4,
+              runSpacing: 2,
+              children:
+                  traumasList
+                      .map(
+                        (trauma) => pw.Container(
+                          padding: const pw.EdgeInsets.symmetric(
+                            horizontal: 3,
+                            vertical: 1,
+                          ),
+                          decoration: pw.BoxDecoration(
+                            color: PdfColors.grey100,
+                            borderRadius: pw.BorderRadius.circular(2),
+                            border: pw.Border.all(
+                              color: PdfColors.grey400,
+                              width: 0.3,
+                            ),
+                          ),
+                          child: pw.Text(trauma, style: _valueStyle),
+                        ),
+                      )
+                      .toList(),
+            ),
+          ),
+        ],
+      ),
+    );
 
     return pw.Container(
       width: double.infinity,
@@ -1400,70 +1447,12 @@ class PdfGeneratorService {
       ),
       child: pw.Column(
         children: [
-          _buildCompactSectionHeader('HISTORIA CLÍNICA'),
+          _buildCompactSectionHeader('ANTECEDENTES CLÍNICOS'),
           pw.Padding(
             padding: const pw.EdgeInsets.all(4),
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                if (traumasList.isNotEmpty) ...[
-                  pw.Row(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text('Traumas: ', style: _labelStyle),
-                      pw.Expanded(
-                        child: pw.Wrap(
-                          spacing: 4,
-                          runSpacing: 2,
-                          children:
-                              traumasList
-                                  .map(
-                                    (trauma) => pw.Container(
-                                      padding: const pw.EdgeInsets.symmetric(
-                                        horizontal: 3,
-                                        vertical: 1,
-                                      ),
-                                      decoration: pw.BoxDecoration(
-                                        color: PdfColors.grey100,
-                                        borderRadius: pw.BorderRadius.circular(
-                                          2,
-                                        ),
-                                        border: pw.Border.all(
-                                          color: PdfColors.grey400,
-                                          width: 0.3,
-                                        ),
-                                      ),
-                                      child: pw.Text(
-                                        trauma,
-                                        style: _valueStyle,
-                                      ),
-                                    ),
-                                  )
-                                  .toList(),
-                        ),
-                      ),
-                    ],
-                  ),
-                  pw.SizedBox(height: 3),
-                ],
-                if (clinical.agenteCausal.isNotEmpty)
-                  _buildCompactDetailRow(
-                    'Agente causal:',
-                    clinical.agenteCausal,
-                  ),
-                if (clinical.cinematica.isNotEmpty)
-                  _buildCompactDetailRow('Cinemática:', clinical.cinematica),
-                if (clinical.medidaSeguridad.isNotEmpty)
-                  _buildCompactDetailRow(
-                    'Medida de seguridad:',
-                    clinical.medidaSeguridad,
-                  ),
-                if (clinical.observaciones.isNotEmpty)
-                  _buildCompactDetailRow(
-                    'Observaciones:',
-                    clinical.observaciones,
-                  ),
-              ],
+              children: traumasWidgets,
             ),
           ),
         ],
@@ -1479,7 +1468,7 @@ class PdfGeneratorService {
       ),
       child: pw.Column(
         children: [
-          _buildCompactSectionHeader('EVALUACIÓN SAMPLE'),
+          // _buildCompactSectionHeader('EVALUACIÓN SAMPLE'),
           pw.Padding(
             padding: const pw.EdgeInsets.all(4),
             child: pw.Column(
@@ -1701,7 +1690,22 @@ class PdfGeneratorService {
 
   pw.Widget _buildCompactGynecoObstetricSection(
     GynecoObstetricDisplayData gynecoObstetric,
+    UnifiedFrapRecord record,
   ) {
+    // Obtener escalas directamente de detailedInfo
+    final detailedInfo = record.getDetailedInfo();
+    final gyneco =
+        detailedInfo['gynecoObstetric'] as Map<String, dynamic>? ?? {};
+
+    // Extraer escalas - buscar en la estructura correcta
+    final escalasMap = <String, dynamic>{};
+    if (gyneco['silvermanAnderson'] != null) {
+      escalasMap['silvermanAnderson'] = gyneco['silvermanAnderson'];
+    }
+    if (gyneco['apgar'] != null) {
+      escalasMap['apgar'] = gyneco['apgar'];
+    }
+
     return pw.Container(
       width: double.infinity,
       decoration: pw.BoxDecoration(
@@ -1715,84 +1719,193 @@ class PdfGeneratorService {
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                // Datos principales
+                // Clasificación de urgencia
+                pw.Row(
+                  children: [
+                    pw.Expanded(
+                      child: _buildCompactDetailRow(
+                        'Urgencia:',
+                        gynecoObstetric.urgencia == 'Otro' &&
+                                gynecoObstetric.urgenciaEspecifique.isNotEmpty
+                            ? gynecoObstetric.urgenciaEspecifique
+                            : gynecoObstetric.urgencia,
+                      ),
+                    ),
+                    if (gynecoObstetric.hora.isNotEmpty &&
+                        gynecoObstetric.hora != 'N/A')
+                      pw.Container(
+                        width: 100,
+                        child: _buildCompactDetailRow(
+                          'Hora:',
+                          gynecoObstetric.hora,
+                        ),
+                      ),
+                  ],
+                ),
+
+                // Estado actual (checkboxes)
+                if (gynecoObstetric.isParto ||
+                    gynecoObstetric.isAborto ||
+                    gynecoObstetric.isHxVaginal ||
+                    gynecoObstetric.expulsionPlacenta) ...[
+                  pw.SizedBox(height: 3),
+                  pw.Row(
+                    children: [
+                      pw.Text('Estado Actual: ', style: _labelStyle),
+                      if (gynecoObstetric.isParto) ...[
+                        pw.Container(
+                          margin: const pw.EdgeInsets.only(right: 4),
+                          padding: const pw.EdgeInsets.symmetric(
+                            horizontal: 3,
+                            vertical: 1,
+                          ),
+                          decoration: pw.BoxDecoration(
+                            color: PdfColors.pink50,
+                            borderRadius: pw.BorderRadius.circular(2),
+                            border: pw.Border.all(
+                              color: PdfColors.pink300,
+                              width: 0.3,
+                            ),
+                          ),
+                          child: pw.Text('Parto', style: _valueStyle),
+                        ),
+                      ],
+                      if (gynecoObstetric.isAborto) ...[
+                        pw.Container(
+                          margin: const pw.EdgeInsets.only(right: 4),
+                          padding: const pw.EdgeInsets.symmetric(
+                            horizontal: 3,
+                            vertical: 1,
+                          ),
+                          decoration: pw.BoxDecoration(
+                            color: PdfColors.pink50,
+                            borderRadius: pw.BorderRadius.circular(2),
+                            border: pw.Border.all(
+                              color: PdfColors.pink300,
+                              width: 0.3,
+                            ),
+                          ),
+                          child: pw.Text('Aborto', style: _valueStyle),
+                        ),
+                      ],
+                      if (gynecoObstetric.isHxVaginal) ...[
+                        pw.Container(
+                          padding: const pw.EdgeInsets.symmetric(
+                            horizontal: 3,
+                            vertical: 1,
+                          ),
+                          decoration: pw.BoxDecoration(
+                            color: PdfColors.pink50,
+                            borderRadius: pw.BorderRadius.circular(2),
+                            border: pw.Border.all(
+                              color: PdfColors.pink300,
+                              width: 0.3,
+                            ),
+                          ),
+                          child: pw.Text(
+                            'Hemorragia Vaginal',
+                            style: _valueStyle,
+                          ),
+                        ),
+                      ],
+                      if (gynecoObstetric.expulsionPlacenta) ...[
+                        pw.Container(
+                          margin: const pw.EdgeInsets.only(left: 4),
+                          padding: const pw.EdgeInsets.symmetric(
+                            horizontal: 3,
+                            vertical: 1,
+                          ),
+                          decoration: pw.BoxDecoration(
+                            color: PdfColors.pink50,
+                            borderRadius: pw.BorderRadius.circular(2),
+                            border: pw.Border.all(
+                              color: PdfColors.pink300,
+                              width: 0.3,
+                            ),
+                          ),
+                          child: pw.Text(
+                            'Expulsión de Placenta',
+                            style: _valueStyle,
+                          ),
+                        ),
+                      ],
+                      pw.SizedBox(width: 4),
+                      _buildCompactTableCellLabeled('FUM', gynecoObstetric.fum),
+                      pw.SizedBox(width: 4),
+                      _buildCompactTableCellLabeled(
+                        'Semanas',
+                        gynecoObstetric.semanasGestacion,
+                      ),
+                    ],
+                  ),
+                ],
+
+                pw.SizedBox(height: 3),
+
+                // Datos principales (tabla)
                 pw.Table(
                   border: null,
                   columnWidths: {
                     0: const pw.FlexColumnWidth(1),
                     1: const pw.FlexColumnWidth(1),
+                    2: const pw.FlexColumnWidth(1),
+                    3: const pw.FlexColumnWidth(1),
                   },
                   children: [
                     pw.TableRow(
                       children: [
-                        _buildCompactTableCell(
-                          'FUM: ${gynecoObstetric.fum}',
+                        _buildCompactTableCellLabeled(
+                          'Gesta',
+                          gynecoObstetric.gesta,
+                        ),
+                        _buildCompactTableCellLabeled(
+                          'Partos',
+                          gynecoObstetric.partos,
                           alignLeft: true,
                         ),
-                        _buildCompactTableCell(
-                          'Semanas: ${gynecoObstetric.semanasGestacion}',
-                          alignLeft: true,
-                        ),
+                        if (gynecoObstetric.cesareas.isNotEmpty)
+                          _buildCompactTableCellLabeled(
+                            'Cesáreas',
+                            gynecoObstetric.cesareas,
+                            alignLeft: true,
+                          ),
+                        if (gynecoObstetric.abortos.isNotEmpty)
+                          _buildCompactTableCellLabeled(
+                            'Abortos',
+                            gynecoObstetric.abortos,
+                            alignLeft: true,
+                          ),
                       ],
                     ),
                     pw.TableRow(
                       children: [
-                        _buildCompactTableCell(
-                          'Gesta: ${gynecoObstetric.gesta}',
+                        _buildCompactTableCellLabeled(
+                          'R.C.F.',
+                          gynecoObstetric.ruidosCardiacosFetales
+                              ? ' ${gynecoObstetric.frecuenciaCardiacaFetal.isNotEmpty ? '${gynecoObstetric.frecuenciaCardiacaFetal} bpm' : ''}'
+                              : 'No',
                           alignLeft: true,
                         ),
-                        _buildCompactTableCell(
-                          'Partos: ${gynecoObstetric.partos}',
-                          alignLeft: true,
+                        _buildCompactTableCellLabeled(
+                          'M.A.',
+                          gynecoObstetric.metodosAnticonceptivos.isNotEmpty
+                              ? gynecoObstetric.metodosAnticonceptivos
+                              : 'N/A',
+                        ),
+                        _buildCompactTableCellLabeled(
+                          'Exp. Placenta',
+                          gynecoObstetric.expulsionPlacenta ? 'Sí' : 'No',
                         ),
                       ],
                     ),
-                    if (gynecoObstetric.cesareas.isNotEmpty ||
-                        gynecoObstetric.abortos.isNotEmpty)
-                      pw.TableRow(
-                        children: [
-                          if (gynecoObstetric.cesareas.isNotEmpty)
-                            _buildCompactTableCell(
-                              'Cesáreas: ${gynecoObstetric.cesareas}',
-                              alignLeft: true,
-                            )
-                          else
-                            pw.SizedBox(),
-                          if (gynecoObstetric.abortos.isNotEmpty)
-                            _buildCompactTableCell(
-                              'Abortos: ${gynecoObstetric.abortos}',
-                              alignLeft: true,
-                            )
-                          else
-                            pw.SizedBox(),
-                        ],
-                      ),
                   ],
                 ),
-
-                // Métodos anticonceptivos
-                if (gynecoObstetric.metodosAnticonceptivos.isNotEmpty) ...[
-                  pw.SizedBox(height: 3),
-                  _buildCompactDetailRow(
-                    'Métodos anticonceptivos:',
-                    gynecoObstetric.metodosAnticonceptivos,
-                  ),
-                ],
-
-                // Ruidos cardiacos fetales
-                _buildCompactDetailRow(
-                  'Ruidos cardíacos fetales:',
-                  gynecoObstetric.ruidosCardiacosFetales ? 'Sí' : 'No',
+                pw.SizedBox(height: 3),
+                pw.Container(
+                  width: double.infinity,
+                  height: 0.8,
+                  color: PdfColors.grey400,
                 ),
-
-                // Frecuencia cardiaca fetal
-                if (gynecoObstetric.frecuenciaCardiacaFetal.isNotEmpty) ...[
-                  pw.SizedBox(height: 2),
-                  _buildCompactDetailRow(
-                    'Frecuencia cardíaca fetal:',
-                    gynecoObstetric.frecuenciaCardiacaFetal,
-                  ),
-                ],
 
                 // Contracciones
                 if (gynecoObstetric.contracciones.isNotEmpty) ...[
@@ -1803,57 +1916,10 @@ class PdfGeneratorService {
                   ),
                 ],
 
-                // Expulsión placenta
-                _buildCompactDetailRow(
-                  'Expulsión placenta:',
-                  gynecoObstetric.expulsionPlacenta ? 'Sí' : 'No',
-                ),
-
                 // Escalas APGAR y Silverman-Anderson
-                if (gynecoObstetric.escalasObstetricas != null) ...[
+                if (escalasMap.isNotEmpty) ...[
                   pw.SizedBox(height: 3),
-
-                  // APGAR
-                  if (gynecoObstetric.escalasObstetricas!['apgar'] != null) ...[
-                    pw.Text('APGAR:', style: _labelStyle),
-                    pw.Row(
-                      children: [
-                        if (gynecoObstetric
-                                .escalasObstetricas!['apgar']['minuto1'] !=
-                            null)
-                          pw.Text(
-                            '1min: ${gynecoObstetric.escalasObstetricas!['apgar']['minuto1']}  ',
-                            style: _smallStyle,
-                          ),
-                        if (gynecoObstetric
-                                .escalasObstetricas!['apgar']['minuto5'] !=
-                            null)
-                          pw.Text(
-                            '5min: ${gynecoObstetric.escalasObstetricas!['apgar']['minuto5']}  ',
-                            style: _smallStyle,
-                          ),
-                        if (gynecoObstetric
-                                .escalasObstetricas!['apgar']['minuto10'] !=
-                            null)
-                          pw.Text(
-                            '10min: ${gynecoObstetric.escalasObstetricas!['apgar']['minuto10']}',
-                            style: _smallStyle,
-                          ),
-                      ],
-                    ),
-                    pw.SizedBox(height: 2),
-                  ],
-
-                  // Silverman-Anderson
-                  if (gynecoObstetric
-                          .escalasObstetricas!['silvermanAnderson'] !=
-                      null) ...[
-                    _buildCompactDetailRow(
-                      'Silverman-Anderson:',
-                      gynecoObstetric.escalasObstetricas!['silvermanAnderson']
-                          .toString(),
-                    ),
-                  ],
+                  _buildEscalasObstetricasForPdf(escalasMap),
                 ],
 
                 // Observaciones
@@ -2135,21 +2201,6 @@ class PdfGeneratorService {
                     'Consentimiento del Servicio',
                     displayData.consentimientoServicio!,
                   ),
-                if (hasPatientReceptionSignature)
-                  _buildCompactSignature(
-                    'Paciente',
-                    displayData.reception.patientSignature!,
-                  ),
-                if (hasPatientSignature)
-                  _buildCompactSignature(
-                    'Negativa de Atencion',
-                    attentionNegative!['patientSignature']!,
-                  ),
-                if (hasWitnessSignature)
-                  _buildCompactSignature(
-                    'Testigo',
-                    attentionNegative!['witnessSignature']!,
-                  ),
                 if (hasDoctorSignature)
                   _buildCompactDoctorSignature(
                     displayData.reception.doctorSignature!,
@@ -2195,6 +2246,27 @@ class PdfGeneratorService {
         text,
         style: isHeader ? _labelStyle : _valueStyle,
         textAlign: alignLeft ? pw.TextAlign.left : pw.TextAlign.center,
+      ),
+    );
+  }
+
+  // Similar a _buildCompactTableCell pero con etiqueta en negritas y valor normal
+  // ignore: unused_element
+  pw.Widget _buildCompactTableCellLabeled(
+    String label,
+    String value, {
+    bool alignLeft = true,
+  }) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.all(2),
+      child: pw.RichText(
+        textAlign: alignLeft ? pw.TextAlign.left : pw.TextAlign.center,
+        text: pw.TextSpan(
+          children: [
+            pw.TextSpan(text: '$label: ', style: _labelStyle),
+            pw.TextSpan(text: value, style: _valueStyle),
+          ],
+        ),
       ),
     );
   }
@@ -2320,6 +2392,89 @@ class PdfGeneratorService {
       'oxigeno': 'Oxígeno',
     };
     return procedures[key] ?? key;
+  }
+
+  pw.Widget _buildEscalasObstetricasForPdf(Map<String, dynamic> escalasParam) {
+    final widgets = <pw.Widget>[];
+
+    // APGAR
+    final apgarRaw = escalasParam['apgar'];
+    if (apgarRaw is Map) {
+      final apgarMap = Map<String, dynamic>.from(apgarRaw);
+      final apgarValues = <pw.Widget>[];
+
+      apgarMap.forEach((key, value) {
+        if (value != null && value.toString().isNotEmpty) {
+          String label = key;
+          if (key == 'heartRate')
+            label = 'FC';
+          else if (key == 'respiratoryEffort')
+            label = 'ER';
+          else if (key == 'muscleTone')
+            label = 'TM';
+          else if (key == 'reflexes')
+            label = 'Reflejos';
+          else if (key == 'skinColor')
+            label = 'Color';
+
+          apgarValues.add(
+            pw.Container(
+              margin: const pw.EdgeInsets.only(right: 8, bottom: 2),
+              child: pw.Text('$label: $value', style: _valueStyle),
+            ),
+          );
+        }
+      });
+
+      if (apgarValues.isNotEmpty) {
+        widgets.add(pw.Text('APGAR:', style: _labelStyle));
+        widgets.add(pw.Wrap(spacing: 4, runSpacing: 2, children: apgarValues));
+        widgets.add(pw.SizedBox(height: 4));
+      }
+    }
+
+    // Silverman-Anderson
+    final silvermanRaw = escalasParam['silvermanAnderson'];
+    if (silvermanRaw is Map) {
+      final silvermanMap = Map<String, dynamic>.from(silvermanRaw);
+      final silvermanValues = <pw.Widget>[];
+
+      silvermanMap.forEach((key, value) {
+        if (value != null && value.toString().isNotEmpty) {
+          String label = key;
+          if (key == 'respirationMoved')
+            label = 'Resp';
+          else if (key == 'retraction')
+            label = 'Retrac';
+          else if (key == 'nasal')
+            label = 'Nasal';
+          else if (key == 'moan')
+            label = 'Quejido';
+          else if (key == 'circulation')
+            label = 'Circ';
+
+          silvermanValues.add(
+            pw.Container(
+              margin: const pw.EdgeInsets.only(right: 8, bottom: 2),
+              child: pw.Text('$label: $value', style: _valueStyle),
+            ),
+          );
+        }
+      });
+
+      if (silvermanValues.isNotEmpty) {
+        widgets.add(pw.Text('Silverman-Anderson:', style: _labelStyle));
+        widgets.add(
+          pw.Wrap(spacing: 4, runSpacing: 2, children: silvermanValues),
+        );
+        widgets.add(pw.SizedBox(height: 4));
+      }
+    }
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: widgets.isEmpty ? [pw.SizedBox()] : widgets,
+    );
   }
 
   // ========== MÉTODOS ORIGINALES (se mantienen para funcionalidad) ==========
@@ -2801,18 +2956,26 @@ class PdfGeneratorService {
 
     if (record.localRecord != null) {
       final physicalExam = record.localRecord!.physicalExam;
-      timeColumns = physicalExam.timeColumns;
-      vitalSigns = physicalExam.vitalSignsData.map(
-        (key, value) => MapEntry(key, value.map((k, v) => MapEntry(k, v))),
-      );
+      timeColumns =
+          (physicalExam['timeColumns'] as List?)?.cast<String>() ?? [];
+
+      final vitalSignsRaw = physicalExam['vitalSignsData'];
+      if (vitalSignsRaw is Map) {
+        vitalSigns = vitalSignsRaw.map(
+          (key, value) => MapEntry(
+            key.toString(),
+            value is Map ? Map<String, String>.from(value) : <String, String>{},
+          ),
+        );
+      }
 
       return VitalSignsDisplayData(
         timeColumns: timeColumns,
         vitalSigns: vitalSigns,
-        eva: physicalExam.eva,
-        llc: physicalExam.llc,
-        glucosa: physicalExam.glucosa,
-        ta: physicalExam.ta,
+        eva: physicalExam['eva']?.toString() ?? '',
+        llc: physicalExam['llc']?.toString() ?? '',
+        glucosa: physicalExam['glucosa']?.toString() ?? '',
+        ta: physicalExam['ta']?.toString() ?? '',
       );
     } else {
       final physicalExam =
@@ -2860,11 +3023,11 @@ class PdfGeneratorService {
     if (record.localRecord != null) {
       final physicalExam = record.localRecord!.physicalExam;
       return SampleDisplayData(
-        alergias: physicalExam.sampleAlergias,
-        medicamentos: physicalExam.sampleMedicamentos,
-        enfermedades: physicalExam.sampleEnfermedades,
-        horaAlimento: physicalExam.sampleHoraAlimento,
-        eventosPrevios: physicalExam.sampleEventosPrevios,
+        alergias: physicalExam['sampleAlergias']?.toString() ?? '',
+        medicamentos: physicalExam['sampleMedicamentos']?.toString() ?? '',
+        enfermedades: physicalExam['sampleEnfermedades']?.toString() ?? '',
+        horaAlimento: physicalExam['sampleHoraAlimento']?.toString() ?? '',
+        eventosPrevios: physicalExam['sampleEventosPrevios']?.toString() ?? '',
       );
     } else {
       final physicalExam =
@@ -2920,58 +3083,48 @@ class PdfGeneratorService {
         otras: false,
       );
     } else {
+      // Obtener clinicalHistory desde detailedInfo
+      final clinicalHistory =
+          detailedInfo['clinicalHistory'] as Map<String, dynamic>? ?? {};
+
+      // Función auxiliar para parsear booleanos
+      bool _parseBool(dynamic value) {
+        if (value is bool) return value;
+        if (value is String) {
+          return value.toLowerCase() == 'true' ||
+              value.toLowerCase() == 'sí' ||
+              value.toLowerCase() == 'si';
+        }
+        return false;
+      }
+
       return ClinicalDisplayData(
         currentCondition: '',
-        traumaCraneo:
-            _getFromClinicalHistory(detailedInfo, 'traumaCraneo') == 'true',
-        traumaCraneoEspecifique: _getFromClinicalHistory(
-          detailedInfo,
-          'traumaCraneoEspecifique',
-        ),
-        traumaTorax:
-            _getFromClinicalHistory(detailedInfo, 'traumaTorax') == 'true',
-        traumaToraxEspecifique: _getFromClinicalHistory(
-          detailedInfo,
-          'traumaToraxEspecifique',
-        ),
-        traumaAbdomen:
-            _getFromClinicalHistory(detailedInfo, 'traumaAbdomen') == 'true',
-        traumaAbdomenEspecifique: _getFromClinicalHistory(
-          detailedInfo,
-          'traumaAbdomenEspecifique',
-        ),
-        traumaColumna:
-            _getFromClinicalHistory(detailedInfo, 'traumaColumna') == 'true',
-        traumaColumnaEspecifique: _getFromClinicalHistory(
-          detailedInfo,
-          'traumaColumnaEspecifique',
-        ),
-        traumaExtremidades:
-            _getFromClinicalHistory(detailedInfo, 'traumaExtremidades') ==
-            'true',
-        traumaExtremidadesEspecifique: _getFromClinicalHistory(
-          detailedInfo,
-          'traumaExtremidadesEspecifique',
-        ),
-        traumaPelvis:
-            _getFromClinicalHistory(detailedInfo, 'traumaPelvis') == 'true',
-        traumaPelvisEspecifique: _getFromClinicalHistory(
-          detailedInfo,
-          'traumaPelvisEspecifique',
-        ),
-        traumaOtros:
-            _getFromClinicalHistory(detailedInfo, 'traumaOtros') == 'true',
-        traumaOtrosEspecifique: _getFromClinicalHistory(
-          detailedInfo,
-          'traumaOtrosEspecifique',
-        ),
-        agenteCausal: _getFromClinicalHistory(detailedInfo, 'agenteCausal'),
-        cinematica: _getFromClinicalHistory(detailedInfo, 'cinematica'),
-        medidaSeguridad: _getFromClinicalHistory(
-          detailedInfo,
-          'medidaSeguridad',
-        ),
-        observaciones: _getFromClinicalHistory(detailedInfo, 'observaciones'),
+        traumaCraneo: _parseBool(clinicalHistory['traumaCraneo']),
+        traumaCraneoEspecifique:
+            clinicalHistory['traumaCraneoEspecifique']?.toString() ?? '',
+        traumaTorax: _parseBool(clinicalHistory['traumaTorax']),
+        traumaToraxEspecifique:
+            clinicalHistory['traumaToraxEspecifique']?.toString() ?? '',
+        traumaAbdomen: _parseBool(clinicalHistory['traumaAbdomen']),
+        traumaAbdomenEspecifique:
+            clinicalHistory['traumaAbdomenEspecifique']?.toString() ?? '',
+        traumaColumna: _parseBool(clinicalHistory['traumaColumna']),
+        traumaColumnaEspecifique:
+            clinicalHistory['traumaColumnaEspecifique']?.toString() ?? '',
+        traumaExtremidades: _parseBool(clinicalHistory['traumaExtremidades']),
+        traumaExtremidadesEspecifique:
+            clinicalHistory['traumaExtremidadesEspecifique']?.toString() ?? '',
+        traumaPelvis: _parseBool(clinicalHistory['traumaPelvis']),
+        traumaPelvisEspecifique:
+            clinicalHistory['traumaPelvisEspecifique']?.toString() ?? '',
+        traumaOtros: _parseBool(clinicalHistory['traumaOtros']),
+        traumaOtrosEspecifique:
+            clinicalHistory['traumaOtrosEspecifique']?.toString() ?? '',
+        agenteCausal: clinicalHistory['agenteCausal']?.toString() ?? '',
+        cinematica: clinicalHistory['cinematica']?.toString() ?? '',
+        medidaSeguridad: clinicalHistory['medidaSeguridad']?.toString() ?? '',
+        observaciones: clinicalHistory['observaciones']?.toString() ?? '',
         // Antecedentes patológicos desde detailedInfo
         diabetes: _getFromPathologicalHistory(detailedInfo, 'diabetes') == 'Sí',
         diabetesEspecifique: _getFromPathologicalHistory(
@@ -3139,6 +3292,8 @@ class PdfGeneratorService {
 
     return GynecoObstetricDisplayData(
       urgencia: gynecoObstetric['urgencia']?.toString() ?? 'N/A',
+      urgenciaEspecifique:
+          gynecoObstetric['urgenciaEspecifique']?.toString() ?? '',
       fum: gynecoObstetric['fum']?.toString() ?? 'N/A',
       semanasGestacion:
           gynecoObstetric['semanasGestacion']?.toString() ?? 'N/A',
@@ -3151,6 +3306,9 @@ class PdfGeneratorService {
           gynecoObstetric['metodosAnticonceptivos']?.toString() ?? 'N/A',
       ruidosCardiacosFetales: gynecoObstetric['ruidosCardiacosFetales'] == true,
       expulsionPlacenta: gynecoObstetric['expulsionPlacenta'] == true,
+      isParto: gynecoObstetric['isParto'] == true,
+      isAborto: gynecoObstetric['isAborto'] == true,
+      isHxVaginal: gynecoObstetric['isHxVaginal'] == true,
       frecuenciaCardiacaFetal:
           gynecoObstetric['frecuenciaCardiacaFetal']?.toString() ?? '',
       contracciones: gynecoObstetric['contracciones']?.toString() ?? '',
@@ -3252,18 +3410,6 @@ class PdfGeneratorService {
     return 'N/A';
   }
 
-  String _getFromClinicalHistory(
-    Map<String, dynamic> detailedInfo,
-    String key,
-  ) {
-    final clinicalHistory =
-        detailedInfo['clinicalHistory'] as Map<String, dynamic>? ?? {};
-    final value = clinicalHistory[key];
-    if (value == true) return 'Sí';
-    if (value == false) return 'No';
-    return value?.toString() ?? 'N/A';
-  }
-
   String _boolToString(dynamic value) {
     if (value == true) return 'Sí';
     if (value == false) return 'No';
@@ -3349,6 +3495,7 @@ class PdfGeneratorService {
   }
 
   Map<String, dynamic>? _getEscalasObstetricas(UnifiedFrapRecord record) {
+    // Primero intentar desde registro local
     if (record.localRecord != null &&
         record.localRecord!.escalasObstetricas != null) {
       final e = record.localRecord!.escalasObstetricas!;
@@ -3359,24 +3506,35 @@ class PdfGeneratorService {
         'contracciones': e.contracciones,
       };
     }
+
+    // Luego intentar desde registro en la nube
     final details = record.getDetailedInfo();
     final gyneco = details['gynecoObstetric'] as Map<String, dynamic>?;
+
     if (gyneco != null) {
-      final silver = gyneco['silvermanAnderson'];
-      final apgar = gyneco['apgar'];
-      final fcf = gyneco['frecuenciaCardiacaFetal'];
-      final cont = gyneco['contracciones'];
-      if (silver != null || apgar != null || fcf != null || cont != null) {
+      // Buscar escalas dentro de gynecoObstetric
+      final escalasObstetricas =
+          gyneco['escalasObstetricas'] as Map<String, dynamic>?;
+
+      if (escalasObstetricas != null && escalasObstetricas.isNotEmpty) {
+        return escalasObstetricas;
+      }
+
+      // O también intentar obtener silvermanAnderson y apgar directamente
+      final silverMap = gyneco['silvermanAnderson'];
+      final apgarMap = gyneco['apgar'];
+
+      if (silverMap != null || apgarMap != null) {
         return {
-          'silvermanAnderson': silver,
-          'apgar': apgar,
-          'frecuenciaCardiacaFetal': fcf,
-          'contracciones': cont,
+          'silvermanAnderson': silverMap,
+          'apgar': apgarMap,
+          'frecuenciaCardiacaFetal': gyneco['frecuenciaCardiacaFetal'],
+          'contracciones': gyneco['contracciones'],
         };
       }
     }
-    final esc = details['escalasObstetricas'] as Map<String, dynamic>?;
-    return esc;
+
+    return null;
   }
 
   // ========== MÉTODOS DE ARCHIVO Y COMPARTIR ==========

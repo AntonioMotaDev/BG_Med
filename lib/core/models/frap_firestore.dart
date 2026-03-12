@@ -77,23 +77,25 @@ class FrapFirestore extends Equatable {
   // Factory constructor desde Firestore
   factory FrapFirestore.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
-
-    // Debug: Ver qué contiene attentionNegative en los datos raw de Firebase
-    print('🔥 [FIREBASE RAW] attentionNegative for doc ${doc.id}:');
-    print(data['attentionNegative']);
+    final defaultDate = DateTime.fromMillisecondsSinceEpoch(0);
 
     // Helper function para convertir timestamps de manera segura
-    DateTime parseTimestamp(dynamic timestamp) {
+    DateTime parseTimestamp(dynamic timestamp, {DateTime? fallback}) {
+      final fallbackDate = fallback ?? defaultDate;
       if (timestamp == null) {
-        return DateTime.now();
+        return fallbackDate;
       }
       if (timestamp is Timestamp) {
         return timestamp.toDate();
       }
       if (timestamp is String) {
-        return DateTime.parse(timestamp);
+        try {
+          return DateTime.parse(timestamp);
+        } catch (_) {
+          return fallbackDate;
+        }
       }
-      return DateTime.now();
+      return fallbackDate;
     }
 
     // Helper function para convertir Maps de manera segura
@@ -111,11 +113,14 @@ class FrapFirestore extends Equatable {
       return [];
     }
 
+    final updatedAt = parseTimestamp(data['updatedAt']);
+    final createdAt = parseTimestamp(data['createdAt'], fallback: updatedAt);
+
     return FrapFirestore(
       id: doc.id,
       userId: data['userId'] ?? '',
-      createdAt: parseTimestamp(data['createdAt']),
-      updatedAt: parseTimestamp(data['updatedAt']),
+      createdAt: createdAt,
+      updatedAt: updatedAt,
       serviceInfo: parseMap(data['serviceInfo']),
       registryInfo: parseMap(data['registryInfo']),
       patientInfo: parseMap(data['patientInfo']),
@@ -136,9 +141,12 @@ class FrapFirestore extends Equatable {
 
   // Factory constructor desde Map
   factory FrapFirestore.fromMap(Map<String, dynamic> data, String id) {
-    DateTime parseTimestamp(dynamic timestamp) {
+    final defaultDate = DateTime.fromMillisecondsSinceEpoch(0);
+
+    DateTime parseTimestamp(dynamic timestamp, {DateTime? fallback}) {
+      final fallbackDate = fallback ?? defaultDate;
       if (timestamp == null) {
-        return DateTime.now();
+        return fallbackDate;
       }
       if (timestamp is Timestamp) {
         return timestamp.toDate();
@@ -146,11 +154,11 @@ class FrapFirestore extends Equatable {
       if (timestamp is String) {
         try {
           return DateTime.parse(timestamp);
-        } catch (e) {
-          return DateTime.now();
+        } catch (_) {
+          return fallbackDate;
         }
       }
-      return DateTime.now();
+      return fallbackDate;
     }
 
     Map<String, dynamic> parseMap(dynamic mapData) {
@@ -167,11 +175,14 @@ class FrapFirestore extends Equatable {
       return [];
     }
 
+    final updatedAt = parseTimestamp(data['updatedAt']);
+    final createdAt = parseTimestamp(data['createdAt'], fallback: updatedAt);
+
     return FrapFirestore(
       id: id,
       userId: data['userId'] ?? '',
-      createdAt: parseTimestamp(data['createdAt']),
-      updatedAt: parseTimestamp(data['updatedAt']),
+      createdAt: createdAt,
+      updatedAt: updatedAt,
       serviceInfo: parseMap(data['serviceInfo']),
       registryInfo: parseMap(data['registryInfo']),
       patientInfo: parseMap(data['patientInfo']),

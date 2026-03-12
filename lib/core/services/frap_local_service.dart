@@ -1,16 +1,19 @@
 import 'package:hive/hive.dart';
 import 'package:uuid/uuid.dart';
+import 'package:flutter/foundation.dart';
 import 'package:bg_med/core/models/frap.dart';
 import 'package:bg_med/core/models/patient.dart';
 import 'package:bg_med/core/models/clinical_history.dart';
-import 'package:bg_med/core/models/physical_exam.dart';
 import 'package:bg_med/core/models/insumo.dart';
 import 'package:bg_med/core/models/personal_medico.dart';
 import 'package:bg_med/features/frap/presentation/providers/frap_data_provider.dart';
+import 'package:bg_med/core/validators/frap_data_validator.dart';
+import 'package:bg_med/core/exceptions/frap_exceptions.dart';
 
 class FrapLocalService {
   static const String _boxName = 'fraps';
   Box<Frap>? _frapBox;
+  final FrapDataValidator _validator = FrapDataValidator.instance;
 
   // Obtener la caja de Hive de forma segura
   Future<Box<Frap>> get _getFrapBox async {
@@ -41,8 +44,21 @@ class FrapLocalService {
   // CREAR un nuevo registro FRAP local
   Future<String?> createFrapRecord({required FrapData frapData}) async {
     try {
+      // Validación pre-conversión
+      final preValidation = _validator.validateComplete(frapData);
+      if (!preValidation.isValid) {
+        throw ValidationException(preValidation.errors);
+      }
+
       // Convertir FrapData a modelo Frap
       final frap = _convertFrapDataToFrap(frapData);
+
+      // Validación post-conversión (COMENTADA PARA TESTING)
+      // if (!_isValidFrapModel(frap)) {
+      //   throw ConversionException(
+      //     'La conversión produjo un modelo Frap inválido',
+      //   );
+      // }
 
       // Guardar en Hive
       final box = await _getFrapBox;
@@ -50,6 +66,9 @@ class FrapLocalService {
 
       return frap.id;
     } catch (e) {
+      if (e is ValidationException || e is ConversionException) {
+        rethrow;
+      }
       throw Exception('Error al crear el registro FRAP local: $e');
     }
   }
@@ -146,7 +165,7 @@ class FrapLocalService {
 
       return records;
     } catch (e) {
-      print('Error al obtener los registros FRAP locales: $e');
+      debugPrint('Error al obtener los registros FRAP locales: $e');
       throw Exception('Error al obtener los registros FRAP locales: $e');
     }
   }
@@ -407,10 +426,35 @@ class FrapLocalService {
       observaciones: clinicalHistoryData['observaciones'] ?? '',
     );
 
-    // Preparar serviceInfo duplicando currentCondition / emergencyContact si venían en patientInfo
-    final Map<String, dynamic> mergedServiceInfo = {...frapData.serviceInfo};
-    final currentCondition = (patientInfo['currentCondition'] ?? '').toString();
-    final emergencyContact = (patientInfo['emergencyContact'] ?? '').toString();
+    // Preparar serviceInfo - Construcción manual campo por campo para garantizar serialización
+    final Map<String, dynamic> mergedServiceInfo = {
+      'horaLlamada': frapData.serviceInfo['horaLlamada']?.toString() ?? '',
+      'horaArribo': frapData.serviceInfo['horaArribo']?.toString() ?? '',
+      'horaLlegada': frapData.serviceInfo['horaLlegada']?.toString() ?? '',
+      'horaTermino': frapData.serviceInfo['horaTermino']?.toString() ?? '',
+      'tiempoEsperaArribo':
+          frapData.serviceInfo['tiempoEsperaArribo']?.toString() ?? '',
+      'tiempoEsperaLlegada':
+          frapData.serviceInfo['tiempoEsperaLlegada']?.toString() ?? '',
+      'tipoServicio': frapData.serviceInfo['tipoServicio']?.toString() ?? '',
+      'tipoServicioEspecifique':
+          frapData.serviceInfo['tipoServicioEspecifique']?.toString() ?? '',
+      'tipoUrgencia': frapData.serviceInfo['tipoUrgencia']?.toString() ?? '',
+      'urgenciaEspecifique':
+          frapData.serviceInfo['urgenciaEspecifique']?.toString() ?? '',
+      'lugarOcurrencia':
+          frapData.serviceInfo['lugarOcurrencia']?.toString() ?? '',
+      'lugarOcurrenciaEspecifique':
+          frapData.serviceInfo['lugarOcurrenciaEspecifique']?.toString() ?? '',
+      'ubicacion': frapData.serviceInfo['ubicacion']?.toString() ?? '',
+      'consentimientoSignature':
+          frapData.serviceInfo['consentimientoSignature']?.toString() ?? '',
+      'timestamp': frapData.serviceInfo['timestamp']?.toString() ?? '',
+    };
+
+    // Agregar currentCondition y emergencyContact si existen en patientInfo
+    final currentCondition = patientInfo['currentCondition']?.toString() ?? '';
+    final emergencyContact = patientInfo['emergencyContact']?.toString() ?? '';
     if (currentCondition.isNotEmpty) {
       mergedServiceInfo['currentCondition'] = currentCondition;
     }
@@ -422,9 +466,9 @@ class FrapLocalService {
     if (frapData.insumos.isNotEmpty) {
       for (final item in frapData.insumos) {
         final cantidad =
-            (item['cantidad'] is int)
-                ? item['cantidad'] as int
-                : int.tryParse(item['cantidad'].toString()) ?? 0;
+            (item['cantidad'] is double)
+                ? item['cantidad'] as double
+                : double.tryParse(item['cantidad'].toString()) ?? 0;
         final articulo = (item['articulo'] ?? '').toString();
         if (cantidad > 0 && articulo.isNotEmpty) {
           insumos.add(Insumo(cantidad: cantidad, articulo: articulo));
@@ -456,21 +500,29 @@ class FrapLocalService {
       }
     }
 
-    // Extraer examen físico
+    // Preparar physicalExam - Guardar exactamente igual que en Firestore (sin reorganizar)
     final physicalExamData = frapData.physicalExam;
 
-    // Usar el factory constructor del modelo actualizado
-    final physicalExam = PhysicalExam.fromFormData(physicalExamData);
+    print('🔍 DEBUG _convertFrapDataToFrap - physicalExamData recibido:');
+    print('  Type: ${physicalExamData.runtimeType}');
+    print('  Keys: ${physicalExamData.keys.toList()}');
+    print('  Full data: $physicalExamData');
+
+    // Guardar el Map tal cual viene del provider - sin reorganizar estructura
+    // Esto garantiza que Hive tenga la misma estructura que Firestore
+    final Map<String, dynamic> mergedPhysicalExam = {
+      ...physicalExamData, // Copia todas las propiedades tal como vienen
+    };
 
     final now = DateTime.now();
     final id = existingId ?? _generateId();
     final createdAt = existingCreatedAt ?? now;
 
-    return Frap(
+    final frap = Frap(
       id: id,
       patient: patient,
       clinicalHistory: clinicalHistory,
-      physicalExam: physicalExam,
+      physicalExam: mergedPhysicalExam,
       createdAt: createdAt,
       updatedAt: now,
       serviceInfo: mergedServiceInfo,
@@ -486,13 +538,15 @@ class FrapLocalService {
       patientReception: frapData.patientReception,
       insumos: insumos,
       personalMedico: personalMedico,
-      tipoUrgencia: frapData.serviceInfo['tipoUrgencia'],
-      urgenciaEspecifique: frapData.serviceInfo['urgenciaEspecifique'],
-      ubicacion: frapData.serviceInfo['ubicacion'],
-      tipoServicioEspecifique: frapData.serviceInfo['tipoServicioEspecifique'],
+      tipoUrgencia: mergedServiceInfo['tipoUrgencia'],
+      urgenciaEspecifique: mergedServiceInfo['urgenciaEspecifique'],
+      ubicacion: mergedServiceInfo['ubicacion'],
+      tipoServicioEspecifique: mergedServiceInfo['tipoServicioEspecifique'],
       lugarOcurrenciaEspecifique:
-          frapData.serviceInfo['lugarOcurrenciaEspecifique'],
+          mergedServiceInfo['lugarOcurrenciaEspecifique'],
     );
+
+    return frap;
   }
 
   // CONVERTIR Frap a Map para backup
@@ -529,14 +583,7 @@ class FrapLocalService {
         'medidaSeguridad': frap.clinicalHistory.medidaSeguridad,
         'observaciones': frap.clinicalHistory.observaciones,
       },
-      'physicalExam': {
-        'vitalSigns': frap.physicalExam.vitalSigns,
-        'head': frap.physicalExam.head,
-        'neck': frap.physicalExam.neck,
-        'thorax': frap.physicalExam.thorax,
-        'abdomen': frap.physicalExam.abdomen,
-        'extremities': frap.physicalExam.extremities,
-      },
+      'physicalExam': frap.physicalExam,
       'insumos':
           frap.insumos
               .map(
@@ -562,7 +609,7 @@ class FrapLocalService {
         insumosData.map((item) {
           final insumoMap = item as Map<String, dynamic>;
           return Insumo(
-            cantidad: insumoMap['cantidad'] as int,
+            cantidad: insumoMap['cantidad'] as double,
             articulo: insumoMap['articulo'] as String,
           );
         }).toList();
@@ -606,14 +653,7 @@ class FrapLocalService {
             clinicalHistoryData['medidaSeguridad'] as String? ?? '',
         observaciones: clinicalHistoryData['observaciones'] as String? ?? '',
       ),
-      physicalExam: PhysicalExam(
-        vitalSigns: physicalExamData['vitalSigns'] as String,
-        head: physicalExamData['head'] as String,
-        neck: physicalExamData['neck'] as String,
-        thorax: physicalExamData['thorax'] as String,
-        abdomen: physicalExamData['abdomen'] as String,
-        extremities: physicalExamData['extremities'] as String,
-      ),
+      physicalExam: physicalExamData.isNotEmpty ? physicalExamData : {},
       insumos: insumos,
       createdAt: DateTime.parse(map['createdAt'] as String),
     );
@@ -627,8 +667,14 @@ class FrapLocalService {
         'tipoUrgencia': frap.tipoUrgencia,
         'urgenciaEspecifique': frap.urgenciaEspecifique,
         'ubicacion': frap.ubicacion,
-        'tipoServicioEspecifique': frap.tipoServicioEspecifique,
-        'lugarOcurrenciaEspecifique': frap.lugarOcurrenciaEspecifique,
+        'tipoServicioEspecifique':
+            frap.tipoServicioEspecifique?.isNotEmpty == true
+                ? frap.tipoServicioEspecifique
+                : frap.serviceInfo['tipoServicioEspecifique'],
+        'lugarOcurrenciaEspecifique':
+            frap.lugarOcurrenciaEspecifique?.isNotEmpty == true
+                ? frap.lugarOcurrenciaEspecifique
+                : frap.serviceInfo['lugarOcurrenciaEspecifique'],
       },
       registryInfo: frap.registryInfo,
       patientInfo: {
@@ -679,7 +725,7 @@ class FrapLocalService {
         'medidaSeguridad': frap.clinicalHistory.medidaSeguridad,
         'observaciones': frap.clinicalHistory.observaciones,
       },
-      physicalExam: frap.physicalExam.toFirebaseFormat(),
+      physicalExam: frap.physicalExam,
       priorityJustification: frap.priorityJustification,
       injuryLocation: frap.injuryLocation,
       receivingUnit: frap.receivingUnit,
@@ -696,8 +742,12 @@ class FrapLocalService {
     );
   }
 
-  // MARCAR un registro como sincronizado
-  Future<void> markAsSynced(String frapId) async {
+  // MARCAR un registro como sincronizado (con transacción atómica)
+  Future<void> markAsSynced(
+    String frapId,
+    String cloudProvider,
+    String cloudId,
+  ) async {
     try {
       final box = await _getFrapBox;
       final existingIndex = box.values.toList().indexWhere(
@@ -705,16 +755,56 @@ class FrapLocalService {
       );
 
       if (existingIndex == -1) {
-        throw Exception('Registro no encontrado');
+        throw RecordNotFoundException(
+          'No se puede marcar como sincronizado un registro inexistente: $frapId',
+        );
       }
 
       final existingFrap = box.getAt(existingIndex)!;
+
+      // Transacción atómica: marcar como sincronizado
       final updatedFrap = existingFrap.copyWith(isSynced: true);
 
-      // Actualizar en Hive
+      // Actualizar en Hive de forma atómica
       await box.putAt(existingIndex, updatedFrap);
+
+      debugPrint(
+        '✅ Registro $frapId marcado como sincronizado con $cloudProvider (cloudId: $cloudId)',
+      );
+    } on RecordNotFoundException {
+      debugPrint(
+        '❌ Error: Registro $frapId no encontrado para marcar como sincronizado',
+      );
+      rethrow; // Re-lanza la excepción
     } catch (e) {
-      throw Exception('Error al marcar como sincronizado: $e');
+      debugPrint('❌ Error al marcar registro $frapId como sincronizado: $e');
+      rethrow; // Re-lanza la excepción original
+    }
+  }
+
+  // MARCAR un registro como NO sincronizado (para re-sincronización)
+  Future<void> markAsNotSynced(String frapId) async {
+    try {
+      final box = await _getFrapBox;
+      final existingIndex = box.values.toList().indexWhere(
+        (frap) => frap.id == frapId,
+      );
+
+      if (existingIndex == -1) {
+        throw RecordNotFoundException(
+          'No se puede marcar como no sincronizado un registro inexistente: $frapId',
+        );
+      }
+
+      final existingFrap = box.getAt(existingIndex)!;
+      final updatedFrap = existingFrap.copyWith(isSynced: false);
+
+      await box.putAt(existingIndex, updatedFrap);
+
+      debugPrint('🔄 Registro $frapId marcado para re-sincronización');
+    } catch (e) {
+      debugPrint('❌ Error al marcar registro $frapId como no sincronizado: $e');
+      rethrow;
     }
   }
 
@@ -728,4 +818,33 @@ class FrapLocalService {
       throw Exception('Error al obtener registros no sincronizados: $e');
     }
   }
+
+  // VALIDAR que el modelo Frap convertido es válido
+  // bool _isValidFrapModel(Frap frap) {
+  //   // Validaciones críticas del modelo
+
+  //   // 1. Validar que el paciente no es nulo y tiene datos esenciales
+  //   if (frap.patient.name.trim().isEmpty) {
+  //     return false;
+  //   }
+  //   if (frap.patient.age < 0) return false;
+
+  //   // 2. Validar información de registro
+  //   final folio = frap.registryInfo['folio'];
+  //   if (folio == null || (folio as String).isEmpty) {
+  //     return false;
+  //   }
+
+  //   // 3. Validar información de servicio
+  //   final tipoUrgencia = frap.serviceInfo['tipoUrgencia'];
+  //   if (tipoUrgencia == null || (tipoUrgencia as String).isEmpty) {
+  //     return false;
+  //   }
+
+  //   // 4. Validar que el ID no es nulo
+  //   if (frap.id.isEmpty) return false;
+
+  //   // Si pasa todas las validaciones críticas, el modelo es válido
+  //   return true;
+  // }
 }

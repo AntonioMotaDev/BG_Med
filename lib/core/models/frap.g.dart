@@ -16,11 +16,15 @@ class FrapAdapter extends TypeAdapter<Frap> {
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
+    final physicalExamJson = fields[3] as String? ?? '';
     return Frap(
       id: fields[0] as String,
       patient: fields[1] as Patient,
       clinicalHistory: fields[2] as ClinicalHistory,
-      physicalExam: fields[3] as PhysicalExam,
+      physicalExam:
+          physicalExamJson.isEmpty
+              ? {}
+              : Map<String, dynamic>.from(jsonDecode(physicalExamJson) as Map),
       createdAt: fields[4] as DateTime,
       updatedAt: fields[5] as DateTime?,
       serviceInfo: (fields[6] as Map).cast<String, dynamic>(),
@@ -57,7 +61,7 @@ class FrapAdapter extends TypeAdapter<Frap> {
       ..writeByte(2)
       ..write(obj.clinicalHistory)
       ..writeByte(3)
-      ..write(obj.physicalExam)
+      ..write(obj._physicalExamJson)
       ..writeByte(4)
       ..write(obj.createdAt)
       ..writeByte(5)

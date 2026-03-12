@@ -102,7 +102,7 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withAlpha(10),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -169,7 +169,7 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withAlpha(10),
                     blurRadius: 8,
                     offset: const Offset(0, 4),
                   ),
@@ -197,7 +197,7 @@ class _PdfPreviewScreenState extends State<PdfPreviewScreen> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withAlpha(10),
                   blurRadius: 4,
                   offset: const Offset(0, -2),
                 ),

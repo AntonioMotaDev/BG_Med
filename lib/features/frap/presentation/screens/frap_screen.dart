@@ -2,6 +2,7 @@ import 'package:bg_med/core/theme/app_theme.dart';
 import 'package:bg_med/features/frap/presentation/providers/frap_data_provider.dart';
 import 'package:bg_med/features/frap/presentation/providers/frap_unified_provider.dart';
 import 'package:bg_med/core/services/frap_unified_service.dart';
+import 'package:bg_med/core/providers/frap_data_validator_provider.dart';
 import 'package:bg_med/features/frap/presentation/dialogs/patient_info_form_dialog.dart';
 import 'package:bg_med/features/frap/presentation/dialogs/service_info_form_dialog.dart';
 import 'package:bg_med/features/frap/presentation/dialogs/registry_info_form_dialog.dart';
@@ -17,6 +18,7 @@ import 'package:bg_med/features/frap/presentation/dialogs/attention_negative_for
 import 'package:bg_med/features/frap/presentation/dialogs/patient_reception_form_dialog.dart';
 import 'package:bg_med/features/frap/presentation/dialogs/injury_location_form_dialog.dart';
 import 'package:bg_med/features/frap/presentation/dialogs/insumos_form_dialog.dart';
+import 'package:bg_med/features/frap/presentation/screens/frap_records_list_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -963,17 +965,104 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
 
   bool _validateForm() {
     final frapData = ref.read(frapDataProvider);
+    final validator = ref.read(frapDataValidatorProvider);
 
-    // Validar que se hayan completado los campos mínimos requeridos
-    if (frapData.patientInfo.isEmpty) {
-      _showErrorDialog(
-        'Error de validación',
-        'Debe completar al menos la información del paciente para guardar el registro.',
-      );
+    // Validación completa usando FrapDataValidator
+    final result = validator.validateComplete(frapData);
+
+    if (!result.isValid) {
+      _showValidationErrorDialog('Errores de Validación', result.errors);
       return false;
     }
 
+    // Mostrar advertencias si existen (no bloquean el guardado)
+    if (result.warnings.isNotEmpty) {
+      _showValidationWarningDialog(result.warnings);
+    }
+
     return true;
+  }
+
+  void _showValidationErrorDialog(String title, List<String> errors) {
+    final errorMessage = _formatValidationErrors(errors);
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.red),
+                const SizedBox(width: 8),
+                Expanded(child: Text(title)),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Por favor corrija los siguientes errores:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(errorMessage),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Entendido'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  void _showValidationWarningDialog(List<String> warnings) {
+    final warningMessage = _formatValidationErrors(warnings);
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Row(
+              children: [
+                Icon(Icons.warning_amber, color: Colors.orange.shade700),
+                const SizedBox(width: 8),
+                const Text('Advertencias'),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Se encontraron las siguientes advertencias:',
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(warningMessage),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Entendido'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  String _formatValidationErrors(List<String> errors) {
+    return errors
+        .asMap()
+        .entries
+        .map((entry) => '${entry.key + 1}. ${entry.value}')
+        .join('\n');
   }
 
   Future<void> _saveRecord() async {
@@ -1125,7 +1214,7 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
                           : AppTheme.primaryGreen,
                 ),
                 const SizedBox(width: 8),
-                const Text('Registro Guardado'),
+                const Text('Registro Guardado Correctamente'),
               ],
             ),
             content: Column(
@@ -1163,7 +1252,7 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
                     ),
                   ),
                 const SizedBox(height: 16),
-                const Text('¿Qué desea hacer a continuación?'),
+                // const Text('¿Qué desea hacer a continuación?'),
               ],
             ),
             actions: [
@@ -1175,18 +1264,28 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
                 },
                 child: const Text('Nuevo Registro'),
               ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  // Navegar a la vista de registros
-                  Navigator.pushNamed(context, '/frap-records');
-                },
-                child: const Text('Ver Registros'),
-              ),
+              // TextButton(
+              //   onPressed: () {
+              //     Navigator.of(context).pop();
+              //     // Navegar a la vista de detalles del frap
+              //     Navigator.pushNamed(
+              //       context,
+              //       '/frap-record-detail',
+              //       arguments: result.recordId,
+              //     );
+              //   },
+              //   child: const Text('Ver Registro'),
+              // ),
               ElevatedButton(
                 onPressed: () {
+                  // Regresar a la lista de registros
                   Navigator.of(context).pop();
-                  Navigator.of(context).pop(); // Salir del formulario
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(
+                      builder: (_) => const FrapRecordsListScreen(),
+                    ),
+                    (route) => false,
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor:
@@ -1195,7 +1294,7 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
                           : AppTheme.primaryGreen,
                   foregroundColor: Colors.white,
                 ),
-                child: const Text('Salir'),
+                child: const Text('Aceptar'),
               ),
             ],
           ),

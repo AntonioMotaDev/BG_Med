@@ -1,6 +1,7 @@
+import 'dart:convert';
 import 'package:bg_med/core/models/clinical_history.dart';
 import 'package:bg_med/core/models/patient.dart';
-import 'package:bg_med/core/models/physical_exam.dart';
+// import 'package:bg_med/core/models/physical_exam.dart';
 import 'package:equatable/equatable.dart';
 import 'package:hive/hive.dart';
 import 'package:bg_med/core/models/insumo.dart';
@@ -18,9 +19,21 @@ class Frap extends Equatable {
   @HiveField(2)
   final ClinicalHistory clinicalHistory;
   @HiveField(3)
-  final PhysicalExam physicalExam;
+  final String _physicalExamJson;
   @HiveField(4)
   final DateTime createdAt;
+
+  // Getter para obtener physicalExam como Map
+  Map<String, dynamic> get physicalExam {
+    if (_physicalExamJson.isEmpty) return {};
+    try {
+      return jsonDecode(_physicalExamJson) as Map<String, dynamic>;
+    } catch (e) {
+      print('Error deserializando physicalExam: $e');
+      return {};
+    }
+  }
+
   @HiveField(5)
   final DateTime updatedAt;
   @HiveField(6)
@@ -67,12 +80,12 @@ class Frap extends Equatable {
   @HiveField(27)
   final String? lugarOcurrenciaEspecifique; // Especificación de lugar de ocurrencia
 
-  const Frap({
+  Frap({
     // Campos existentes
     required this.id,
     required this.patient,
     required this.clinicalHistory,
-    required this.physicalExam,
+    required Map<String, dynamic> physicalExam,
     required this.createdAt,
     // Nuevos campos con valores por defecto
     DateTime? updatedAt,
@@ -96,14 +109,15 @@ class Frap extends Equatable {
     this.ubicacion,
     this.tipoServicioEspecifique,
     this.lugarOcurrenciaEspecifique,
-  }) : updatedAt = updatedAt ?? createdAt;
+  }) : updatedAt = updatedAt ?? createdAt,
+       _physicalExamJson = physicalExam.isEmpty ? '' : jsonEncode(physicalExam);
 
   // Método copyWith para crear copias con cambios
   Frap copyWith({
     String? id,
     Patient? patient,
     ClinicalHistory? clinicalHistory,
-    PhysicalExam? physicalExam,
+    Map<String, dynamic>? physicalExam,
     DateTime? createdAt,
     DateTime? updatedAt,
     Map<String, dynamic>? serviceInfo,
@@ -240,7 +254,7 @@ class Frap extends Equatable {
     if (patient.name.isNotEmpty) completedSections++;
     if (hasSectionData('management')) completedSections++;
     if (hasSectionData('medications')) completedSections++;
-    if (physicalExam.vitalSigns.isNotEmpty) completedSections++;
+    if (physicalExam.isNotEmpty) completedSections++;
     if (hasSectionData('priorityJustification')) completedSections++;
     if (hasSectionData('receivingUnit')) completedSections++;
     if (hasSectionData('patientReception')) completedSections++;
@@ -253,7 +267,7 @@ class Frap extends Equatable {
       'id': id,
       'patient': patient.toJson(),
       'clinicalHistory': clinicalHistory.toJson(),
-      'physicalExam': physicalExam.toJson(),
+      'physicalExam': physicalExam,
       'serviceInfo': serviceInfo,
       'registryInfo': registryInfo,
       'management': management,

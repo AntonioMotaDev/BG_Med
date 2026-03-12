@@ -64,50 +64,13 @@ class PatientFirestore extends Equatable {
   // Factory constructor desde Firestore
   factory PatientFirestore.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+    final defaultDate = DateTime.fromMillisecondsSinceEpoch(0);
 
     // Helper function para convertir timestamps de manera segura
-    DateTime parseTimestamp(dynamic timestamp) {
+    DateTime parseTimestamp(dynamic timestamp, {DateTime? fallback}) {
+      final fallbackDate = fallback ?? defaultDate;
       if (timestamp == null) {
-        return DateTime.now();
-      }
-      if (timestamp is Timestamp) {
-        return timestamp.toDate();
-      }
-      if (timestamp is String) {
-        return DateTime.parse(timestamp);
-      }
-      return DateTime.now();
-    }
-
-    return PatientFirestore(
-      id: doc.id,
-      age: data['age'] ?? 0,
-      city: data['city'] ?? '',
-      createdAt: parseTimestamp(data['createdAt']),
-      exteriorNumber: data['exteriorNumber'] ?? '',
-      firstName: data['firstName'] ?? '',
-      insurance: data['insurance'] ?? '',
-      interiorNumber: data['interiorNumber'],
-      maternalLastName: data['maternalLastName'] ?? '',
-      neighborhood: data['neighborhood'] ?? '',
-      paternalLastName: data['paternalLastName'] ?? '',
-      phone: data['phone'] ?? '',
-      responsiblePerson: data['responsiblePerson'],
-      emergencyContact: data['emergencyContact'],
-      sex: data['sex'] ?? '',
-      gender: data['gender'] ?? '',
-      addressDetails: data['addressDetails'] ?? '',
-      street: data['street'] ?? '',
-      updatedAt: parseTimestamp(data['updatedAt']),
-    );
-  }
-
-  // Factory constructor desde Map
-  factory PatientFirestore.fromMap(Map<String, dynamic> data, String id) {
-    // Helper function para convertir timestamps de manera segura
-    DateTime parseTimestamp(dynamic timestamp) {
-      if (timestamp == null) {
-        return DateTime.now();
+        return fallbackDate;
       }
       if (timestamp is Timestamp) {
         return timestamp.toDate();
@@ -115,18 +78,70 @@ class PatientFirestore extends Equatable {
       if (timestamp is String) {
         try {
           return DateTime.parse(timestamp);
-        } catch (e) {
-          return DateTime.now();
+        } catch (_) {
+          return fallbackDate;
         }
       }
-      return DateTime.now();
+      return fallbackDate;
     }
+
+    final updatedAt = parseTimestamp(data['updatedAt']);
+    final createdAt = parseTimestamp(data['createdAt'], fallback: updatedAt);
+
+    return PatientFirestore(
+      id: doc.id,
+      age: data['age'] ?? 0,
+      city: data['city'] ?? '',
+      createdAt: createdAt,
+      exteriorNumber: data['exteriorNumber'] ?? '',
+      firstName: data['firstName'] ?? '',
+      insurance: data['insurance'] ?? '',
+      interiorNumber: data['interiorNumber'],
+      maternalLastName: data['maternalLastName'] ?? '',
+      neighborhood: data['neighborhood'] ?? '',
+      paternalLastName: data['paternalLastName'] ?? '',
+      phone: data['phone'] ?? '',
+      responsiblePerson: data['responsiblePerson'],
+      emergencyContact: data['emergencyContact'],
+      sex: data['sex'] ?? '',
+      gender: data['gender'] ?? '',
+      addressDetails: data['addressDetails'] ?? '',
+      street: data['street'] ?? '',
+      updatedAt: updatedAt,
+    );
+  }
+
+  // Factory constructor desde Map
+  factory PatientFirestore.fromMap(Map<String, dynamic> data, String id) {
+    final defaultDate = DateTime.fromMillisecondsSinceEpoch(0);
+
+    // Helper function para convertir timestamps de manera segura
+    DateTime parseTimestamp(dynamic timestamp, {DateTime? fallback}) {
+      final fallbackDate = fallback ?? defaultDate;
+      if (timestamp == null) {
+        return fallbackDate;
+      }
+      if (timestamp is Timestamp) {
+        return timestamp.toDate();
+      }
+      if (timestamp is String) {
+        try {
+          return DateTime.parse(timestamp);
+        } catch (_) {
+          return fallbackDate;
+        }
+      }
+      return fallbackDate;
+    }
+
+    final updatedAt = parseTimestamp(data['updatedAt']);
+    final createdAt = parseTimestamp(data['createdAt'], fallback: updatedAt);
 
     return PatientFirestore(
       id: id,
       age: data['age'] ?? 0,
       city: data['city'] ?? '',
-      createdAt: parseTimestamp(data['createdAt']),
+      createdAt: createdAt,
       exteriorNumber: data['exteriorNumber'] ?? '',
       firstName: data['firstName'] ?? '',
       insurance: data['insurance'] ?? '',
@@ -141,7 +156,7 @@ class PatientFirestore extends Equatable {
       gender: data['gender'] ?? '',
       street: data['street'] ?? '',
       addressDetails: data['addressDetails'] ?? '',
-      updatedAt: parseTimestamp(data['updatedAt']),
+      updatedAt: updatedAt,
     );
   }
 

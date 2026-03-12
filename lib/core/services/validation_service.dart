@@ -156,7 +156,8 @@ class ValidationService {
       );
     }
 
-    if (frap.physicalExam.vitalSigns.trim().isEmpty) {
+    if (frap.physicalExam.isEmpty ||
+        (frap.physicalExam['vitalSigns']?.toString() ?? '').trim().isEmpty) {
       warnings.add(
         ValidationWarning(
           field: 'vitalSigns',

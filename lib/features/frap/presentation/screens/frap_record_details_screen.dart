@@ -152,19 +152,13 @@ class _FrapRecordDetailsScreenState
           'emergencyContact': {
             'label': 'Contacto de emergencia',
             'customBuilder':
-                (data) => _getSafeStringValue(
-                  _detailedInfo['serviceInfo'],
-                  'emergencyContact',
-                ),
+                (data) => _getSafeStringValue(data, 'emergencyContact'),
           },
           'currentCondition': {
             'label': 'Padecimiento actual',
             'isFullWidth': true,
             'customBuilder':
-                (data) => _getSafeStringValue(
-                  _detailedInfo['serviceInfo'],
-                  'currentCondition',
-                ),
+                (data) => _getSafeStringValue(data, 'currentCondition'),
           },
         },
         fieldMappings: {
@@ -199,7 +193,7 @@ class _FrapRecordDetailsScreenState
             'label': 'Oxígeno',
             'condition': (data) => data['oxigeno'] == true,
             'dependentField': 'ltMin',
-            'dependentLabel': 'Lt/min',
+            'dependentLabel': 'Oxigeno Lt/min',
           },
           'viaAerea': {
             'label': 'Especifique vía aérea',
@@ -598,7 +592,7 @@ class _FrapRecordDetailsScreenState
         color: Colors.amber,
         fieldMappings: {},
         specialFields: {
-          'insumosList': {
+          'insumos': {
             'label': 'Lista de insumos',
             'isFullWidth': true,
             'customBuilder': (data) => _buildInsumosList(data),
@@ -1623,7 +1617,7 @@ class _FrapRecordDetailsScreenState
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Cantidad: ${_getSafeStringValue(insumosList[i], 'cantidad') ?? '0'}',
+                            'Cantidad: ${_getSafeStringValue(insumosList[i], 'cantidad') ?? '0.0'}',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey[600],
@@ -2372,25 +2366,32 @@ class _FrapRecordDetailsScreenState
       final value = _getSafeStringValue(sectionData, fieldKey);
       final fallbackValue = config.fallbacks[fieldKey];
       var finalValue = value ?? (fallbackValue?.toString());
+      var finalLabel = label;
 
-      if (finalValue != null &&
-          finalValue.trim().toLowerCase() == 'otro' &&
-          otroFieldsMapping.containsKey(fieldKey)) {
-        final especifiqueField = otroFieldsMapping[fieldKey]!;
-        final especifiqueValue = _getSafeStringValue(
-          sectionData,
-          especifiqueField,
-        );
+      // Manejar campos con opción "Otro" que requieren especificación
+      if (finalValue != null && otroFieldsMapping.containsKey(fieldKey)) {
+        final cleanValue = finalValue.trim().toLowerCase();
 
-        if (especifiqueValue != null && especifiqueValue.trim().isNotEmpty) {
-          finalValue = especifiqueValue;
-          fieldsToSkip.add(especifiqueField);
+        if (cleanValue == 'otro') {
+          final especifiqueField = otroFieldsMapping[fieldKey]!;
+          final especifiqueValue = _getSafeStringValue(
+            sectionData,
+            especifiqueField,
+          );
+
+          if (especifiqueValue != null && especifiqueValue.trim().isNotEmpty) {
+            finalValue = especifiqueValue;
+            fieldsToSkip.add(especifiqueField);
+          }
         }
       }
 
       if (fieldKey == 'entreCalles' ||
           (finalValue != null && finalValue.trim().isNotEmpty)) {
-        details.add({'label': label, 'value': finalValue ?? 'No especificado'});
+        details.add({
+          'label': finalLabel,
+          'value': finalValue ?? 'No especificado',
+        });
       }
     });
 
@@ -3863,7 +3864,7 @@ class _FrapRecordDetailsScreenState
 
   // Método para construir lista de insumos
   Widget _buildInsumosList(Map<String, dynamic> data) {
-    final insumosList = data['insumosList'] as List<dynamic>? ?? [];
+    final insumosList = data['insumos'] as List<dynamic>? ?? [];
 
     if (insumosList.isEmpty) {
       return Container(

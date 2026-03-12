@@ -1,4 +1,9 @@
 import 'package:bg_med/core/models/frap.dart';
+import 'package:bg_med/core/models/patient_firestore.dart';
+import 'package:bg_med/core/services/frap_unified_service.dart';
+import 'package:bg_med/features/frap/presentation/providers/frap_unified_provider.dart';
+import 'package:bg_med/features/frap/presentation/screens/frap_record_details_screen.dart';
+import 'package:bg_med/features/patients/presentation/dialogs/patient_details_dialog.dart';
 import 'package:bg_med/features/patients/presentation/providers/patients_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -33,16 +38,14 @@ class RecentActivitySection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final patientsState = ref.watch(patientsNotifierProvider);
+    final unifiedFrapState = ref.watch(unifiedFrapProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
           'Actividad Reciente',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         ValueListenableBuilder(
@@ -53,31 +56,55 @@ class RecentActivitySection extends ConsumerWidget {
 
               // Agregar registros FRAP
               for (final frap in box.values) {
-                activities.add(RecentActivity(
-                  id: frap.id,
-                  title: frap.patient.name,
-                  subtitle: 'Registro FRAP creado',
-                  createdAt: frap.createdAt,
-                  icon: Icons.assignment,
-                  color: Colors.blue[600]!,
-                  type: 'frap',
-                  data: frap,
-                ));
+                activities.add(
+                  RecentActivity(
+                    id: frap.id,
+                    title: frap.patient.name,
+                    subtitle: 'Registro FRAP creado',
+                    createdAt: frap.createdAt,
+                    icon: Icons.assignment,
+                    color: Colors.blue[600]!,
+                    type: 'frap',
+                    data: frap,
+                  ),
+                );
+              }
+
+              // Agregar registros FRAP de nube que aun no existen localmente
+              for (final record in unifiedFrapState.records) {
+                if (record.isLocal || record.cloudRecord == null) {
+                  continue;
+                }
+
+                activities.add(
+                  RecentActivity(
+                    id: record.id,
+                    title: record.patientName,
+                    subtitle: 'Registro FRAP creado',
+                    createdAt: record.createdAt,
+                    icon: Icons.assignment,
+                    color: Colors.blue[600]!,
+                    type: 'frap',
+                    data: record,
+                  ),
+                );
               }
 
               // Agregar pacientes creados (solo si el estado es exitoso)
               if (patientsState.status == PatientsStatus.success) {
                 for (final patient in patientsState.patients) {
-                  activities.add(RecentActivity(
-                    id: patient.id ?? '',
-                    title: patient.fullName,
-                    subtitle: 'Paciente registrado',
-                    createdAt: patient.createdAt,
-                    icon: Icons.person_add,
-                    color: Colors.green[600]!,
-                    type: 'patient',
-                    data: patient,
-                  ));
+                  activities.add(
+                    RecentActivity(
+                      id: patient.id ?? '',
+                      title: patient.fullName,
+                      subtitle: 'Paciente registrado',
+                      createdAt: patient.createdAt,
+                      icon: Icons.person_add,
+                      color: Colors.green[600]!,
+                      type: 'patient',
+                      data: patient,
+                    ),
+                  );
                 }
               }
 
@@ -86,15 +113,24 @@ class RecentActivitySection extends ConsumerWidget {
               }
 
               // Ordenar por fecha de creación (más reciente primero)
-              activities.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+              activities.sort((a, b) {
+                final dateCompare = b.createdAt.compareTo(a.createdAt);
+                if (dateCompare != 0) {
+                  return dateCompare;
+                }
+
+                // Desempate estable para evitar cambios visuales entre rebuilds.
+                return b.id.compareTo(a.id);
+              });
 
               // Mostrar solo los últimos 5 registros
               final recentActivities = activities.take(5).toList();
 
               return Column(
-                children: recentActivities.map((activity) {
-                  return _buildActivityTile(activity);
-                }).toList(),
+                children:
+                    recentActivities.map((activity) {
+                      return _buildActivityTile(context, activity);
+                    }).toList(),
               );
             } catch (e) {
               // Si hay error con la caja de Hive, mostrar estado vacío
@@ -106,15 +142,11 @@ class RecentActivitySection extends ConsumerWidget {
     );
   }
 
-  Widget _buildActivityTile(RecentActivity activity) {
+  Widget _buildActivityTile(BuildContext context, RecentActivity activity) {
     return ListTile(
       leading: CircleAvatar(
         backgroundColor: activity.color.withOpacity(0.1),
-        child: Icon(
-          activity.icon,
-          color: activity.color,
-          size: 20,
-        ),
+        child: Icon(activity.icon, color: activity.color, size: 20),
       ),
       title: Text(
         activity.title,
@@ -127,18 +159,12 @@ class RecentActivitySection extends ConsumerWidget {
         children: [
           Text(
             activity.subtitle,
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 12,
-            ),
+            style: TextStyle(color: Colors.grey[600], fontSize: 12),
           ),
           const SizedBox(height: 2),
           Text(
             _formatDate(activity.createdAt),
-            style: TextStyle(
-              color: Colors.grey[500],
-              fontSize: 11,
-            ),
+            style: TextStyle(color: Colors.grey[500], fontSize: 11),
           ),
         ],
       ),
@@ -147,23 +173,56 @@ class RecentActivitySection extends ConsumerWidget {
         size: 16,
         color: Colors.grey[400],
       ),
-      onTap: () {
-        _handleActivityTap(activity);
-      },
+      onTap: () => _handleActivityTap(context, activity),
     );
   }
 
-  void _handleActivityTap(RecentActivity activity) {
+  void _handleActivityTap(BuildContext context, RecentActivity activity) {
     switch (activity.type) {
       case 'frap':
-        // TODO: Navigate to FRAP details
-        print('Navegar a detalles de FRAP: ${activity.id}');
+        final data = activity.data;
+        late final UnifiedFrapRecord record;
+        if (data is Frap) {
+          record = UnifiedFrapRecord.fromLocal(data);
+        } else if (data is UnifiedFrapRecord) {
+          record = data;
+        } else {
+          _showNavigationError(context, 'No se pudo abrir el detalle del FRAP');
+          return;
+        }
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => FrapRecordDetailsScreen(record: record),
+          ),
+        );
         break;
       case 'patient':
-        // TODO: Navigate to patient details or show patient details dialog
-        print('Navegar a detalles de paciente: ${activity.id}');
+        final data = activity.data;
+        if (data is! PatientFirestore) {
+          _showNavigationError(
+            context,
+            'No se pudo abrir el detalle del paciente',
+          );
+          return;
+        }
+
+        showDialog(
+          context: context,
+          builder: (context) => PatientDetailsDialog(patient: data),
+        );
+        break;
+      default:
+        _showNavigationError(context, 'Tipo de actividad no soportado');
         break;
     }
+  }
+
+  void _showNavigationError(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
   }
 
   Widget _buildEmptyState() {
@@ -177,11 +236,7 @@ class RecentActivitySection extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          Icon(
-            Icons.timeline_outlined,
-            size: 48,
-            color: Colors.grey[400],
-          ),
+          Icon(Icons.timeline_outlined, size: 48, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
             'No hay actividad reciente',
@@ -195,9 +250,7 @@ class RecentActivitySection extends ConsumerWidget {
           Text(
             'Crea un registro FRAP o registra un paciente para comenzar',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.grey[500],
-            ),
+            style: TextStyle(color: Colors.grey[500]),
           ),
         ],
       ),
@@ -218,4 +271,4 @@ class RecentActivitySection extends ConsumerWidget {
       return '${date.day}/${date.month}/${date.year}';
     }
   }
-} 
+}

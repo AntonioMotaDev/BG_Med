@@ -809,11 +809,6 @@ class _CalendarTabState extends ConsumerState<CalendarTab> {
                           ? 'Sí'
                           : frap.clinicalHistory.traumaToraxEspecifique,
                     ),
-                  if (frap.clinicalHistory.agenteCausal.isNotEmpty)
-                    _buildDetailRow(
-                      'Agente Causal',
-                      frap.clinicalHistory.agenteCausal,
-                    ),
                   const SizedBox(height: 16),
                   Text(
                     'Fecha y hora del registro:',

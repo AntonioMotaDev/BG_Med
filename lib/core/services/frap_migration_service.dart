@@ -450,7 +450,11 @@ class FrapMigrationService {
 
             try {
               await _retryOperation(
-                () => _localService.markAsSynced(localRecord.id),
+                () => _localService.markAsSynced(
+                  localRecord.id,
+                  'firestore',
+                  existingCloudId,
+                ),
                 'mark_as_synced',
               );
             } catch (e) {
@@ -467,7 +471,11 @@ class FrapMigrationService {
               // Marcar como sincronizado
               try {
                 await _retryOperation(
-                  () => _localService.markAsSynced(localRecord.id),
+                  () => _localService.markAsSynced(
+                    localRecord.id,
+                    'firestore',
+                    cloudId,
+                  ),
                   'mark_as_synced',
                 );
               } catch (e) {

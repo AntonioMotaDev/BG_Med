@@ -61,13 +61,18 @@ class _FrapRecordsListScreenState extends ConsumerState<FrapRecordsListScreen>
   @override
   void didPopNext() {
     // Recargar datos al volver a esta pantalla
-    _refreshRecords();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshRecords();
+    });
   }
 
   @override
   void didPush() {
     // Cargar datos al entrar a esta pantalla
-    _refreshRecords();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshRecords();
+    });
   }
 
   void _onSearchChanged() {
@@ -192,7 +197,7 @@ class _FrapRecordsListScreenState extends ConsumerState<FrapRecordsListScreen>
           const SnackBar(
             content: Text('Registros actualizados'),
             backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
+            duration: Duration(milliseconds: 500),
           ),
         );
       }

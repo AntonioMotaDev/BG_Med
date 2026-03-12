@@ -16,10 +16,14 @@ class InsumoAdapter extends TypeAdapter<Insumo> {
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
-    return Insumo(
-      cantidad: fields[0] as int,
-      articulo: fields[1] as String,
-    );
+    final rawCantidad = fields[0];
+    final double cantidad =
+        rawCantidad == null
+            ? 0.0
+            : (rawCantidad is int
+                ? rawCantidad.toDouble()
+                : (rawCantidad as double));
+    return Insumo(cantidad: cantidad, articulo: fields[1] as String);
   }
 
   @override

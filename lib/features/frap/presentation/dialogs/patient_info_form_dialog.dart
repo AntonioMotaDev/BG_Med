@@ -168,7 +168,7 @@ class _PatientInfoFormDialogState extends ConsumerState<PatientInfoFormDialog> {
                 gradient: LinearGradient(
                   colors: [
                     AppTheme.primaryBlue,
-                    AppTheme.primaryBlue.withOpacity(0.8),
+                    AppTheme.primaryBlue.withAlpha(204),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -183,7 +183,7 @@ class _PatientInfoFormDialogState extends ConsumerState<PatientInfoFormDialog> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withAlpha(51),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -497,7 +497,7 @@ class _PatientInfoFormDialogState extends ConsumerState<PatientInfoFormDialog> {
                       ),
                       trailing:
                           isSelected
-                              ? Icon(
+                              ? const Icon(
                                 Icons.check_circle,
                                 color: AppTheme.primaryBlue,
                               )
@@ -621,6 +621,7 @@ class _PatientInfoFormDialogState extends ConsumerState<PatientInfoFormDialog> {
                         _selectedPatient == null ||
                         _firstNameController.text.trim().isEmpty,
                     validator: (value) {
+                      if (_selectedPatient != null) return null;
                       if (value == null || value.trim().isEmpty) {
                         return 'El nombre es requerido';
                       }
@@ -638,6 +639,7 @@ class _PatientInfoFormDialogState extends ConsumerState<PatientInfoFormDialog> {
                         _selectedPatient == null ||
                         _paternalLastNameController.text.trim().isEmpty,
                     validator: (value) {
+                      if (_selectedPatient != null) return null;
                       if (value == null || value.trim().isEmpty) {
                         return 'El apellido paterno es requerido';
                       }
@@ -660,6 +662,7 @@ class _PatientInfoFormDialogState extends ConsumerState<PatientInfoFormDialog> {
                         _selectedPatient == null ||
                         _maternalLastNameController.text.trim().isEmpty,
                     validator: (value) {
+                      if (_selectedPatient != null) return null;
                       if (value == null || value.trim().isEmpty) {
                         return 'El apellido materno es requerido';
                       }
@@ -1243,6 +1246,10 @@ class _PatientInfoFormDialogState extends ConsumerState<PatientInfoFormDialog> {
 
       // Limpiar búsqueda
       _searchController.clear();
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _formKey.currentState?.reset();
+      _formKey.currentState?.validate();
     });
   }
 

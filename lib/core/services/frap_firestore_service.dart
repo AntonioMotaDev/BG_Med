@@ -2,12 +2,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:bg_med/core/models/frap_firestore.dart';
 import 'package:bg_med/features/frap/presentation/providers/frap_data_provider.dart';
+import 'package:bg_med/core/validators/frap_data_validator.dart';
+import 'package:bg_med/core/exceptions/frap_exceptions.dart';
 
 class FrapFirestoreService {
   static const String _collectionName = 'preHospitalRecords';
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FrapDataValidator _validator = FrapDataValidator.instance;
 
   // Referencia a la colección
   CollectionReference get _collection => _firestore.collection(_collectionName);
@@ -26,6 +29,12 @@ class FrapFirestoreService {
         throw Exception('Usuario no autenticado');
       }
 
+      // Validación pre-conversión
+      final preValidation = _validator.validateComplete(frapData);
+      if (!preValidation.isValid) {
+        throw ValidationException(preValidation.errors);
+      }
+
       final frapFirestore = FrapFirestore.create(
         userId: userId,
         serviceInfo: frapData.serviceInfo,
@@ -42,11 +51,22 @@ class FrapFirestoreService {
         injuryLocation: frapData.injuryLocation,
         receivingUnit: frapData.receivingUnit,
         patientReception: frapData.patientReception,
+        insumos: frapData.insumos,
       );
+
+      // Validación post-conversión (COMENTADA PARA TESTING)
+      // if (!_isValidFrapFirestore(frapFirestore)) {
+      //   throw ConversionException(
+      //     'La conversión produjo un modelo FrapFirestore inválido',
+      //   );
+      // }
 
       final docRef = await _collection.add(frapFirestore.toFirestore());
       return docRef.id;
     } catch (e) {
+      if (e is ValidationException || e is ConversionException) {
+        rethrow;
+      }
       throw Exception('Error al crear el registro FRAP: $e');
     }
   }
@@ -91,6 +111,7 @@ class FrapFirestoreService {
         'injuryLocation': frapData.injuryLocation,
         'receivingUnit': frapData.receivingUnit,
         'patientReception': frapData.patientReception,
+        'insumos': frapData.insumos,
       };
 
       await _collection.doc(frapId).update(updatedData);
@@ -364,6 +385,7 @@ class FrapFirestoreService {
         injuryLocation: originalRecord.injuryLocation,
         receivingUnit: originalRecord.receivingUnit,
         patientReception: originalRecord.patientReception,
+        insumos: originalRecord.insumos,
       );
 
       final docRef = await _collection.add(duplicatedRecord.toFirestore());
@@ -575,4 +597,39 @@ class FrapFirestoreService {
       throw Exception('Error al restaurar registros FRAP: $e');
     }
   }
+
+  // VALIDAR que el modelo FrapFirestore convertido es válido
+  // bool _isValidFrapFirestore(FrapFirestore frap) {
+  //   // Validaciones críticas del modelo
+
+  //   // 1. Validar que userId no es nulo o vacío
+  //   if (frap.userId.isEmpty) return false;
+
+  //   // 2. Validar información del paciente
+  //   if (frap.patientInfo.isEmpty) return false;
+  //   final patientInfo = frap.patientInfo;
+  //   if (patientInfo['firstName'] == null ||
+  //       (patientInfo['firstName'] as String).isEmpty) {
+  //     return false;
+  //   }
+
+  //   // 3. Validar información de servicio
+  //   if (frap.serviceInfo.isEmpty) return false;
+  //   final serviceInfo = frap.serviceInfo;
+  //   if (serviceInfo['tipoUrgencia'] == null ||
+  //       (serviceInfo['tipoUrgencia'] as String).isEmpty) {
+  //     return false;
+  //   }
+
+  //   // 4. Validar información de registro
+  //   if (frap.registryInfo.isEmpty) return false;
+  //   final registryInfo = frap.registryInfo!;
+  //   if (registryInfo['folio'] == null ||
+  //       (registryInfo['folio'] as String).isEmpty) {
+  //     return false;
+  //   }
+
+  //   // Si pasa todas las validaciones críticas, el modelo es válido
+  //   return true;
+  // }
 }

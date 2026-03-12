@@ -108,6 +108,71 @@ class _GynecoObstetricFormDialogState extends State<GynecoObstetricFormDialog> {
         };
       }
     }
+
+    // Normalizar exclusividad de estado actual (solo una activa a la vez)
+    _normalizeExclusiveEstado();
+  }
+
+  // Asegura que solo una de las opciones exclusivas quede activa
+  void _normalizeExclusiveEstado() {
+    final selectedCount =
+        [
+          _isParto,
+          _isAborto,
+          _isHxVaginal,
+          _expulsionPlacenta,
+        ].where((v) => v).length;
+    if (selectedCount <= 1) return;
+
+    // Prioridad: Parto > Aborto > Hx Vaginal > Expulsión Placenta
+    if (_isParto) {
+      _isAborto = false;
+      _isHxVaginal = false;
+      _expulsionPlacenta = false;
+    } else if (_isAborto) {
+      _isParto = false;
+      _isHxVaginal = false;
+      _expulsionPlacenta = false;
+    } else if (_isHxVaginal) {
+      _isParto = false;
+      _isAborto = false;
+      _expulsionPlacenta = false;
+    } else if (_expulsionPlacenta) {
+      _isParto = false;
+      _isAborto = false;
+      _isHxVaginal = false;
+    }
+  }
+
+  // Maneja selección exclusiva con checkboxes (tipo radio):
+  // al marcar una opción, desmarca las demás; al desmarcar, solo apaga esa opción
+  void _selectEstado(String key, bool selected) {
+    setState(() {
+      if (!selected) {
+        // Permitir que queden todas desmarcadas si así lo elige el usuario
+        switch (key) {
+          case 'parto':
+            _isParto = false;
+            break;
+          case 'aborto':
+            _isAborto = false;
+            break;
+          case 'hx':
+            _isHxVaginal = false;
+            break;
+          case 'placenta':
+            _expulsionPlacenta = false;
+            break;
+        }
+        return;
+      }
+
+      // Marcar la seleccionada y desmarcar el resto
+      _isParto = key == 'parto';
+      _isAborto = key == 'aborto';
+      _isHxVaginal = key == 'hx';
+      _expulsionPlacenta = key == 'placenta';
+    });
   }
 
   @override
@@ -302,22 +367,18 @@ class _GynecoObstetricFormDialogState extends State<GynecoObstetricFormDialog> {
                             child: _buildCheckboxOption(
                               title: 'Parto',
                               value: _isParto,
-                              onChanged: (value) {
-                                setState(() {
-                                  _isParto = value ?? false;
-                                });
-                              },
+                              onChanged:
+                                  (value) =>
+                                      _selectEstado('parto', value ?? false),
                             ),
                           ),
                           Expanded(
                             child: _buildCheckboxOption(
                               title: 'Aborto',
                               value: _isAborto,
-                              onChanged: (value) {
-                                setState(() {
-                                  _isAborto = value ?? false;
-                                });
-                              },
+                              onChanged:
+                                  (value) =>
+                                      _selectEstado('aborto', value ?? false),
                             ),
                           ),
                         ],
@@ -329,22 +390,18 @@ class _GynecoObstetricFormDialogState extends State<GynecoObstetricFormDialog> {
                             child: _buildCheckboxOption(
                               title: 'Hx Vaginal',
                               value: _isHxVaginal,
-                              onChanged: (value) {
-                                setState(() {
-                                  _isHxVaginal = value ?? false;
-                                });
-                              },
+                              onChanged:
+                                  (value) =>
+                                      _selectEstado('hx', value ?? false),
                             ),
                           ),
                           Expanded(
                             child: _buildCheckboxOption(
                               title: 'Expulsión Placenta',
                               value: _expulsionPlacenta,
-                              onChanged: (value) {
-                                setState(() {
-                                  _expulsionPlacenta = value ?? false;
-                                });
-                              },
+                              onChanged:
+                                  (value) =>
+                                      _selectEstado('placenta', value ?? false),
                             ),
                           ),
                         ],
@@ -775,7 +832,7 @@ class _GynecoObstetricFormDialogState extends State<GynecoObstetricFormDialog> {
             borderRadius: BorderRadius.circular(8),
           ),
           child: DropdownButtonFormField<int>(
-            value: value > 0 ? value : null,
+            initialValue: value > 0 ? value : null,
             decoration: const InputDecoration(
               hintText: 'Seleccionar',
               border: InputBorder.none,

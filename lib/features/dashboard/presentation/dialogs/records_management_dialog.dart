@@ -645,12 +645,12 @@ class _RecordsManagementDialogState extends State<RecordsManagementDialog> {
                   ]),
                   const SizedBox(height: 16),
                   _buildDetailSection('Examen Físico', [
-                    'Signos vitales: ${frap.physicalExam.vitalSigns.isEmpty ? "No registrado" : frap.physicalExam.vitalSigns}',
-                    'Cabeza: ${frap.physicalExam.head.isEmpty ? "Normal" : frap.physicalExam.head}',
-                    'Cuello: ${frap.physicalExam.neck.isEmpty ? "Normal" : frap.physicalExam.neck}',
-                    'Tórax: ${frap.physicalExam.thorax.isEmpty ? "Normal" : frap.physicalExam.thorax}',
-                    'Abdomen: ${frap.physicalExam.abdomen.isEmpty ? "Normal" : frap.physicalExam.abdomen}',
-                    'Extremidades: ${frap.physicalExam.extremities.isEmpty ? "Normal" : frap.physicalExam.extremities}',
+                    'Signos vitales: ${(frap.physicalExam['vitalSigns']?.toString() ?? '').isEmpty ? "No registrado" : frap.physicalExam['vitalSigns']}',
+                    'Cabeza: ${(frap.physicalExam['head']?.toString() ?? '').isEmpty ? "Normal" : frap.physicalExam['head']}',
+                    'Cuello: ${(frap.physicalExam['neck']?.toString() ?? '').isEmpty ? "Normal" : frap.physicalExam['neck']}',
+                    'Tórax: ${(frap.physicalExam['thorax']?.toString() ?? '').isEmpty ? "Normal" : frap.physicalExam['thorax']}',
+                    'Abdomen: ${(frap.physicalExam['abdomen']?.toString() ?? '').isEmpty ? "Normal" : frap.physicalExam['abdomen']}',
+                    'Extremidades: ${(frap.physicalExam['extremities']?.toString() ?? '').isEmpty ? "Normal" : frap.physicalExam['extremities']}',
                   ]),
                   const SizedBox(height: 16),
                   Text(
@@ -848,12 +848,12 @@ INFORMACIÓN DEL PACIENTE:
 HISTORIA CLÍNICA:
 ${frap.clinicalHistory.traumaCraneo ? '- Trauma Cráneo: ${frap.clinicalHistory.traumaCraneoEspecifique.isEmpty ? "Sí" : frap.clinicalHistory.traumaCraneoEspecifique}\n' : ''}${frap.clinicalHistory.traumaTorax ? '- Trauma Tórax: ${frap.clinicalHistory.traumaToraxEspecifique.isEmpty ? "Sí" : frap.clinicalHistory.traumaToraxEspecifique}\n' : ''}${frap.clinicalHistory.traumaAbdomen ? '- Trauma Abdomen: ${frap.clinicalHistory.traumaAbdomenEspecifique.isEmpty ? "Sí" : frap.clinicalHistory.traumaAbdomenEspecifique}\n' : ''}${frap.clinicalHistory.agenteCausal.isNotEmpty ? '- Agente Causal: ${frap.clinicalHistory.agenteCausal}\n' : ''}${frap.clinicalHistory.cinematica.isNotEmpty ? '- Cinemática: ${frap.clinicalHistory.cinematica}\n' : ''}${frap.clinicalHistory.observaciones.isNotEmpty ? '- Observaciones: ${frap.clinicalHistory.observaciones}\n' : ''}${!frap.clinicalHistory.traumaCraneo && !frap.clinicalHistory.traumaTorax && !frap.clinicalHistory.traumaAbdomen && frap.clinicalHistory.agenteCausal.isEmpty ? '- Sin información de trauma registrada\n' : ''}
 EXAMEN FÍSICO:
-- Signos vitales: ${frap.physicalExam.vitalSigns.isEmpty ? "No registrado" : frap.physicalExam.vitalSigns}
-- Cabeza: ${frap.physicalExam.head.isEmpty ? "Normal" : frap.physicalExam.head}
-- Cuello: ${frap.physicalExam.neck.isEmpty ? "Normal" : frap.physicalExam.neck}
-- Tórax: ${frap.physicalExam.thorax.isEmpty ? "Normal" : frap.physicalExam.thorax}
-- Abdomen: ${frap.physicalExam.abdomen.isEmpty ? "Normal" : frap.physicalExam.abdomen}
-- Extremidades: ${frap.physicalExam.extremities.isEmpty ? "Normal" : frap.physicalExam.extremities}
+- Signos vitales: ${(frap.physicalExam['vitalSigns']?.toString() ?? '').isEmpty ? "No registrado" : frap.physicalExam['vitalSigns']}
+- Cabeza: ${(frap.physicalExam['head']?.toString() ?? '').isEmpty ? "Normal" : frap.physicalExam['head']}
+- Cuello: ${(frap.physicalExam['neck']?.toString() ?? '').isEmpty ? "Normal" : frap.physicalExam['neck']}
+- Tórax: ${(frap.physicalExam['thorax']?.toString() ?? '').isEmpty ? "Normal" : frap.physicalExam['thorax']}
+- Abdomen: ${(frap.physicalExam['abdomen']?.toString() ?? '').isEmpty ? "Normal" : frap.physicalExam['abdomen']}
+- Extremidades: ${(frap.physicalExam['extremities']?.toString() ?? '').isEmpty ? "Normal" : frap.physicalExam['extremities']}
 
 REGISTRO:
 - Fecha: ${_formatDateTime(frap.createdAt)}

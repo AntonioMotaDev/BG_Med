@@ -2,7 +2,6 @@ import 'package:bg_med/core/models/frap.dart';
 import 'package:bg_med/core/models/frap_firestore.dart';
 import 'package:bg_med/core/models/patient.dart';
 import 'package:bg_med/core/models/clinical_history.dart';
-import 'package:bg_med/core/models/physical_exam.dart';
 import 'package:bg_med/core/models/insumo.dart';
 import 'package:bg_med/core/models/personal_medico.dart';
 import 'package:bg_med/core/models/escalas_obstetricas.dart';
@@ -361,15 +360,14 @@ class FrapTransitionModel {
       traumaPelvisEspecifique: clinicalData['traumaPelvisEspecifique'] ?? '',
       traumaOtros: clinicalData['traumaOtros'] ?? false,
       traumaOtrosEspecifique: clinicalData['traumaOtrosEspecifique'] ?? '',
-      agenteCausal: clinicalData['agenteCausal'] ?? '',
-      cinematica: clinicalData['cinematica'] ?? '',
-      medidaSeguridad: clinicalData['medidaSeguridad'] ?? '',
-      observaciones: clinicalData['observaciones'] ?? '',
     );
   }
 
-  PhysicalExam _createPhysicalExamFromCloud(Map<String, dynamic> examData) {
-    return PhysicalExam.fromFormData(examData);
+  Map<String, dynamic> _createPhysicalExamFromCloud(
+    Map<String, dynamic> examData,
+  ) {
+    // examData ya es un Map validado, retornarlo directamente
+    return examData;
   }
 
   Map<String, dynamic> _convertSectionData(Map<String, dynamic> cloudSection) {
@@ -507,15 +505,12 @@ class FrapTransitionModel {
       'traumaPelvisEspecifique': local.clinicalHistory.traumaPelvisEspecifique,
       'traumaOtros': local.clinicalHistory.traumaOtros,
       'traumaOtrosEspecifique': local.clinicalHistory.traumaOtrosEspecifique,
-      'agenteCausal': local.clinicalHistory.agenteCausal,
-      'cinematica': local.clinicalHistory.cinematica,
-      'medidaSeguridad': local.clinicalHistory.medidaSeguridad,
-      'observaciones': local.clinicalHistory.observaciones,
     };
   }
 
   Map<String, dynamic> _createPhysicalExamFromLocal(Frap local) {
-    return local.physicalExam.toFirebaseFormat();
+    // physicalExam ya es un Map<String, dynamic>, retornarlo directamente
+    return local.physicalExam;
   }
 
   /// Crear copia con cambios
