@@ -857,6 +857,13 @@ class _FrapRecordsListScreenState extends ConsumerState<FrapRecordsListScreen>
                       if (result['success'] == true) {
                         print('Sincronización exitosa: $result');
 
+                        if (mounted) {
+                          setState(() {
+                            _sortBy = 'date';
+                            _sortAscending = false;
+                          });
+                        }
+
                         // Recargar registros después de la sincronización
                         await ref
                             .read(unifiedFrapProvider.notifier)
@@ -871,8 +878,13 @@ class _FrapRecordsListScreenState extends ConsumerState<FrapRecordsListScreen>
                                 as Map<String, dynamic>?;
                         final spaceFreed =
                             statistics?['estimatedSpaceFreedMB'] ?? '0.00';
+                        final cleanupErrors =
+                            cleanupResult?['cleanupErrors'] as List<dynamic>? ??
+                            [];
 
                         String message = 'Sincronización completada';
+                        Color snackBarColor = Colors.green;
+
                         if (removedCount > 0) {
                           message +=
                               '\nSe eliminaron $removedCount registros duplicados';
@@ -882,11 +894,29 @@ class _FrapRecordsListScreenState extends ConsumerState<FrapRecordsListScreen>
                               '\nNo se encontraron duplicados para eliminar';
                         }
 
+                        // Mostrar advertencia si hubo errores en la limpieza
+                        if (cleanupErrors.isNotEmpty) {
+                          snackBarColor = Colors.orange;
+                          message +=
+                              '\n⚠️ Hubo ${cleanupErrors.length} problemas en la limpieza:';
+                          for (
+                            int i = 0;
+                            i < cleanupErrors.length && i < 2;
+                            i++
+                          ) {
+                            message += '\n• ${cleanupErrors[i]}';
+                          }
+                          if (cleanupErrors.length > 2) {
+                            message +=
+                                '\n• +${cleanupErrors.length - 2} problemas más';
+                          }
+                        }
+
                         messenger.showSnackBar(
                           SnackBar(
                             content: Text(message),
-                            backgroundColor: Colors.green,
-                            duration: const Duration(seconds: 5),
+                            backgroundColor: snackBarColor,
+                            duration: const Duration(seconds: 6),
                           ),
                         );
                       } else {

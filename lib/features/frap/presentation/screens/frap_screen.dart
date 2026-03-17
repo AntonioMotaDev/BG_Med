@@ -2,6 +2,7 @@ import 'package:bg_med/core/theme/app_theme.dart';
 import 'package:bg_med/features/frap/presentation/providers/frap_data_provider.dart';
 import 'package:bg_med/features/frap/presentation/providers/frap_unified_provider.dart';
 import 'package:bg_med/core/services/frap_unified_service.dart';
+import 'package:bg_med/core/providers/connectivity_provider.dart';
 import 'package:bg_med/core/providers/frap_data_validator_provider.dart';
 import 'package:bg_med/features/frap/presentation/dialogs/patient_info_form_dialog.dart';
 import 'package:bg_med/features/frap/presentation/dialogs/service_info_form_dialog.dart';
@@ -111,6 +112,14 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
   Widget build(BuildContext context) {
     final frapData = ref.watch(frapDataProvider);
     final isEditing = widget.editingRecord != null;
+    final connectivityState = ref.watch(connectivityProvider);
+    final isRecordLockedByDoctorSignature = _hasReceivingDoctorSignature(
+      widget.editingRecord,
+    );
+    final isConnected =
+        connectivityState == ConnectivityState.connected ||
+        connectivityState == ConnectivityState.wifi ||
+        connectivityState == ConnectivityState.mobile;
 
     return Scaffold(
       appBar: AppBar(
@@ -121,63 +130,6 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
         ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
-        actions: [
-          // Botón de sincronización manual
-          IconButton(
-            icon:
-                _isSaving
-                    ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
-                      ),
-                    )
-                    : const Icon(Icons.sync),
-            onPressed:
-                _isSaving
-                    ? null
-                    : () async {
-                      setState(() {
-                        _isSaving = true;
-                      });
-
-                      try {
-                        final result =
-                            await ref
-                                .read(unifiedFrapProvider.notifier)
-                                .syncRecordsWithResult();
-
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(result.message),
-                              backgroundColor:
-                                  result.success ? Colors.green : Colors.orange,
-                            ),
-                          );
-                        }
-                      } catch (e) {
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Error al sincronizar: $e'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      } finally {
-                        if (mounted) {
-                          setState(() {
-                            _isSaving = false;
-                          });
-                        }
-                      }
-                    },
-            tooltip: 'Sincronizar ahora',
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -215,6 +167,35 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
               ),
             ),
 
+            if (isRecordLockedByDoctorSignature) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  border: Border.all(color: Colors.red.shade200),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.lock, color: Colors.red.shade700, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Registro bloqueado: ya cuenta con la firma del médico receptor y no puede editarse.',
+                        style: TextStyle(
+                          color: Colors.red.shade700,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
             GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -230,6 +211,13 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
                   filledFields: frapData.getFilledFieldsCount('patient_info'),
                   totalFields: 14,
                   onTap: () => _openPatientInfoDialog(),
+                  forceDisabled: isRecordLockedByDoctorSignature || isEditing,
+                  statusMessage:
+                      isRecordLockedByDoctorSignature
+                          ? 'Registro bloqueado por firma del médico receptor'
+                          : isEditing
+                          ? 'No editable durante actualización de registro'
+                          : null,
                 ),
 
                 // Información del Servicio
@@ -239,6 +227,7 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
                   filledFields: frapData.getFilledFieldsCount('service_info'),
                   totalFields: 8,
                   onTap: () => _openServiceInfoDialog(),
+                  forceDisabled: isRecordLockedByDoctorSignature,
                 ),
 
                 // Información del Registro
@@ -248,6 +237,7 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
                   filledFields: frapData.getFilledFieldsCount('registry_info'),
                   totalFields: 5,
                   onTap: () => _openRegistryInfoDialog(),
+                  forceDisabled: isRecordLockedByDoctorSignature,
                 ),
 
                 // Manejo
@@ -257,6 +247,7 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
                   filledFields: frapData.getFilledFieldsCount('management'),
                   totalFields: 12,
                   onTap: () => _openManagementDialog(),
+                  forceDisabled: isRecordLockedByDoctorSignature,
                 ),
 
                 // Antecedentes Patológicos (solo para urgencias clínicas)
@@ -276,6 +267,7 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
                     statusMessage: _getSectionStatusMessage(
                       'pathological_history',
                     ),
+                    forceDisabled: isRecordLockedByDoctorSignature,
                   ),
 
                 // Antecedentes Clínicos (solo para urgencias de trauma)
@@ -293,6 +285,7 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
                     ),
                     textColor: _getSectionTextColor('clinical_history'),
                     statusMessage: _getSectionStatusMessage('clinical_history'),
+                    forceDisabled: isRecordLockedByDoctorSignature,
                   ),
 
                 // Medicamentos
@@ -302,6 +295,7 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
                   filledFields: frapData.getFilledFieldsCount('medications'),
                   totalFields: 1,
                   onTap: () => _openMedicationsDialog(),
+                  forceDisabled: isRecordLockedByDoctorSignature,
                 ),
 
                 // Gineco-Obstétrico
@@ -313,6 +307,7 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
                   ),
                   totalFields: 10,
                   onTap: () => _openGynecoObstetricDialog(),
+                  forceDisabled: isRecordLockedByDoctorSignature,
                 ),
 
                 // Examen Físico
@@ -322,6 +317,7 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
                   filledFields: frapData.getFilledFieldsCount('physical_exam'),
                   totalFields: 12,
                   onTap: () => _openPhysicalExamDialog(),
+                  forceDisabled: isRecordLockedByDoctorSignature,
                 ),
 
                 // Negativa de Atención
@@ -333,6 +329,7 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
                   ),
                   totalFields: 4,
                   onTap: () => _openAttentionNegativeDialog(),
+                  forceDisabled: isRecordLockedByDoctorSignature,
                 ),
 
                 // Justificación de Prioridad
@@ -344,6 +341,7 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
                   ),
                   totalFields: 7,
                   onTap: () => _openPriorityJustificationDialog(),
+                  forceDisabled: isRecordLockedByDoctorSignature,
                 ),
 
                 // Unidad Receptora
@@ -353,6 +351,7 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
                   filledFields: frapData.getFilledFieldsCount('receiving_unit'),
                   totalFields: 8,
                   onTap: () => _openReceivingUnitDialog(),
+                  forceDisabled: isRecordLockedByDoctorSignature,
                 ),
 
                 // Localización de Lesiones
@@ -364,6 +363,7 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
                   ),
                   totalFields: 2,
                   onTap: () => _openInjuryLocationDialog(),
+                  forceDisabled: isRecordLockedByDoctorSignature,
                 ),
 
                 // Recepción del Paciente
@@ -375,6 +375,7 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
                   ),
                   totalFields: 6,
                   onTap: () => _openPatientReceptionDialog(),
+                  forceDisabled: isRecordLockedByDoctorSignature,
                 ),
 
                 // Insumos (Nuevo)
@@ -384,6 +385,7 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
                   filledFields: frapData.getFilledFieldsCount('insumos'),
                   totalFields: 2,
                   onTap: () => _openInsumosDialog(),
+                  forceDisabled: isRecordLockedByDoctorSignature,
                 ),
               ],
             ),
@@ -395,18 +397,33 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.blue.withAlpha(25),
+                color:
+                    isConnected
+                        ? Colors.blue.withAlpha(25)
+                        : Colors.orange.withAlpha(25),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.withAlpha(77)),
+                border: Border.all(
+                  color:
+                      isConnected
+                          ? Colors.blue.withAlpha(77)
+                          : Colors.orange.withAlpha(77),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.wifi, color: Colors.blue, size: 16),
+                  Icon(
+                    isConnected ? Icons.wifi : Icons.signal_wifi_off,
+                    color: isConnected ? Colors.blue : Colors.orange,
+                    size: 16,
+                  ),
                   const SizedBox(width: 8),
                   Text(
-                    'Conectado - Se guardará en la nube',
+                    isConnected
+                        ? 'Conectado - Se guardará en la nube'
+                        : 'Sin conexión - Se guardará localmente y se sincronizará después',
                     style: TextStyle(
-                      color: Colors.blue[700],
+                      color:
+                          isConnected ? Colors.blue[700] : Colors.orange[700],
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
@@ -421,7 +438,10 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: _isSaving ? null : _saveRecord,
+                onPressed:
+                    (_isSaving || isRecordLockedByDoctorSignature)
+                        ? null
+                        : _saveRecord,
                 icon:
                     _isSaving
                         ? const SizedBox(
@@ -438,6 +458,8 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
                 label: Text(
                   _isSaving
                       ? (isEditing ? 'Actualizando...' : 'Guardando...')
+                      : isRecordLockedByDoctorSignature
+                      ? 'Registro bloqueado por firma'
                       : (isEditing
                           ? 'Actualizar Registro'
                           : 'Guardar Registro'),
@@ -458,7 +480,10 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
             SizedBox(
               width: double.infinity,
               child: TextButton.icon(
-                onPressed: _isSaving ? null : _showClearConfirmationDialog,
+                onPressed:
+                    (_isSaving || isRecordLockedByDoctorSignature)
+                        ? null
+                        : _showClearConfirmationDialog,
                 icon: const Icon(Icons.delete_sweep_outlined),
                 label: const Text('Limpiar Formulario'),
                 style: TextButton.styleFrom(
@@ -487,11 +512,13 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
     Color? backgroundColor,
     Color? textColor,
     String? statusMessage,
+    bool forceDisabled = false,
   }) {
     final isComplete = filledFields == totalFields;
     final isEmpty = filledFields == 0;
     final isDisabled =
-        statusMessage != null && statusMessage.contains('No aplica');
+        forceDisabled ||
+        (statusMessage != null && statusMessage.contains('No aplica'));
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -566,7 +593,7 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
                       if (isDisabled) ...[
                         const SizedBox(height: 4),
                         Text(
-                          statusMessage,
+                          statusMessage ?? '',
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -1066,6 +1093,14 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
   }
 
   Future<void> _saveRecord() async {
+    if (_hasReceivingDoctorSignature(widget.editingRecord)) {
+      _showErrorDialog(
+        'Registro Bloqueado',
+        'No se puede actualizar porque ya cuenta con la firma del médico receptor.',
+      );
+      return;
+    }
+
     if (!_validateForm()) {
       return;
     }
@@ -1089,9 +1124,9 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
         if (!mounted) return;
 
         if (result.success || result.updatedLocally) {
-          _showUpdateSuccessDialog(result);
+          await _showUpdateSuccessDialog(result);
           // Regresar a la pantalla anterior
-          Navigator.of(context).pop();
+          Navigator.of(context).pop(true);
         } else {
           _showErrorDialog(
             'Error al Actualizar',
@@ -1137,8 +1172,8 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
     }
   }
 
-  void _showUpdateSuccessDialog(UnifiedUpdateResult result) {
-    showDialog(
+  Future<void> _showUpdateSuccessDialog(UnifiedUpdateResult result) {
+    return showDialog(
       context: context,
       builder:
           (context) => AlertDialog(
@@ -1355,5 +1390,34 @@ class _FrapScreenState extends ConsumerState<FrapScreen> {
             ],
           ),
     );
+  }
+
+  bool _hasReceivingDoctorSignature(UnifiedFrapRecord? record) {
+    if (record == null) {
+      return false;
+    }
+
+    final detailedInfo = record.getDetailedInfo();
+    final patientReception = detailedInfo['patientReception'];
+    if (patientReception is! Map<String, dynamic>) {
+      return false;
+    }
+
+    const signatureKeys = [
+      'doctorSignature',
+      'receivingDoctorSignature',
+      'doctor_signature',
+      'firmaDoctor',
+      'firmaMedico',
+    ];
+
+    for (final key in signatureKeys) {
+      final value = patientReception[key];
+      if (value != null && value.toString().trim().isNotEmpty) {
+        return true;
+      }
+    }
+
+    return false;
   }
 }

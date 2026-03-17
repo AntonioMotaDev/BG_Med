@@ -161,19 +161,18 @@ class FrapUnifiedService {
                   },
                 );
               } catch (syncError) {
-                // ❌ FALLO CRÍTICO: markAsSynced falló
+                // ⚠️ markAsSynced falló, pero los datos están guardados en local y nube
                 debugPrint(
-                  '❌ CRÍTICO: markAsSynced falló para $localRecordId: $syncError',
+                  '⚠️ markAsSynced falló para $localRecordId: $syncError',
                 );
 
-                result.success = false;
+                // El registro fue guardado correctamente; el estado de sync se recupera automáticamente
+                result.success = true;
                 result.message =
-                    'Registro guardado pero sincronización falló. '
-                    'Se reintentará automáticamente.';
+                    'Registro guardado en la nube. Se sincronizará automáticamente.';
                 result.syncError = syncError.toString();
-                result.errors.add('Error de sincronización: $syncError');
 
-                // Intentar rollback del estado de sincronización
+                // Marcar como no sincronizado para reintento automático en próxima sync
                 await _rollbackSyncStatus(localRecordId);
 
                 FrapConversionLogger.logConversionError(
@@ -484,6 +483,35 @@ class FrapUnifiedService {
               );
             }
           }
+
+          // Asegurar que el registro local quede vinculado con su par en nube
+          final localIndex = unifiedRecords.indexWhere(
+            (r) => r.localRecord?.id == existingLocal.id,
+          );
+          if (localIndex != -1) {
+            final localCurrent = unifiedRecords[localIndex].localRecord;
+            if (localCurrent != null) {
+              unifiedRecords[localIndex] = UnifiedFrapRecord(
+                localRecord: localCurrent,
+                cloudRecord: cloudRecord,
+                createdAt: localCurrent.createdAt,
+                patientName: localCurrent.patient.fullName,
+                patientAge: localCurrent.patient.age,
+                patientSex: localCurrent.patient.sex,
+                patientGender: localCurrent.patient.gender,
+                patientAddress: _buildFullAddressFromPatient(
+                  localCurrent.patient,
+                ),
+                patientPhone: localCurrent.patient.phone,
+                patientInsurance: localCurrent.patient.insurance,
+                patientResponsiblePerson:
+                    localCurrent.patient.responsiblePerson ?? '',
+                completionPercentage: localCurrent.completionPercentage,
+                isSynced: localCurrent.isSynced,
+                folio: localCurrent.registryInfo['folio']?.toString() ?? '',
+              );
+            }
+          }
         }
       }
 
@@ -516,16 +544,50 @@ class FrapUnifiedService {
       return localFolio == cloudFolio;
     }
 
-    // 2) Fallback: nombre + ventana de tiempo
-    final localPatientName = local.patient.fullName.toLowerCase();
-    final cloudPatientName = cloud.patientName.toLowerCase();
+    // 2) Fallback estricto: nombre normalizado + señal fuerte + ventana temporal
+    final localPatientName = _normalizeText(local.patient.fullName);
+    final cloudPatientName = _normalizeText(cloud.patientName);
+    if (localPatientName.isEmpty || cloudPatientName.isEmpty) {
+      return false;
+    }
+    if (localPatientName != cloudPatientName) {
+      return false;
+    }
 
-    return localPatientName == cloudPatientName &&
-        local.createdAt.difference(cloud.createdAt).abs().inMinutes < 5;
+    final localAge = local.patient.age;
+    final cloudAge = cloud.patientAge;
+    final sameAge = localAge > 0 && cloudAge > 0 && localAge == cloudAge;
+
+    final localSex = _normalizeText(local.patient.sex);
+    final cloudSex = _normalizeText(cloud.patientSex);
+    final sameSex =
+        localSex.isNotEmpty && cloudSex.isNotEmpty && localSex == cloudSex;
+
+    final samePhone =
+        _normalizePhone(local.patient.phone) ==
+        _normalizePhone(cloud.patientInfo['phone']?.toString());
+    final hasSamePhone =
+        _normalizePhone(local.patient.phone).isNotEmpty && samePhone;
+
+    final hasStrongSignal = hasSamePhone || (sameAge && sameSex);
+    if (!hasStrongSignal) {
+      return false;
+    }
+
+    return local.createdAt.difference(cloud.createdAt).abs().inMinutes <= 60;
   }
 
   String _normalizeFolio(dynamic folio) {
     return folio?.toString().trim().toUpperCase() ?? '';
+  }
+
+  String _normalizeText(String? value) {
+    if (value == null) return '';
+    return value.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+  }
+
+  String _normalizePhone(String? value) {
+    return (value ?? '').replaceAll(RegExp(r'\D'), '');
   }
 
   // Convertir registro de la nube a formato local con validación completa
@@ -556,10 +618,7 @@ class FrapUnifiedService {
       );
 
       // Convertir examen físico sin validación para conservar campos completos
-      final examData =
-          cloud.physicalExam is Map
-              ? Map<String, dynamic>.from(cloud.physicalExam)
-              : <String, dynamic>{};
+      final examData = Map<String, dynamic>.from(cloud.physicalExam);
 
       // Crear un registro local basado en los datos de la nube
       final localFrap = Frap(
@@ -691,6 +750,7 @@ class FrapUnifiedService {
     final personalData =
         cloud.serviceInfo['personalMedico'] ??
         cloud.management['personalMedico'] ??
+        cloud.receivingUnit['personalMedico'] ??
         [];
 
     if (personalData is List) {
@@ -700,11 +760,11 @@ class FrapUnifiedService {
       if (validation.isValid && validation.cleanedData != null) {
         final cleanedPersonal =
             validation.cleanedData!['personalMedico'] as List;
-        return cleanedPersonal.map((personalData) {
+        return cleanedPersonal.map((item) {
           return PersonalMedico(
-            nombre: personalData['nombre'] ?? '',
-            especialidad: personalData['especialidad'] ?? '',
-            cedula: personalData['cedula'] ?? '',
+            nombre: item['nombre'] ?? '',
+            especialidad: item['especialidad'] ?? '',
+            cedula: item['cedula'] ?? '',
           );
         }).toList();
       }
@@ -773,90 +833,40 @@ class FrapUnifiedService {
     return await _migrationService.getMigrationStats();
   }
 
-  /// Eliminar un registro de forma unificada (local y nube)
+  /// Eliminar un registro de forma local.
+  /// Los registros en la nube son permanentes y solo pueden eliminarse individualmente.
   Future<UnifiedDeleteResult> deleteRecord(UnifiedFrapRecord record) async {
     final result = UnifiedDeleteResult();
 
     try {
       final localId = record.localRecord?.id;
-      final cloudId = record.cloudRecord?.id;
 
-      // Si no hay IDs, no hay nada que eliminar
-      if (localId == null && cloudId == null) {
+      // Si no hay registro local, no hay nada que eliminar localmente
+      if (localId == null) {
         result.success = false;
-        result.message = 'No se puede eliminar: registro sin identificadores';
+        result.wasOnlyLocal = false;
+        result.message =
+            'Este registro solo existe en la nube y no puede eliminarse desde aquí. '
+            'Los registros en la nube solo se pueden eliminar de forma individual.';
         return result;
       }
 
-      // Verificar conectividad
-      final hasInternet = await hasInternetConnection();
-
-      // 1. Intentar eliminar del almacenamiento local
-      if (localId != null) {
-        try {
-          await _localService.deleteFrapRecord(localId);
-          result.deletedFromLocal = true;
-        } catch (e) {
-          result.localError = 'Error al eliminar localmente: $e';
-          debugPrint(result.localError);
-        }
-      }
-
-      // 2. Intentar eliminar de Firestore si hay conexión
-      if (cloudId != null && hasInternet) {
-        try {
-          await _cloudService.deleteFrapRecord(cloudId);
-          result.deletedFromCloud = true;
-        } catch (e) {
-          result.cloudError = 'Error al eliminar de la nube: $e';
-          debugPrint(result.cloudError);
-        }
-      } else if (cloudId != null && !hasInternet) {
-        // Si hay ID de nube pero no hay internet
-        result.cloudError =
-            'Sin conexión. El registro se eliminó localmente pero permanece en la nube';
-      }
-
-      // Marcar si solo existía localmente
-      result.wasOnlyLocal = cloudId == null;
-      final wasOnlyCloud = localId == null;
-
-      // Determinar éxito general
-      if (result.wasOnlyLocal) {
-        // Solo existía localmente
-        result.success = result.deletedFromLocal;
+      // Eliminar únicamente del almacenamiento local
+      try {
+        await _localService.deleteFrapRecord(localId);
+        result.deletedFromLocal = true;
+        result.wasOnlyLocal = record.cloudRecord == null;
+        result.success = true;
         result.message =
-            result.success
-                ? 'Registro eliminado correctamente (solo local)'
-                : 'Error al eliminar el registro local';
-      } else if (wasOnlyCloud) {
-        // Solo existía en la nube
-        result.success = result.deletedFromCloud;
-        result.message =
-            result.success
-                ? 'Registro eliminado correctamente (solo en nube)'
-                : 'Error al eliminar el registro de la nube';
-      } else if (!hasInternet) {
-        // Existe en nube pero sin conexión
-        result.success = result.deletedFromLocal;
-        result.message =
-            result.success
-                ? 'Registro eliminado localmente. Se eliminará de la nube cuando haya conexión'
-                : 'Error al eliminar el registro';
-      } else {
-        // Debe eliminarse de ambos (existe en local y nube)
-        result.success = result.deletedFromLocal && result.deletedFromCloud;
-        if (result.success) {
-          result.message = 'Registro eliminado completamente';
-        } else if (result.deletedFromLocal && !result.deletedFromCloud) {
-          result.message =
-              'Registro eliminado localmente pero falló en la nube';
-        } else if (!result.deletedFromLocal && result.deletedFromCloud) {
-          result.message =
-              'Registro eliminado de la nube pero falló localmente';
-        } else {
-          result.message = 'Error al eliminar el registro';
-        }
+            result.wasOnlyLocal
+                ? 'Registro eliminado correctamente'
+                : 'Registro eliminado localmente. El registro permanece en la nube.';
+        debugPrint('✅ Registro local eliminado: $localId');
+      } catch (e) {
+        result.localError = 'Error al eliminar localmente: $e';
+        result.success = false;
+        result.message = 'Error al eliminar el registro: $e';
+        debugPrint('❌ ${result.localError}');
       }
     } catch (e) {
       result.success = false;
@@ -876,10 +886,20 @@ class FrapUnifiedService {
 
     try {
       final localId = originalRecord.localRecord?.id;
-      final cloudId = originalRecord.cloudRecord?.id;
+      String? cloudId = originalRecord.cloudRecord?.id;
+
+      // Recuperar copia local cuando el registro original llega desactualizado.
+      String? resolvedLocalId = localId;
+      if (resolvedLocalId == null) {
+        final folio = originalRecord.folio.trim();
+        if (folio.isNotEmpty) {
+          final localByFolio = await _localService.findRecordByFolio(folio);
+          resolvedLocalId = localByFolio?.id;
+        }
+      }
 
       // Verificar que tenga al menos un ID
-      if (localId == null && cloudId == null) {
+      if (resolvedLocalId == null && cloudId == null) {
         result.success = false;
         result.message = 'No se puede actualizar: registro sin identificadores';
         return result;
@@ -888,20 +908,28 @@ class FrapUnifiedService {
       // Verificar conectividad
       final hasInternet = await hasInternetConnection();
 
+      // Fallback: resolver cloudId por folio/equivalencia cuando no llega vinculado.
+      if ((cloudId == null || cloudId.isEmpty) && hasInternet) {
+        cloudId = await _resolveCloudIdForUpdate(originalRecord, updatedData);
+      }
+
+      // ID local efectivo: puede ser el existente o uno recién creado
+      String? effectiveLocalId = resolvedLocalId;
+
       // 1. Actualizar en almacenamiento local si existe
-      if (localId != null) {
+      if (effectiveLocalId != null) {
         try {
           await _localService.updateFrapRecord(
-            frapId: localId,
+            frapId: effectiveLocalId,
             frapData: updatedData,
           );
           result.updatedLocally = true;
-          debugPrint('✅ Registro local actualizado: $localId');
+          debugPrint('✅ Registro local actualizado: $effectiveLocalId');
 
           // T3.2: CRÍTICO - Resetear isSynced para marcar para re-sincronización
           if (cloudId != null) {
             try {
-              await _localService.markAsNotSynced(localId);
+              await _localService.markAsNotSynced(effectiveLocalId);
               result.requiresSync = true;
               debugPrint('🔄 Registro marcado para re-sincronización');
             } catch (e) {
@@ -919,6 +947,7 @@ class FrapUnifiedService {
           final newLocalId = await _localService.createFrapRecord(
             frapData: updatedData,
           );
+          effectiveLocalId = newLocalId;
           result.updatedLocally = newLocalId != null;
           if (result.updatedLocally) {
             debugPrint('✅ Copia local creada con ID: $newLocalId');
@@ -940,9 +969,13 @@ class FrapUnifiedService {
           debugPrint('✅ Registro cloud actualizado: $cloudId');
 
           // Si cloud se actualizó exitosamente, marcar como sincronizado
-          if (localId != null && result.updatedLocally) {
+          if (effectiveLocalId != null && result.updatedLocally) {
             try {
-              await _localService.markAsSynced(localId, 'firestore', cloudId);
+              await _localService.markAsSynced(
+                effectiveLocalId,
+                'firestore',
+                cloudId,
+              );
               result.requiresSync = false; // Ya está sincronizado
               debugPrint('✅ Registro marcado como sincronizado');
             } catch (syncError) {
@@ -967,7 +1000,7 @@ class FrapUnifiedService {
 
       // Determinar éxito general
       final wasOnlyLocal = cloudId == null;
-      final wasOnlyCloud = localId == null && cloudId != null;
+      final wasOnlyCloud = effectiveLocalId == null && cloudId != null;
 
       if (wasOnlyLocal) {
         // Solo existía localmente
@@ -1029,6 +1062,70 @@ class FrapUnifiedService {
     return result;
   }
 
+  Future<String?> _resolveCloudIdForUpdate(
+    UnifiedFrapRecord originalRecord,
+    FrapData updatedData,
+  ) async {
+    try {
+      final cloudRecords = await _cloudService.getAllFrapRecords();
+
+      final updatedFolio = _normalizeFolio(
+        updatedData.registryInfo['folio']?.toString(),
+      );
+      final originalFolio = _normalizeFolio(originalRecord.folio);
+
+      if (updatedFolio.isNotEmpty || originalFolio.isNotEmpty) {
+        final byFolio = cloudRecords.firstWhereOrNull((c) {
+          final cloudFolio = _normalizeFolio(c.registryInfo['folio']);
+          return cloudFolio.isNotEmpty &&
+              (cloudFolio == updatedFolio || cloudFolio == originalFolio);
+        });
+        if (byFolio?.id != null && byFolio!.id!.isNotEmpty) {
+          return byFolio.id;
+        }
+      }
+
+      final normalizedName = _normalizeText(originalRecord.patientName);
+      final bySignals = cloudRecords.firstWhereOrNull((c) {
+        if (_normalizeText(c.patientName) != normalizedName) {
+          return false;
+        }
+
+        final sameAge =
+            originalRecord.patientAge > 0 &&
+            c.patientAge > 0 &&
+            originalRecord.patientAge == c.patientAge;
+        final sameSex =
+            _normalizeText(originalRecord.patientSex).isNotEmpty &&
+            _normalizeText(c.patientSex).isNotEmpty &&
+            _normalizeText(originalRecord.patientSex) ==
+                _normalizeText(c.patientSex);
+        final samePhone =
+            _normalizePhone(originalRecord.patientPhone).isNotEmpty &&
+            _normalizePhone(originalRecord.patientPhone) ==
+                _normalizePhone(c.patientInfo['phone']?.toString());
+
+        if (!(samePhone || (sameAge && sameSex))) {
+          return false;
+        }
+
+        return c.createdAt
+                .difference(originalRecord.createdAt)
+                .abs()
+                .inMinutes <=
+            120;
+      });
+
+      if (bySignals?.id != null && bySignals!.id!.isNotEmpty) {
+        return bySignals.id;
+      }
+    } catch (e) {
+      debugPrint('⚠️ No se pudo resolver cloudId para actualización: $e');
+    }
+
+    return null;
+  }
+
   /// Verificar permisos de edición para un registro
   Future<EditPermission> canEditRecord(UnifiedFrapRecord record) async {
     try {
@@ -1052,6 +1149,13 @@ class FrapUnifiedService {
         );
       }
 
+      // 1.5. Bloquear edición cuando ya existe firma del médico receptor
+      if (_hasReceivingDoctorSignature(record)) {
+        return EditPermission.denied(
+          'Este registro no se puede editar porque ya cuenta con la firma del médico receptor',
+        );
+      }
+
       // 2. Si solo está en nube y no hay internet
       if (record.localRecord == null && !await hasInternetConnection()) {
         return EditPermission.denied(
@@ -1066,12 +1170,55 @@ class FrapUnifiedService {
         );
       }
 
-      // 5. Permitir edición normal (tiene copia local o puede descargar)
+      // 4. Permitir edición normal (tiene copia local o puede descargar)
       return EditPermission.allowed();
     } catch (e) {
       debugPrint('Error al verificar permisos de edición: $e');
       return EditPermission.denied('Error al verificar permisos: $e');
     }
+  }
+
+  bool _hasReceivingDoctorSignature(UnifiedFrapRecord record) {
+    final localReception = record.localRecord?.patientReception;
+    if (_containsSignatureValue(localReception)) {
+      return true;
+    }
+
+    final cloudReception = record.cloudRecord?.patientReception;
+    if (_containsSignatureValue(cloudReception)) {
+      return true;
+    }
+
+    final detailedReception = record.getDetailedInfo()['patientReception'];
+    if (detailedReception is Map<String, dynamic> &&
+        _containsSignatureValue(detailedReception)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  bool _containsSignatureValue(Map<String, dynamic>? data) {
+    if (data == null || data.isEmpty) {
+      return false;
+    }
+
+    const signatureKeys = [
+      'doctorSignature',
+      'receivingDoctorSignature',
+      'doctor_signature',
+      'firmaDoctor',
+      'firmaMedico',
+    ];
+
+    for (final key in signatureKeys) {
+      final value = data[key];
+      if (value != null && value.toString().trim().isNotEmpty) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /// Limpiar recursos
@@ -1166,8 +1313,8 @@ class UnifiedFrapRecord {
 
   // Método para obtener información detallada
   Map<String, dynamic> getDetailedInfo() {
-    print(
-      '📋 DEBUG getDetailedInfo - Fuente: ${localRecord != null
+    debugPrint(
+      '📋 getDetailedInfo - Fuente: ${localRecord != null
           ? "LOCAL"
           : cloudRecord != null
           ? "CLOUD"
@@ -1347,6 +1494,7 @@ class UnifiedFrapRecord {
       'personalMedico':
           cloud.management['personalMedico'] ??
           cloud.serviceInfo['personalMedico'] ??
+          cloud.receivingUnit['personalMedico'] ??
           [],
       'escalasObstetricas':
           cloud.gynecoObstetric['escalasObstetricas'] ??

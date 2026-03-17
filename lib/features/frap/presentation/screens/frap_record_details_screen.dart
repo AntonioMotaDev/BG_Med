@@ -51,6 +51,9 @@ class _FrapRecordDetailsScreenState
     extends ConsumerState<FrapRecordDetailsScreen> {
   late Map<String, dynamic> _detailedInfo;
   bool _isLoading = true;
+  bool _isCheckingEditPermission = true;
+  bool _canEditRecord = false;
+  String? _editBlockedReason;
 
   // Configuración centralizada de secciones
   late final List<SectionConfig> _sectionConfigs;
@@ -60,6 +63,23 @@ class _FrapRecordDetailsScreenState
     super.initState();
     _initializeSectionConfigs();
     _loadDetailedInfo();
+    _refreshEditPermission();
+  }
+
+  Future<void> _refreshEditPermission() async {
+    setState(() {
+      _isCheckingEditPermission = true;
+    });
+
+    final notifier = ref.read(unifiedFrapProvider.notifier);
+    final permission = await notifier.canEditRecord(widget.record);
+    if (!mounted) return;
+
+    setState(() {
+      _canEditRecord = permission.canEdit;
+      _editBlockedReason = permission.message;
+      _isCheckingEditPermission = false;
+    });
   }
 
   void _initializeSectionConfigs() {
@@ -614,6 +634,57 @@ class _FrapRecordDetailsScreenState
     });
   }
 
+  Future<void> _refreshCurrentRecordFromProvider() async {
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await ref.read(unifiedFrapProvider.notifier).loadAllRecords();
+      if (!mounted) return;
+
+      final refreshedRecord = _findLatestRecordForEditing();
+      if (refreshedRecord != null) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder:
+                (context) => FrapRecordDetailsScreen(record: refreshedRecord),
+          ),
+        );
+        return;
+      }
+
+      _loadDetailedInfo();
+      await _refreshEditPermission();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No se encontró una versión más reciente del registro',
+            ),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        _loadDetailedInfo();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al actualizar registro: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
   // Método auxiliar para decodificar firmas base64 correctamente
   Uint8List _getImageBytesFromBase64(String base64Data) {
     try {
@@ -837,8 +908,30 @@ class _FrapRecordDetailsScreenState
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () => _editRecord(),
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Actualizar registro',
+            onPressed: _refreshCurrentRecordFromProvider,
+          ),
+          IconButton(
+            icon:
+                _isCheckingEditPermission
+                    ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                    : Icon(
+                      Icons.edit,
+                      color: _canEditRecord ? null : Colors.grey,
+                    ),
+            tooltip:
+                _canEditRecord
+                    ? 'Editar registro'
+                    : (_editBlockedReason ?? 'Edición no disponible'),
+            onPressed:
+                (!_isCheckingEditPermission && _canEditRecord)
+                    ? () => _editRecord()
+                    : null,
           ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
@@ -1063,6 +1156,10 @@ class _FrapRecordDetailsScreenState
 
             const SizedBox(height: 12),
 
+            _buildSyncStatusIndicator(),
+
+            const SizedBox(height: 12),
+
             // Barra de progreso
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1092,6 +1189,64 @@ class _FrapRecordDetailsScreenState
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSyncStatusIndicator() {
+    final hasCloudCopy = widget.record.cloudRecord != null;
+    final isSynced = widget.record.isSynced;
+
+    late String label;
+    late Color chipColor;
+    late IconData icon;
+
+    if (hasCloudCopy && isSynced) {
+      label = 'Actualizado en nube';
+      chipColor = Colors.green;
+      icon = Icons.cloud_done;
+    } else if (hasCloudCopy && !isSynced) {
+      label = 'Pendiente de sincronizacion';
+      chipColor = Colors.orange;
+      icon = Icons.sync_problem;
+    } else {
+      label = 'Solo local';
+      chipColor = Colors.blueGrey;
+      icon = Icons.storage;
+    }
+
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: Colors.white.withValues(alpha: 0.95)),
+        const SizedBox(width: 8),
+        const Text(
+          'Estado:',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: chipColor.withValues(alpha: 0.35),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.35),
+              width: 1,
+            ),
+          ),
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -2063,6 +2218,7 @@ class _FrapRecordDetailsScreenState
 
   Future<void> _editRecord() async {
     final notifier = ref.read(unifiedFrapProvider.notifier);
+    UnifiedFrapRecord recordForEditing = widget.record;
 
     // Verificar permisos de edición
     final permission = await notifier.canEditRecord(widget.record);
@@ -2127,8 +2283,41 @@ class _FrapRecordDetailsScreenState
 
       try {
         // Sincronizar registros (esto descargará el registro de la nube)
-        await notifier.syncRecords();
+        final syncResult = await notifier.syncRecordsWithResult();
         if (!mounted) return;
+
+        if (!syncResult.success) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                syncResult.message.isNotEmpty
+                    ? syncResult.message
+                    : 'No se pudo descargar el registro para edición',
+              ),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+          return;
+        }
+
+        final refreshedRecord = _findLatestRecordForEditing();
+        if (refreshedRecord == null) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'No se encontró la copia local del registro después de sincronizar',
+              ),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 3),
+            ),
+          );
+          return;
+        }
+
+        recordForEditing = refreshedRecord;
 
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -2153,14 +2342,63 @@ class _FrapRecordDetailsScreenState
       }
     }
 
+    // Resolver versión más reciente incluso cuando no hubo descarga explícita.
+    recordForEditing = _findLatestRecordForEditing() ?? recordForEditing;
+
     // Navegar a pantalla de edición
     if (!mounted) return;
-    Navigator.push(
+    final updated = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (context) => FrapScreen(editingRecord: widget.record),
+        builder: (context) => FrapScreen(editingRecord: recordForEditing),
       ),
     );
+
+    if (!mounted || updated != true) return;
+    await _refreshCurrentRecordFromProvider();
+  }
+
+  UnifiedFrapRecord? _findLatestRecordForEditing() {
+    final records = ref.read(unifiedFrapProvider).records;
+
+    if (records.isEmpty) {
+      return null;
+    }
+
+    final targetLocalId = widget.record.localRecord?.id;
+    final targetCloudId = widget.record.cloudRecord?.id;
+    final targetFolio = widget.record.folio.trim().toUpperCase();
+
+    UnifiedFrapRecord? match;
+
+    if (targetLocalId != null) {
+      for (final record in records) {
+        if (record.localRecord?.id == targetLocalId) {
+          match = record;
+          break;
+        }
+      }
+    }
+
+    if (match == null && targetCloudId != null && targetCloudId.isNotEmpty) {
+      for (final record in records) {
+        if (record.cloudRecord?.id == targetCloudId) {
+          match = record;
+          break;
+        }
+      }
+    }
+
+    if (match == null && targetFolio.isNotEmpty) {
+      for (final record in records) {
+        if (record.folio.trim().toUpperCase() == targetFolio) {
+          match = record;
+          break;
+        }
+      }
+    }
+
+    return match;
   }
 
   void _generatePDF() {

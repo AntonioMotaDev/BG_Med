@@ -683,12 +683,54 @@ class FrapMigrationService {
 
   /// Verificar si dos registros son equivalentes
   bool _areRecordsEquivalent(Frap local, FrapFirestore cloud) {
-    // Comparar por datos del paciente y fecha de creación
-    final localPatientName = local.patient.fullName.toLowerCase();
-    final cloudPatientName = cloud.patientName.toLowerCase();
+    final localFolio = _normalizeFolio(local.registryInfo['folio']);
+    final cloudFolio = _normalizeFolio(cloud.registryInfo['folio']);
+    if (localFolio.isNotEmpty && cloudFolio.isNotEmpty) {
+      return localFolio == cloudFolio;
+    }
 
-    return localPatientName == cloudPatientName &&
-        local.createdAt.difference(cloud.createdAt).abs().inMinutes < 5;
+    final localPatientName = _normalizeText(local.patient.fullName);
+    final cloudPatientName = _normalizeText(cloud.patientName);
+    if (localPatientName.isEmpty || cloudPatientName.isEmpty) {
+      return false;
+    }
+    if (localPatientName != cloudPatientName) {
+      return false;
+    }
+
+    final sameAge =
+        local.patient.age > 0 &&
+        cloud.patientAge > 0 &&
+        local.patient.age == cloud.patientAge;
+
+    final localSex = _normalizeText(local.patient.sex);
+    final cloudSex = _normalizeText(cloud.patientSex);
+    final sameSex =
+        localSex.isNotEmpty && cloudSex.isNotEmpty && localSex == cloudSex;
+
+    final localPhone = _normalizePhone(local.patient.phone);
+    final cloudPhone = _normalizePhone(cloud.patientInfo['phone']?.toString());
+    final hasSamePhone = localPhone.isNotEmpty && localPhone == cloudPhone;
+
+    final hasStrongSignal = hasSamePhone || (sameAge && sameSex);
+    if (!hasStrongSignal) {
+      return false;
+    }
+
+    return local.createdAt.difference(cloud.createdAt).abs().inMinutes <= 60;
+  }
+
+  String _normalizeFolio(dynamic folio) {
+    return folio?.toString().trim().toUpperCase() ?? '';
+  }
+
+  String _normalizeText(String? value) {
+    if (value == null) return '';
+    return value.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+  }
+
+  String _normalizePhone(String? value) {
+    return (value ?? '').replaceAll(RegExp(r'\D'), '');
   }
 
   /// Obtener estadísticas de migración

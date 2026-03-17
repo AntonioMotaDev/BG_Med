@@ -5,6 +5,7 @@ import 'package:bg_med/features/frap/presentation/providers/frap_local_provider.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:bg_med/features/frap/presentation/providers/frap_data_provider.dart';
 import 'package:bg_med/core/services/folio_generator_service.dart';
+import 'dart:convert';
 import 'dart:developer' as developer;
 
 // Estados de sincronización
@@ -180,9 +181,54 @@ class UnifiedFrapNotifier extends StateNotifier<UnifiedFrapState> {
       return localFolio == cloudFolio;
     }
 
-    // 2) Fallback: nombre + ventana de tiempo
-    return local.patientName.toLowerCase() == cloud.patientName.toLowerCase() &&
-        local.createdAt.difference(cloud.createdAt).abs().inMinutes < 5;
+    // 2) Fallback estricto: nombre normalizado + señal fuerte + ventana temporal
+    final localName = _normalizeText(local.patientName);
+    final cloudName = _normalizeText(cloud.patientName);
+    if (localName.isEmpty || cloudName.isEmpty || localName != cloudName) {
+      return false;
+    }
+
+    final sameAge =
+        local.patientAge > 0 &&
+        cloud.patientAge > 0 &&
+        local.patientAge == cloud.patientAge;
+
+    final sameSex =
+        local.patientSex.trim().isNotEmpty &&
+        cloud.patientSex.trim().isNotEmpty &&
+        _normalizeText(local.patientSex) == _normalizeText(cloud.patientSex);
+
+    final samePhone = _arePhonesEquivalent(
+      local.patientPhone,
+      cloud.patientPhone,
+    );
+
+    final hasStrongSignal = samePhone || (sameAge && sameSex);
+    if (!hasStrongSignal) {
+      return false;
+    }
+
+    return local.createdAt.difference(cloud.createdAt).abs().inMinutes <= 60;
+  }
+
+  String _normalizeText(String? value) {
+    if (value == null) return '';
+    final collapsed = value.trim().toLowerCase().replaceAll(
+      RegExp(r'\s+'),
+      ' ',
+    );
+    return collapsed;
+  }
+
+  bool _arePhonesEquivalent(String? a, String? b) {
+    final phoneA = (a ?? '').replaceAll(RegExp(r'\D'), '');
+    final phoneB = (b ?? '').replaceAll(RegExp(r'\D'), '');
+
+    if (phoneA.isEmpty || phoneB.isEmpty) {
+      return false;
+    }
+
+    return phoneA == phoneB;
   }
 
   // Guardar registro
@@ -452,19 +498,29 @@ class UnifiedFrapNotifier extends StateNotifier<UnifiedFrapState> {
         // 2. Recargar registros después de la sincronización
         await loadAllRecords();
 
+        // 3. Limpiar duplicados locales de forma segura
+        final cleanupResult = await _cleanupLocalDuplicates(state.records);
+
+        // 4. Recargar nuevamente para reflejar eliminaciones
+        await loadAllRecords();
+
         state = state.copyWith(
           syncStatus: SyncStatus.success,
           lastSync: DateTime.now(),
         );
 
+        // Validar si hubo errores en la limpieza
+        final cleanupErrors =
+            cleanupResult['cleanupErrors'] as List<String>? ?? [];
+        final hasCleanupErrors = cleanupErrors.isNotEmpty;
+
         return {
           'success': true,
           'message': 'Sincronización completada exitosamente',
           'syncedRecords': syncResult.successCount,
-          'cleanupResult': {
-            'removedCount': 0, // Por ahora no implementamos limpieza automática
-            'statistics': {'estimatedSpaceFreedMB': '0.00'},
-          },
+          'cleanupResult': cleanupResult,
+          'hasCleanupWarnings': hasCleanupErrors,
+          'cleanupWarnings': cleanupErrors,
         };
       } else {
         state = state.copyWith(
@@ -493,6 +549,134 @@ class UnifiedFrapNotifier extends StateNotifier<UnifiedFrapState> {
         'success': false,
         'message': 'Error durante sincronización: $e',
         'syncedRecords': 0,
+      };
+    }
+  }
+
+  Future<Map<String, dynamic>> _cleanupLocalDuplicates(
+    List<UnifiedFrapRecord> records,
+  ) async {
+    int removedCount = 0;
+    int estimatedFreedBytes = 0;
+    final List<String> cleanupErrors = [];
+
+    try {
+      final localRecords = records.where((r) => r.localRecord != null).toList();
+      final cloudOnlyRecords =
+          records.where((r) => r.localRecord == null).toList();
+
+      final recordsById = <String, UnifiedFrapRecord>{
+        for (final record in localRecords) record.localRecord!.id: record,
+      };
+
+      final idsToRemove = <String>{};
+
+      // Regla 1: duplicados locales por folio. Priorizar NO SINCRONIZADO + RECIENTE.
+      final localByFolio = <String, List<UnifiedFrapRecord>>{};
+      for (final record in localRecords) {
+        final folio = record.folio.trim().toUpperCase();
+        if (folio.isEmpty) continue;
+        localByFolio.putIfAbsent(folio, () => []).add(record);
+      }
+
+      for (final entry in localByFolio.entries) {
+        final group = entry.value;
+        if (group.length < 2) continue;
+
+        // Prioridad: 1) No sincronizado más reciente  2) Sincronizado más reciente
+        group.sort((a, b) {
+          final aSynced = a.isSynced ? 1 : 0;
+          final bSynced = b.isSynced ? 1 : 0;
+          // Invertir: NO sincronizado (0) debe venir primero que sincronizado (1)
+          if (aSynced != bSynced) {
+            return aSynced.compareTo(bSynced);
+          }
+
+          final aUpdated = a.localRecord?.updatedAt ?? a.createdAt;
+          final bUpdated = b.localRecord?.updatedAt ?? b.createdAt;
+          return bUpdated.compareTo(aUpdated);
+        });
+
+        // Conservamos el primero (mejor candidato); el resto se elimina.
+        for (int i = 1; i < group.length; i++) {
+          idsToRemove.add(group[i].localRecord!.id);
+        }
+      }
+
+      // Regla 2: si existe equivalente en nube, remover copia local ya sincronizada.
+      for (final local in localRecords) {
+        final localId = local.localRecord!.id;
+        if (idsToRemove.contains(localId) || !local.isSynced) {
+          continue;
+        }
+
+        // Verificar contra registros cloud-only Y también contra cloud que estén asociados
+        bool hasEquivalentCloud = cloudOnlyRecords.any(
+          (cloud) => _areRecordsEquivalent(local, cloud),
+        );
+
+        // Si no hay cloud-only, verificar si ya tiene asociado cloudRecord
+        if (!hasEquivalentCloud && local.cloudRecord != null) {
+          hasEquivalentCloud = true;
+        }
+
+        if (hasEquivalentCloud) {
+          idsToRemove.add(localId);
+        }
+      }
+
+      for (final localId in idsToRemove) {
+        final record = recordsById[localId];
+        if (record == null) continue;
+
+        try {
+          final estimatedBytes =
+              utf8.encode(jsonEncode(record.getDetailedInfo())).length;
+          final deleteResult = await _unifiedService.deleteRecord(record);
+
+          if (deleteResult.deletedFromLocal) {
+            removedCount++;
+            estimatedFreedBytes += estimatedBytes;
+          } else if (deleteResult.success == false) {
+            cleanupErrors.add(
+              'No se pudo eliminar: ${record.patientName} (${deleteResult.message})',
+            );
+          }
+        } catch (e) {
+          cleanupErrors.add('Error eliminando: ${record.patientName} - $e');
+          developer.log(
+            'Error eliminando duplicado local ($localId): $e',
+            name: 'UnifiedFrapProvider',
+            error: e,
+          );
+        }
+      }
+
+      return {
+        'removedCount': removedCount,
+        'statistics': {
+          'estimatedSpaceFreedMB': (estimatedFreedBytes / (1024 * 1024))
+              .toStringAsFixed(2),
+        },
+        'cleanupErrors': cleanupErrors,
+        'totalAttempted': idsToRemove.length,
+      };
+    } catch (e) {
+      developer.log(
+        'Error en limpieza de duplicados: $e',
+        name: 'UnifiedFrapProvider',
+        error: e,
+      );
+      cleanupErrors.add('Error general en limpieza: $e');
+
+      return {
+        'removedCount': removedCount,
+        'statistics': {
+          'estimatedSpaceFreedMB': (estimatedFreedBytes / (1024 * 1024))
+              .toStringAsFixed(2),
+        },
+        'cleanupErrors': cleanupErrors,
+        'totalAttempted': 0,
       };
     }
   }
