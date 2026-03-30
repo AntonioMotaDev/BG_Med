@@ -53,12 +53,12 @@ class FrapLocalService {
       // Convertir FrapData a modelo Frap
       final frap = _convertFrapDataToFrap(frapData);
 
-      // Validación post-conversión (COMENTADA PARA TESTING)
-      // if (!_isValidFrapModel(frap)) {
-      //   throw ConversionException(
-      //     'La conversión produjo un modelo Frap inválido',
-      //   );
-      // }
+      // Validar que la conversión produjo un modelo coherente antes de persistir
+      if (!_isValidFrapModel(frap)) {
+        throw ConversionException(
+          'La conversión produjo un modelo Frap inválido',
+        );
+      }
 
       // Guardar en Hive
       final box = await _getFrapBox;
@@ -820,31 +820,31 @@ class FrapLocalService {
   }
 
   // VALIDAR que el modelo Frap convertido es válido
-  // bool _isValidFrapModel(Frap frap) {
-  //   // Validaciones críticas del modelo
+  bool _isValidFrapModel(Frap frap) {
+    // Validaciones críticas del modelo
 
-  //   // 1. Validar que el paciente no es nulo y tiene datos esenciales
-  //   if (frap.patient.name.trim().isEmpty) {
-  //     return false;
-  //   }
-  //   if (frap.patient.age < 0) return false;
+    // 1. Validar que el paciente no es nulo y tiene datos esenciales
+    if (frap.patient.name.trim().isEmpty) {
+      return false;
+    }
+    if (frap.patient.age < 0) return false;
 
-  //   // 2. Validar información de registro
-  //   final folio = frap.registryInfo['folio'];
-  //   if (folio == null || (folio as String).isEmpty) {
-  //     return false;
-  //   }
+    // 2. Validar información de registro
+    final folio = frap.registryInfo['folio'];
+    if (folio == null || (folio as String).isEmpty) {
+      return false;
+    }
 
-  //   // 3. Validar información de servicio
-  //   final tipoUrgencia = frap.serviceInfo['tipoUrgencia'];
-  //   if (tipoUrgencia == null || (tipoUrgencia as String).isEmpty) {
-  //     return false;
-  //   }
+    // 3. Validar información de servicio
+    final tipoUrgencia = frap.serviceInfo['tipoUrgencia'];
+    if (tipoUrgencia == null || (tipoUrgencia as String).isEmpty) {
+      return false;
+    }
 
-  //   // 4. Validar que el ID no es nulo
-  //   if (frap.id.isEmpty) return false;
+    // 4. Validar que el ID no es nulo
+    if (frap.id.isEmpty) return false;
 
-  //   // Si pasa todas las validaciones críticas, el modelo es válido
-  //   return true;
-  // }
+    // Si pasa todas las validaciones críticas, el modelo es válido
+    return true;
+  }
 }

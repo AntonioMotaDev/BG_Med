@@ -140,6 +140,7 @@ class NotificationService {
   void showProgressDialog(BuildContext context, String message) {
     showDialog(
       context: context,
+      useRootNavigator: true,
       barrierDismissible: false,
       builder:
           (context) => AlertDialog(
@@ -156,8 +157,9 @@ class NotificationService {
 
   // Ocultar diálogo de progreso
   void hideProgressDialog(BuildContext context) {
-    if (Navigator.of(context).canPop()) {
-      Navigator.of(context).pop();
+    final navigator = Navigator.of(context, rootNavigator: true);
+    if (navigator.canPop()) {
+      navigator.pop();
     }
   }
 
@@ -224,7 +226,7 @@ class NotificationService {
                   borderRadius: BorderRadius.circular(8),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),

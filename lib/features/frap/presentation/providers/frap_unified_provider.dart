@@ -3,6 +3,7 @@ import 'package:bg_med/core/services/frap_local_service.dart';
 import 'package:bg_med/core/services/frap_firestore_service.dart';
 import 'package:bg_med/features/frap/presentation/providers/frap_local_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:bg_med/features/frap/presentation/providers/frap_data_provider.dart';
 import 'package:bg_med/core/services/folio_generator_service.dart';
 import 'dart:convert';
@@ -377,6 +378,16 @@ class UnifiedFrapNotifier extends StateNotifier<UnifiedFrapState> {
       errorResult.message = 'Error durante sincronización: $e';
       return errorResult;
     }
+  }
+
+  // Alias explícito para acciones manuales de sincronización desde UI
+  Future<SyncResult> forceSyncNow() async {
+    return await syncRecordsWithResult();
+  }
+
+  // Estadísticas de sincronización provenientes del servicio unificado
+  Future<Map<String, dynamic>> getSyncStats() async {
+    return await _unifiedService.getSyncStats();
   }
 
   // Buscar registros
@@ -772,4 +783,23 @@ final unifiedFrapStatisticsProvider = Provider<Map<String, dynamic>>((ref) {
                 ) /
                 state.records.length,
   };
+});
+
+// Estado de conectividad simple para reemplazar la capa de auto-sync legacy
+final unifiedConnectivityProvider = StreamProvider<bool>((ref) {
+  final connectivity = Connectivity();
+
+  final stream = connectivity.onConnectivityChanged.map(
+    (results) => !results.contains(ConnectivityResult.none),
+  );
+
+  return stream;
+});
+
+// Provider de estadísticas de sincronización unificado
+final unifiedSyncStatsProvider = FutureProvider<Map<String, dynamic>>((
+  ref,
+) async {
+  final notifier = ref.watch(unifiedFrapProvider.notifier);
+  return await notifier.getSyncStats();
 });

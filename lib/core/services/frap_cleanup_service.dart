@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:bg_med/core/services/frap_unified_service.dart';
 import 'package:bg_med/core/services/frap_local_service.dart';
 import 'package:bg_med/core/services/frap_firestore_service.dart';
@@ -17,6 +19,8 @@ class FrapCleanupService {
     List<UnifiedFrapRecord> records,
   ) async {
     try {
+      final localBackupData = await _localService.backupFrapRecords();
+
       // Separar registros locales y de la nube
       final localRecords = records.where((r) => r.isLocal).toList();
       final cloudRecords = records.where((r) => !r.isLocal).toList();
@@ -41,20 +45,35 @@ class FrapCleanupService {
       // Procesar duplicados
       int removedCount = 0;
       final errors = <String>[];
+      final removedLocalIds = <String>[];
 
       for (final duplicate in duplicates) {
         try {
           final localRecord = duplicate['local'] as UnifiedFrapRecord?;
 
-          if (localRecord != null && localRecord.isLocal) {
+          if (localRecord != null && localRecord.localRecord != null) {
+            final localId = localRecord.localRecord!.id;
+            if (localId.isEmpty) continue;
+
             // Eliminar registro local duplicado
-            await _localService.deleteFrapRecord(
-              localRecord.localRecord?.id ?? '',
-            );
+            await _localService.deleteFrapRecord(localId);
             removedCount++;
+            removedLocalIds.add(localId);
           }
         } catch (e) {
           errors.add('Error eliminando duplicado: $e');
+        }
+      }
+
+      // Si hubo errores durante eliminación, intentar rollback completo local
+      bool rollbackPerformed = false;
+      if (errors.isNotEmpty && removedCount > 0) {
+        try {
+          await _localService.clearAllFrapRecords();
+          await _localService.restoreFrapRecords(backupData: localBackupData);
+          rollbackPerformed = true;
+        } catch (rollbackError) {
+          errors.add('Error durante rollback de limpieza: $rollbackError');
         }
       }
 
@@ -65,6 +84,8 @@ class FrapCleanupService {
                 ? 'Limpieza completada. $removedCount registros eliminados'
                 : 'Limpieza completada con errores: ${errors.join(', ')}',
         'removedCount': removedCount,
+        'rollbackPerformed': rollbackPerformed,
+        'removedLocalIds': removedLocalIds,
         'errors': errors,
         'statistics': {
           'totalRecords': records.length,
@@ -91,15 +112,22 @@ class FrapCleanupService {
     List<UnifiedFrapRecord> cloudRecords,
   ) {
     final duplicates = <Map<String, dynamic>>[];
+    final seenLocalIds = <String>{};
 
     for (final localRecord in localRecords) {
       for (final cloudRecord in cloudRecords) {
-        // Comparar por nombre del paciente y fecha de creación
-        if (_areRecordsEquivalent(localRecord, cloudRecord)) {
+        final localId = localRecord.localRecord?.id ?? '';
+        if (localId.isEmpty || seenLocalIds.contains(localId)) continue;
+
+        // Comparación robusta: folio, señales de paciente y ventana de tiempo
+        final confidence = _calculateMatchConfidence(localRecord, cloudRecord);
+        if (confidence >= 0.75) {
+          seenLocalIds.add(localId);
           duplicates.add({
             'local': localRecord,
             'cloud': cloudRecord,
-            'criteria': 'patient_name_and_date',
+            'criteria': 'folio_or_patient_signals',
+            'confidence': confidence,
           });
         }
       }
@@ -108,14 +136,62 @@ class FrapCleanupService {
     return duplicates;
   }
 
-  // Verificar si dos registros son equivalentes
-  bool _areRecordsEquivalent(UnifiedFrapRecord local, UnifiedFrapRecord cloud) {
-    // Comparar por nombre del paciente y fecha de creación
-    final localPatientName = local.patientName;
-    final cloudPatientName = cloud.patientName;
+  double _calculateMatchConfidence(
+    UnifiedFrapRecord local,
+    UnifiedFrapRecord cloud,
+  ) {
+    final localFolio = local.folio.trim().toUpperCase();
+    final cloudFolio = cloud.folio.trim().toUpperCase();
 
-    return localPatientName.toLowerCase() == cloudPatientName.toLowerCase() &&
-        local.createdAt.difference(cloud.createdAt).abs().inMinutes < 5;
+    // Coincidencia de folio es prácticamente determinística
+    if (localFolio.isNotEmpty && cloudFolio.isNotEmpty && localFolio == cloudFolio) {
+      return 1.0;
+    }
+
+    final localName = _normalizeText(local.patientName);
+    final cloudName = _normalizeText(cloud.patientName);
+    if (localName.isEmpty || cloudName.isEmpty || localName != cloudName) {
+      return 0.0;
+    }
+
+    double confidence = 0.5; // nombre
+
+    final sameAge =
+        local.patientAge > 0 &&
+        cloud.patientAge > 0 &&
+        local.patientAge == cloud.patientAge;
+    if (sameAge) confidence += 0.2;
+
+    final sameSex =
+        local.patientSex.trim().isNotEmpty &&
+        cloud.patientSex.trim().isNotEmpty &&
+        _normalizeText(local.patientSex) == _normalizeText(cloud.patientSex);
+    if (sameSex) confidence += 0.1;
+
+    final samePhone = _arePhonesEquivalent(local.patientPhone, cloud.patientPhone);
+    if (samePhone) confidence += 0.2;
+
+    final timeDiffMinutes = local.createdAt.difference(cloud.createdAt).abs().inMinutes;
+    if (timeDiffMinutes <= 60) {
+      confidence += 0.1;
+    } else if (timeDiffMinutes > 240) {
+      confidence -= 0.2;
+    }
+
+    return confidence.clamp(0.0, 1.0);
+  }
+
+  String _normalizeText(String value) {
+    return value.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+  }
+
+  bool _arePhonesEquivalent(String? a, String? b) {
+    final phoneA = (a ?? '').replaceAll(RegExp(r'\D'), '');
+    final phoneB = (b ?? '').replaceAll(RegExp(r'\D'), '');
+    if (phoneA.isEmpty || phoneB.isEmpty) {
+      return false;
+    }
+    return phoneA == phoneB;
   }
 
   // Obtener estadísticas de limpieza
@@ -127,16 +203,20 @@ class FrapCleanupService {
       final cloudRecords = records.where((r) => !r.isLocal).toList();
 
       final duplicates = _detectDuplicates(localRecords, cloudRecords);
+      final estimatedSpaceFreedBytes = duplicates.fold<int>(0, (sum, item) {
+        final local = item['local'] as UnifiedFrapRecord?;
+        if (local?.localRecord == null) return sum;
+        return sum + utf8.encode(jsonEncode(local!.localRecord!.toJson())).length;
+      });
 
       return {
         'totalRecords': records.length,
         'localRecords': localRecords.length,
         'cloudRecords': cloudRecords.length,
         'duplicatesFound': duplicates.length,
-        'estimatedSpaceFreedKB': duplicates.length * 2, // Estimación aproximada
-        'estimatedSpaceFreedMB': (duplicates.length * 2 / 1024).toStringAsFixed(
-          2,
-        ),
+        'estimatedSpaceFreedKB': (estimatedSpaceFreedBytes / 1024).toStringAsFixed(2),
+        'estimatedSpaceFreedMB':
+            (estimatedSpaceFreedBytes / (1024 * 1024)).toStringAsFixed(2),
       };
     } catch (e) {
       return {

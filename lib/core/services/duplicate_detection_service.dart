@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:bg_med/core/models/frap.dart';
 import 'package:bg_med/core/models/patient.dart';
+import 'package:crypto/crypto.dart';
 
 class DuplicateGroup {
   final String groupId;
@@ -214,12 +217,7 @@ class DuplicateDetectionService {
   }
 
   String _hashString(String input) {
-    // Hash simple para este ejemplo
-    // En producción, usar un hash más robusto como SHA-256
-    int hash = 0;
-    for (int i = 0; i < input.length; i++) {
-      hash = ((hash << 5) - hash + input.codeUnitAt(i)) & 0xFFFFFFFF;
-    }
-    return hash.toString();
+    // Usar SHA-256 para minimizar colisiones en agrupación de duplicados
+    return sha256.convert(utf8.encode(input)).toString();
   }
 }

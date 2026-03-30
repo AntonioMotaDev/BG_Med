@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:bg_med/core/models/frap.dart';
 import 'package:bg_med/core/services/frap_local_service.dart';
 import 'package:bg_med/core/services/frap_firestore_service.dart';
+import 'package:bg_med/core/services/duplicate_detection_service.dart';
 
 class CleanupResult {
   final bool success;
@@ -44,12 +47,16 @@ class CleanupStatistics {
 class DataCleanupService {
   final FrapLocalService _localService;
   final FrapFirestoreService _cloudService;
+  final DuplicateDetectionService _duplicateDetectionService;
 
   DataCleanupService({
     required FrapLocalService localService,
     required FrapFirestoreService cloudService,
+    DuplicateDetectionService? duplicateDetectionService,
   }) : _localService = localService,
-       _cloudService = cloudService;
+       _cloudService = cloudService,
+       _duplicateDetectionService =
+           duplicateDetectionService ?? DuplicateDetectionService();
 
   Future<CleanupResult> removeDuplicateLocalRecords() async {
     try {
@@ -65,7 +72,20 @@ class DataCleanupService {
         );
       }
 
-      final duplicates = _findDuplicates(localRecords);
+      final duplicateGroups = await _duplicateDetectionService.detectDuplicates(
+        localRecords,
+      );
+      // Evitar falsos positivos: sólo grupos exact/similar con confianza mínima
+      final duplicates =
+          duplicateGroups
+              .where(
+                (group) =>
+                    (group.type == DuplicateType.exact ||
+                        group.type == DuplicateType.similar) &&
+                    group.confidence >= 0.75,
+              )
+              .map((group) => group.records)
+              .toList();
 
       if (duplicates.isEmpty) {
         return CleanupResult(
@@ -119,20 +139,6 @@ class DataCleanupService {
     }
   }
 
-  List<List<Frap>> _findDuplicates(List<Frap> localRecords) {
-    // Simple duplicate detection based on patient name and date
-    final Map<String, List<Frap>> groups = {};
-
-    for (final record in localRecords) {
-      final key =
-          '${record.patient.name}_${record.createdAt.toIso8601String().split('T')[0]}';
-      groups.putIfAbsent(key, () => []).add(record);
-    }
-
-    // Return only groups with more than one record
-    return groups.values.where((group) => group.length > 1).toList();
-  }
-
   Future<CleanupResult> _processDuplicateGroup(List<Frap> group) async {
     if (group.isEmpty) {
       return CleanupResult(
@@ -144,8 +150,16 @@ class DataCleanupService {
       );
     }
 
-    // Mantener el registro más reciente
-    group.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    // Mantener el registro con mayor prioridad:
+    // 1) no sincronizado (para no perder pendientes), 2) más reciente
+    group.sort((a, b) {
+      final aPriority = a.isSynced ? 1 : 0;
+      final bPriority = b.isSynced ? 1 : 0;
+      if (aPriority != bPriority) {
+        return aPriority.compareTo(bPriority);
+      }
+      return b.createdAt.compareTo(a.createdAt);
+    });
     final recordsToDelete = group.skip(1).toList();
 
     int removedCount = 0;
@@ -289,15 +303,46 @@ class DataCleanupService {
     final localRecords = await _localService.getAllFrapRecords();
     final cloudRecords = await _cloudService.getAllFrapRecords();
 
+    final duplicateGroups = await _duplicateDetectionService.detectDuplicates(
+      localRecords,
+    );
+    final actionableGroups =
+        duplicateGroups
+            .where(
+              (group) =>
+                  (group.type == DuplicateType.exact ||
+                      group.type == DuplicateType.similar) &&
+                  group.confidence >= 0.75,
+            )
+            .toList();
+
+    final totalDuplicates = actionableGroups.fold<int>(
+      0,
+      (sum, group) => sum + (group.records.length - 1),
+    );
+
+    // Estimación basada en JSON serializado de registros que potencialmente se eliminarían
+    final estimatedSpaceSaved = actionableGroups.fold<int>(0, (sum, group) {
+      final groupSorted = [...group.records]..sort((a, b) {
+        final aPriority = a.isSynced ? 1 : 0;
+        final bPriority = b.isSynced ? 1 : 0;
+        if (aPriority != bPriority) return aPriority.compareTo(bPriority);
+        return b.createdAt.compareTo(a.createdAt);
+      });
+      final deletable = groupSorted.skip(1);
+      final size = deletable.fold<int>(
+        0,
+        (acc, record) => acc + utf8.encode(jsonEncode(record.toJson())).length,
+      );
+      return sum + size;
+    });
+
     return CleanupStatistics(
       totalLocalRecords: localRecords.length,
       totalCloudRecords: cloudRecords.length,
-      duplicateGroups:
-          0, // This will need to be calculated based on the actual duplicate detection logic
-      totalDuplicates:
-          0, // This will need to be calculated based on the actual duplicate detection logic
-      estimatedSpaceSaved:
-          0, // This will need to be calculated based on the actual duplicate detection logic
+      duplicateGroups: actionableGroups.length,
+      totalDuplicates: totalDuplicates,
+      estimatedSpaceSaved: estimatedSpaceSaved,
     );
   }
 }

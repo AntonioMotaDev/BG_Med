@@ -17,9 +17,8 @@ class ValidationResult {
       errors = const [],
       warnings = const [];
 
-  ValidationResult.failure(List<String> errors, {List<String>? warnings})
+  ValidationResult.failure(this.errors, {List<String>? warnings})
     : isValid = false,
-      errors = errors,
       warnings = warnings ?? const [];
 }
 
@@ -40,9 +39,9 @@ class FrapDataValidator {
     errors.addAll(patientResult.errors);
     warnings.addAll(patientResult.warnings);
 
-    // final serviceResult = _validateServiceInfo(data.serviceInfo);
-    // errors.addAll(serviceResult.errors);
-    // warnings.addAll(serviceResult.warnings);
+    final serviceResult = _validateServiceInfo(data.serviceInfo);
+    errors.addAll(serviceResult.errors);
+    warnings.addAll(serviceResult.warnings);
 
     final registryResult = _validateRegistryInfo(data.registryInfo);
     errors.addAll(registryResult.errors);
@@ -75,9 +74,9 @@ class FrapDataValidator {
   ) {
     switch (sectionName) {
       case 'patient_info':
-      //   return _validatePatientInfo(data);
-      // case 'service_info':
-      //   return _validateServiceInfo(data);
+        return _validatePatientInfo(data);
+      case 'service_info':
+        return _validateServiceInfo(data);
       case 'registry_info':
         return _validateRegistryInfo(data);
       case 'physical_exam':
@@ -254,28 +253,28 @@ class FrapDataValidator {
     );
   }
 
-  // ValidationResult _validateServiceInfo(Map<String, dynamic> data) {
-  //   final errors = <String>[];
+  ValidationResult _validateServiceInfo(Map<String, dynamic> data) {
+    final errors = <String>[];
 
-  //   // Campos de serviceInfo (correctos según service_info_form_dialog.dart)
-  //   if (_isEmptyOrNull(data['tipoUrgencia'])) {
-  //     errors.add('El tipo de urgencia es obligatorio');
-  //   }
+    // Campos críticos de serviceInfo según el flujo del formulario
+    if (_isEmptyOrNull(data['tipoServicio'])) {
+      errors.add('El tipo de servicio es obligatorio');
+    }
 
-  //   if (_isEmptyOrNull(data['tipoServicio'])) {
-  //     errors.add('El tipo de servicio es obligatorio');
-  //   }
+    if (_isEmptyOrNull(data['tipoUrgencia'])) {
+      errors.add('El tipo de urgencia es obligatorio');
+    }
 
-  //   if (_isEmptyOrNull(data['ubicacion'])) {
-  //     errors.add('La ubicación es obligatoria');
-  //   }
+    if (_isEmptyOrNull(data['ubicacion'])) {
+      errors.add('La ubicación es obligatoria');
+    }
 
-  //   if (_isEmptyOrNull(data['lugarOcurrencia'])) {
-  //     errors.add('El lugar de ocurrencia es obligatorio');
-  //   }
+    if (_isEmptyOrNull(data['lugarOcurrencia'])) {
+      errors.add('El lugar de ocurrencia es obligatorio');
+    }
 
-  //   return ValidationResult(isValid: errors.isEmpty, errors: errors);
-  // }
+    return ValidationResult(isValid: errors.isEmpty, errors: errors);
+  }
 
   ValidationResult _validateRegistryInfo(Map<String, dynamic> data) {
     final errors = <String>[];
