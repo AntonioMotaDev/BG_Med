@@ -54,12 +54,12 @@ class FrapFirestoreService {
         insumos: frapData.insumos,
       );
 
-      // Validación post-conversión (COMENTADA PARA TESTING)
-      // if (!_isValidFrapFirestore(frapFirestore)) {
-      //   throw ConversionException(
-      //     'La conversión produjo un modelo FrapFirestore inválido',
-      //   );
-      // }
+      // Validación post-conversión para evitar persistir datos inconsistentes
+      if (!_isValidFrapFirestore(frapFirestore)) {
+        throw ConversionException(
+          'La conversión produjo un modelo FrapFirestore inválido',
+        );
+      }
 
       final docRef = await _collection.add(frapFirestore.toFirestore());
       return docRef.id;
@@ -211,20 +211,15 @@ class FrapFirestoreService {
         throw Exception('Usuario no autenticado');
       }
 
-      // Temporalmente removemos orderBy para evitar el error de índice
       final querySnapshot =
-          await _collection.where('userId', isEqualTo: userId).get();
+          await _collection
+              .where('userId', isEqualTo: userId)
+              .orderBy('createdAt', descending: true)
+              .get();
 
-      // Ordenamos en memoria como workaround temporal
-      final records =
-          querySnapshot.docs
-              .map((doc) => FrapFirestore.fromFirestore(doc))
-              .toList();
-
-      // Ordenar por fecha de creación descendente
-      records.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-      return records;
+      return querySnapshot.docs
+          .map((doc) => FrapFirestore.fromFirestore(doc))
+          .toList();
     } catch (e) {
       throw Exception('Error al obtener los registros FRAP: $e');
     }
@@ -242,21 +237,20 @@ class FrapFirestoreService {
         throw Exception('Usuario no autenticado');
       }
 
-      // Simplificamos la consulta para evitar índice compuesto
-      Query query = _collection.where('userId', isEqualTo: userId).limit(limit);
+      Query query = _collection
+          .where('userId', isEqualTo: userId)
+          .orderBy('createdAt', descending: true)
+          .limit(limit);
 
-      // Nota: Por ahora removemos startAfterDocument hasta que se configure el índice
+      if (lastDocument != null) {
+        query = query.startAfterDocument(lastDocument);
+      }
+
       final querySnapshot = await query.get();
 
-      final records =
-          querySnapshot.docs
-              .map((doc) => FrapFirestore.fromFirestore(doc))
-              .toList();
-
-      // Ordenar en memoria
-      records.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-      return records;
+      return querySnapshot.docs
+          .map((doc) => FrapFirestore.fromFirestore(doc))
+          .toList();
     } catch (e) {
       throw Exception('Error al obtener los registros FRAP paginados: $e');
     }
@@ -440,20 +434,16 @@ class FrapFirestoreService {
         throw Exception('Usuario no autenticado');
       }
 
-      // Removemos orderBy temporalmente para evitar el error de índice
-      return _collection.where('userId', isEqualTo: userId).snapshots().map((
-        querySnapshot,
-      ) {
-        final records =
-            querySnapshot.docs
-                .map((doc) => FrapFirestore.fromFirestore(doc))
-                .toList();
-
-        // Ordenar en memoria por fecha de creación descendente
-        records.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-        return records;
-      });
+      return _collection
+          .where('userId', isEqualTo: userId)
+          .orderBy('createdAt', descending: true)
+          .snapshots()
+          .map(
+            (querySnapshot) =>
+                querySnapshot.docs
+                    .map((doc) => FrapFirestore.fromFirestore(doc))
+                    .toList(),
+          );
     } catch (e) {
       throw Exception('Error al obtener el stream de registros FRAP: $e');
     }
@@ -599,37 +589,34 @@ class FrapFirestoreService {
   }
 
   // VALIDAR que el modelo FrapFirestore convertido es válido
-  // bool _isValidFrapFirestore(FrapFirestore frap) {
-  //   // Validaciones críticas del modelo
+  bool _isValidFrapFirestore(FrapFirestore frap) {
+    // 1. Validar que userId no es nulo o vacío
+    if (frap.userId.isEmpty) return false;
 
-  //   // 1. Validar que userId no es nulo o vacío
-  //   if (frap.userId.isEmpty) return false;
+    // 2. Validar información del paciente
+    if (frap.patientInfo.isEmpty) return false;
+    final patientInfo = frap.patientInfo;
+    final firstName = patientInfo['firstName']?.toString().trim() ?? '';
+    if (firstName.isEmpty) {
+      return false;
+    }
 
-  //   // 2. Validar información del paciente
-  //   if (frap.patientInfo.isEmpty) return false;
-  //   final patientInfo = frap.patientInfo;
-  //   if (patientInfo['firstName'] == null ||
-  //       (patientInfo['firstName'] as String).isEmpty) {
-  //     return false;
-  //   }
+    // 3. Validar información de servicio
+    if (frap.serviceInfo.isEmpty) return false;
+    final serviceInfo = frap.serviceInfo;
+    final urgencyType = serviceInfo['tipoUrgencia']?.toString().trim() ?? '';
+    if (urgencyType.isEmpty) {
+      return false;
+    }
 
-  //   // 3. Validar información de servicio
-  //   if (frap.serviceInfo.isEmpty) return false;
-  //   final serviceInfo = frap.serviceInfo;
-  //   if (serviceInfo['tipoUrgencia'] == null ||
-  //       (serviceInfo['tipoUrgencia'] as String).isEmpty) {
-  //     return false;
-  //   }
+    // 4. Validar información de registro
+    if (frap.registryInfo.isEmpty) return false;
+    final registryInfo = frap.registryInfo;
+    final folio = registryInfo['folio']?.toString().trim() ?? '';
+    if (folio.isEmpty) {
+      return false;
+    }
 
-  //   // 4. Validar información de registro
-  //   if (frap.registryInfo.isEmpty) return false;
-  //   final registryInfo = frap.registryInfo!;
-  //   if (registryInfo['folio'] == null ||
-  //       (registryInfo['folio'] as String).isEmpty) {
-  //     return false;
-  //   }
-
-  //   // Si pasa todas las validaciones críticas, el modelo es válido
-  //   return true;
-  // }
+    return true;
+  }
 }

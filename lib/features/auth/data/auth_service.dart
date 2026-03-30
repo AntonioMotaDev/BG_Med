@@ -1,10 +1,17 @@
 import 'package:bg_med/core/models/user_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  void _logDebug(String message) {
+    if (kDebugMode) {
+      debugPrint('[AuthService] $message');
+    }
+  }
 
   // Stream del estado de autenticación
   Stream<User?> get authStateChanges => _auth.authStateChanges();
@@ -24,7 +31,7 @@ class AuthService {
       }
       return null;
     } catch (e) {
-      print('Error al obtener datos del usuario: $e');
+      _logDebug('Error al obtener datos del usuario: $e');
       return null;
     }
   }
@@ -59,14 +66,17 @@ class AuthService {
         updatedAt: now,
       );
 
-      await _firestore.collection('users').doc(user.uid).set(userData.toFirestore());
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .set(userData.toFirestore());
 
       // Enviar verificación de email
       await user.sendEmailVerification();
 
       return userData;
     } catch (e) {
-      print('Error en registro: $e');
+      _logDebug('Error en registro: $e');
       throw _handleAuthException(e);
     }
   }
@@ -77,8 +87,6 @@ class AuthService {
     required String password,
   }) async {
     try {
-      print('🔐 Intentando login con email: $email');
-      
       final UserCredential result = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
@@ -86,39 +94,28 @@ class AuthService {
 
       final User? user = result.user;
       if (user == null) {
-        print('❌ Usuario es null después del login');
+        _logDebug('Login devolvio usuario nulo');
         return null;
       }
 
-      print('✅ Login exitoso en Firebase Auth. UID: ${user.uid}');
-
       // Obtener datos del usuario desde Firestore
-      print('📄 Buscando datos del usuario en Firestore...');
       final userDoc = await _firestore.collection('users').doc(user.uid).get();
-      
+
       if (!userDoc.exists) {
-        print('❌ Usuario no encontrado en Firestore. UID: ${user.uid}');
+        _logDebug('Usuario autenticado sin documento en Firestore');
         throw Exception('Usuario no encontrado en la base de datos');
       }
 
-      print('✅ Usuario encontrado en Firestore');
       final userData = UserModel.fromFirestore(userDoc);
-      print('👤 Datos del usuario cargados: ${userData.name} (${userData.role})');
 
       // Actualizar estado de verificación de email si cambió
       if (userData.emailVerified != user.emailVerified) {
-        print('📧 Actualizando estado de verificación de email');
         await _updateEmailVerificationStatus(user.uid, user.emailVerified);
       }
 
       return userData;
     } catch (e) {
-      print('❌ Error en login: $e');
-      print('❌ Tipo de error: ${e.runtimeType}');
-      if (e is FirebaseAuthException) {
-        print('❌ Código de error Firebase: ${e.code}');
-        print('❌ Mensaje de error Firebase: ${e.message}');
-      }
+      _logDebug('Error en login: $e');
       throw _handleAuthException(e);
     }
   }
@@ -128,7 +125,7 @@ class AuthService {
     try {
       await _auth.signOut();
     } catch (e) {
-      print('Error al cerrar sesión: $e');
+      _logDebug('Error al cerrar sesion: $e');
       throw Exception('Error al cerrar sesión');
     }
   }
@@ -141,7 +138,7 @@ class AuthService {
         await user.sendEmailVerification();
       }
     } catch (e) {
-      print('Error al enviar verificación: $e');
+      _logDebug('Error al enviar verificacion: $e');
       throw Exception('Error al enviar email de verificación');
     }
   }
@@ -151,7 +148,7 @@ class AuthService {
     try {
       await currentUser?.reload();
     } catch (e) {
-      print('Error al recargar usuario: $e');
+      _logDebug('Error al recargar usuario: $e');
     }
   }
 
@@ -160,7 +157,7 @@ class AuthService {
     try {
       await _auth.sendPasswordResetEmail(email: email);
     } catch (e) {
-      print('Error al restablecer contraseña: $e');
+      _logDebug('Error al restablecer contrasena: $e');
       throw _handleAuthException(e);
     }
   }
@@ -188,13 +185,16 @@ class AuthService {
       }
       return null;
     } catch (e) {
-      print('Error al actualizar perfil: $e');
+      _logDebug('Error al actualizar perfil: $e');
       throw Exception('Error al actualizar perfil');
     }
   }
 
   // Actualizar estado de verificación de email
-  Future<void> _updateEmailVerificationStatus(String userId, bool isVerified) async {
+  Future<void> _updateEmailVerificationStatus(
+    String userId,
+    bool isVerified,
+  ) async {
     try {
       final updateData = <String, dynamic>{
         'emailVerified': isVerified,
@@ -207,7 +207,7 @@ class AuthService {
 
       await _firestore.collection('users').doc(userId).update(updateData);
     } catch (e) {
-      print('Error al actualizar verificación: $e');
+      _logDebug('Error al actualizar verificacion: $e');
     }
   }
 
@@ -249,4 +249,4 @@ class AuthService {
     }
     return 'Error inesperado. Por favor intenta nuevamente';
   }
-} 
+}

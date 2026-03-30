@@ -1,0 +1,5 @@
+# Copy this file to android/key.properties and replace values with your release credentials.
+storeFile=upload-keystore.jks
+storePassword=CHANGE_ME
+keyAlias=upload
+keyPassword=CHANGE_ME

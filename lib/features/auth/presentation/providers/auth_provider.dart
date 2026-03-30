@@ -1,6 +1,7 @@
 import 'package:bg_med/core/models/user_model.dart';
 import 'package:bg_med/features/auth/data/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Proveedor del servicio de autenticación
@@ -21,7 +22,9 @@ final currentUserProvider = FutureProvider<UserModel?>((ref) async {
 });
 
 // Proveedor para el estado de autenticación
-final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
+final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((
+  ref,
+) {
   final authService = ref.watch(authServiceProvider);
   return AuthNotifier(authService);
 });
@@ -34,11 +37,7 @@ class AuthState {
   final UserModel? user;
   final String? errorMessage;
 
-  const AuthState({
-    required this.status,
-    this.user,
-    this.errorMessage,
-  });
+  const AuthState({required this.status, this.user, this.errorMessage});
 
   AuthState copyWith({
     AuthStatus? status,
@@ -62,33 +61,34 @@ class AuthState {
 class AuthNotifier extends StateNotifier<AuthState> {
   final AuthService _authService;
 
-  AuthNotifier(this._authService) : super(const AuthState(status: AuthStatus.initial)) {
+  void _logDebug(String message) {
+    if (kDebugMode) {
+      debugPrint('[AuthNotifier] $message');
+    }
+  }
+
+  AuthNotifier(this._authService)
+    : super(const AuthState(status: AuthStatus.initial)) {
     _init();
   }
 
   void _init() {
     _authService.authStateChanges.listen((user) async {
-      print('🔄 AuthNotifier - Cambio en authStateChanges: ${user?.uid}');
-      
       if (user == null) {
-        print('🔄 AuthNotifier - Usuario es null, estableciendo estado como unauthenticated');
+        _logDebug('Auth state: usuario no autenticado');
         state = const AuthState(status: AuthStatus.unauthenticated);
       } else {
-        print('🔄 AuthNotifier - Usuario detectado, obteniendo datos...');
+        _logDebug('Auth state: usuario autenticado, cargando perfil');
         try {
           final userData = await _authService.getCurrentUserData();
           if (userData != null) {
-            print('🔄 AuthNotifier - Datos del usuario obtenidos: ${userData.name}');
-            state = AuthState(
-              status: AuthStatus.authenticated,
-              user: userData,
-            );
+            state = AuthState(status: AuthStatus.authenticated, user: userData);
           } else {
-            print('🔄 AuthNotifier - No se pudieron obtener datos del usuario');
+            _logDebug('Perfil de usuario no disponible en Firestore');
             state = const AuthState(status: AuthStatus.unauthenticated);
           }
         } catch (e) {
-          print('🔄 AuthNotifier - Error al obtener datos del usuario: $e');
+          _logDebug('Error obteniendo perfil de usuario: $e');
           state = AuthState(
             status: AuthStatus.error,
             errorMessage: 'Error al cargar datos del usuario',
@@ -99,38 +99,29 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   // Iniciar sesión
-  Future<void> signIn({
-    required String email,
-    required String password,
-  }) async {
-    print('🔄 AuthNotifier - Iniciando proceso de login...');
+  Future<void> signIn({required String email, required String password}) async {
+    _logDebug('Iniciando flujo de login');
     state = state.copyWith(status: AuthStatus.loading);
-    
+
     try {
       final user = await _authService.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-      
+
       if (user != null) {
-        print('🔄 AuthNotifier - Login exitoso: ${user.name}');
-        state = AuthState(
-          status: AuthStatus.authenticated,
-          user: user,
-        );
+        _logDebug('Login exitoso');
+        state = AuthState(status: AuthStatus.authenticated, user: user);
       } else {
-        print('🔄 AuthNotifier - Login falló: usuario es null');
+        _logDebug('Login sin datos de usuario');
         state = const AuthState(
           status: AuthStatus.error,
           errorMessage: 'Error al iniciar sesión',
         );
       }
     } catch (e) {
-      print('🔄 AuthNotifier - Error en login: $e');
-      state = AuthState(
-        status: AuthStatus.error,
-        errorMessage: e.toString(),
-      );
+      _logDebug('Error durante login: $e');
+      state = AuthState(status: AuthStatus.error, errorMessage: e.toString());
     }
   }
 
@@ -142,7 +133,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     String role = 'user',
   }) async {
     state = state.copyWith(status: AuthStatus.loading);
-    
+
     try {
       final user = await _authService.registerWithEmailAndPassword(
         email: email,
@@ -150,12 +141,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
         name: name,
         role: role,
       );
-      
+
       if (user != null) {
-        state = AuthState(
-          status: AuthStatus.authenticated,
-          user: user,
-        );
+        state = AuthState(status: AuthStatus.authenticated, user: user);
       } else {
         state = const AuthState(
           status: AuthStatus.error,
@@ -163,10 +151,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         );
       }
     } catch (e) {
-      state = AuthState(
-        status: AuthStatus.error,
-        errorMessage: e.toString(),
-      );
+      state = AuthState(status: AuthStatus.error, errorMessage: e.toString());
     }
   }
 
@@ -226,10 +211,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   // Actualizar perfil
-  Future<void> updateProfile({
-    String? name,
-    String? role,
-  }) async {
+  Future<void> updateProfile({String? name, String? role}) async {
     final currentUser = state.user;
     if (currentUser == null) return;
 
@@ -239,7 +221,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         name: name,
         role: role,
       );
-      
+
       if (updatedUser != null) {
         state = state.copyWith(user: updatedUser);
       }
@@ -255,9 +237,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   void clearError() {
     if (state.status == AuthStatus.error) {
       state = state.copyWith(
-        status: state.user != null 
-            ? AuthStatus.authenticated 
-            : AuthStatus.unauthenticated,
+        status:
+            state.user != null
+                ? AuthStatus.authenticated
+                : AuthStatus.unauthenticated,
         errorMessage: null,
       );
     }

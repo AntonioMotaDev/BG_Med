@@ -24,6 +24,7 @@ import 'dart:developer' as developer;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  String? initializationError;
 
   // Configurar orientación
   await SystemChrome.setPreferredOrientations([
@@ -55,7 +56,12 @@ void main() async {
     await _initializeHiveBoxes();
   } catch (e) {
     developer.log('error: $e', name: 'main_initialization');
-    // Continuar sin la base de datos local si hay un error crítico
+    initializationError = e.toString();
+  }
+
+  if (initializationError != null) {
+    runApp(InitializationErrorApp(error: initializationError));
+    return;
   }
 
   runApp(
@@ -110,8 +116,50 @@ Future<void> _initializeHiveBoxes() async {
         'Error crítico inicializando base de datos: $e2',
         name: 'hive_initialization',
       );
-      // Continuar sin la base de datos local
+      throw Exception('No fue posible inicializar almacenamiento local');
     }
+  }
+}
+
+class InitializationErrorApp extends StatelessWidget {
+  final String error;
+
+  const InitializationErrorApp({super.key, required this.error});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, color: Colors.red, size: 64),
+                const SizedBox(height: 16),
+                const Text(
+                  'Error de inicializacion',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'La aplicacion no pudo iniciar de forma segura. Contacta al administrador.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                SelectableText(
+                  error,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
